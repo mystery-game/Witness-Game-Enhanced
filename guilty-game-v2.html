@@ -50,6 +50,52 @@
             font-weight: 500;
         }
         
+        .streak-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(243, 156, 18, 0.3);
+            border-radius: 20px;
+            display: inline-flex;
+            backdrop-filter: blur(5px);
+        }
+        
+        .streak-icon {
+            font-size: 20px;
+            animation: flicker 2s ease-in-out infinite;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(1.2); }
+        }
+        
+        .streak-number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f39c12;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .streak-label {
+            font-size: 14px;
+            color: #9b99a7;
+        }
+        
+        .streak-display.no-streak {
+            opacity: 0.5;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .streak-display.no-streak .streak-icon {
+            animation: none;
+            filter: grayscale(1);
+        }
+        
         .difficulty-selector {
             margin-top: 10px;
             display: flex;
@@ -559,6 +605,27 @@
             transform: translateY(-1px);
         }
         
+        .tutorial-button {
+            position: absolute;
+            top: 10px;
+            right: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #e8e6f3;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .tutorial-button:hover {
+            border-color: rgba(243, 156, 18, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+        
         .modal {
             position: fixed;
             top: 0;
@@ -757,6 +824,70 @@
             font-style: italic;
         }
         
+        /* Tutorial styles */
+        .tutorial-content {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .tutorial-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tutorial-section h4 {
+            color: #f39c12;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+        
+        .tutorial-section p, .tutorial-section li {
+            color: #d8d6e3;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .tutorial-section ol, .tutorial-section ul {
+            margin-left: 20px;
+        }
+        
+        .tutorial-colors {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        .tutorial-colors > div {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tutorial-start-button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.2s;
+        }
+        
+        .tutorial-start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+            background: #2ecc71;
+        }
+        
         /* Large screens optimization */
         @media (min-width: 1400px) {
             .suspects-grid {
@@ -784,7 +915,7 @@
                 font-size: 28px;
             }
             
-            .stats-button, .reference-button {
+            .stats-button, .reference-button, .tutorial-button {
                 position: static;
                 margin-bottom: 5px;
                 margin-right: 5px;
@@ -821,10 +952,16 @@
 <body>
     <button class="stats-button" onclick="showStats()">📊 Stats</button>
     <button class="reference-button" onclick="showReference()">📋 Trait Guide</button>
+    <button class="tutorial-button" onclick="showTutorial()">❓ How to Play</button>
     
     <div class="header">
         <h1>GUILTY</h1>
         <div class="subtitle">Find the culprit using logical deduction</div>
+        <div class="streak-display" id="streakDisplay">
+            <span class="streak-icon">🔥</span>
+            <span class="streak-number" id="streakNumber">0</span>
+            <span class="streak-label">day streak</span>
+        </div>
     </div>
     
     <div class="crime-box">
@@ -869,6 +1006,61 @@
                 <button class="close-button" onclick="hideReference()">&times;</button>
             </div>
             <div id="referenceDisplay"></div>
+        </div>
+    </div>
+    
+    <!-- Tutorial Modal -->
+    <div class="modal" id="tutorialModal">
+        <div class="modal-content modal-content-wide">
+            <div class="modal-header">
+                <h3 class="modal-title">How to Play GUILTY</h3>
+                <button class="close-button" onclick="hideTutorial()">&times;</button>
+            </div>
+            <div id="tutorialDisplay" class="tutorial-content">
+                <div class="tutorial-section">
+                    <h4>🎯 Goal</h4>
+                    <p>Find the culprit by analyzing suspect traits and using logical deduction.</p>
+                </div>
+                
+                <div class="tutorial-section">
+                    <h4>🔍 How It Works</h4>
+                    <ol>
+                        <li><strong>Read the Crime:</strong> Each day features a new mystery with detailed clues.</li>
+                        <li><strong>Study the Initial Suspect:</strong> This person is NOT guilty, but their trait colors show how they compare to the real culprit.</li>
+                        <li><strong>Analyze Feedback:</strong>
+                            <div class="tutorial-colors">
+                                <div><span class="color-box green"></span> <strong>Green:</strong> This trait exactly matches the culprit</div>
+                                <div><span class="color-box yellow"></span> <strong>Yellow:</strong> This trait is close (±1 suspicion level)</div>
+                                <div><span class="color-box gray"></span> <strong>Gray:</strong> This trait is far from the culprit</div>
+                            </div>
+                        </li>
+                        <li><strong>Make Guesses:</strong> Click suspects to guess. Each trait will show colored feedback.</li>
+                        <li><strong>Use Logic:</strong> If "Museum Access: Staff" shows green, the culprit has Staff access!</li>
+                    </ol>
+                </div>
+                
+                <div class="tutorial-section">
+                    <h4>💡 Tips</h4>
+                    <ul>
+                        <li>Right-click suspects to eliminate them (or long-press on mobile)</li>
+                        <li>Check the Trait Guide to see suspicion levels for each trait value</li>
+                        <li>In Easy mode, yellow traits show arrows (↑↓) indicating if you need higher or lower suspicion</li>
+                        <li>Focus on green traits first - they're exact matches!</li>
+                        <li>Build a daily streak by solving each day's mystery</li>
+                    </ul>
+                </div>
+                
+                <div class="tutorial-section">
+                    <h4>🏆 Difficulty Levels</h4>
+                    <ul>
+                        <li><strong>Easy:</strong> 8 guesses, helpful arrows on close traits</li>
+                        <li><strong>Medium:</strong> 6 guesses, standard feedback</li>
+                        <li><strong>Hard:</strong> 4 guesses, prove your deduction skills!</li>
+                    </ul>
+                </div>
+                
+                <button class="tutorial-start-button" onclick="hideTutorial()">Start Playing!</button>
+            </div>
         </div>
     </div>
     

@@ -969,10 +969,6 @@ function resetGameForNewScenario() {
     // Shuffle suspects
     gameState.suspects.sort(() => seededRandom(seed + 100) - 0.5);
     
-    // Update UI
-    document.getElementById('crimeTitle').textContent = currentCrime.title;
-    document.getElementById('crimeDescription').textContent = currentCrime.description;
-    
     if (gameState.devMode) {
         document.getElementById('devCulpritInfo').textContent = `${gameState.culprit.name} (${gameState.culprit.job})`;
         
@@ -990,19 +986,36 @@ function resetGameForNewScenario() {
     
     displaySuspects();
     updateGuessCounter();
+    
+    // Start timer on first load
+    if (!gameState.startTime) {
+        startTimer();
+    }
 }
 
 // Initialize the game
 async function initGame() {
+    const seed = getDailySeed();
+    
+    // Determine which crime scenario to use
+    let crimeIndex;
+    if (gameState.devMode) {
+        crimeIndex = gameState.currentScenarioIndex;
+    } else {
+        const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        crimeIndex = dayOfYear % CRIME_SCENARIOS.length;
+    }
+    currentCrime = CRIME_SCENARIOS[crimeIndex];
+    
+    // Display crime info
+    document.getElementById('crimeTitle').textContent = `Today's Crime: ${currentCrime.title}`;
+    document.getElementById('crimeDescription').textContent = currentCrime.description;
+    
     // Load stats
     loadStats();
     
-    // Set up daily game
-    const seed = getDailySeed();
-    
-    // Select today's crime scenario
-    const crimeIndex = gameState.devMode ? gameState.currentScenarioIndex : Math.floor(seededRandom(seed) * CRIME_SCENARIOS.length);
-    currentCrime = CRIME_SCENARIOS[crimeIndex];
+    // Check for first-time player
+    checkFirstTimePlayer();
     
     // Generate logical suspects
     const allSuspects = generateSuspects(seed, currentCrime);
@@ -1046,10 +1059,6 @@ async function initGame() {
     
     // Shuffle suspects
     gameState.suspects.sort(() => seededRandom(seed + 100) - 0.5);
-    
-    // Update UI
-    document.getElementById('crimeTitle').textContent = currentCrime.title;
-    document.getElementById('crimeDescription').textContent = currentCrime.description;
     
     if (gameState.devMode) {
         document.getElementById('devCulpritInfo').textContent = `${gameState.culprit.name} (${gameState.culprit.job})`;
@@ -1378,6 +1387,7 @@ let playerStats = {
     gamesWon: 0,
     currentStreak: 0,
     maxStreak: 0,
+    lastPlayDate: null,
     difficultyStats: {
         easy: { played: 0, won: 0 },
         medium: { played: 0, won: 0 },
@@ -1390,6 +1400,7 @@ function loadStats() {
     if (saved) {
         playerStats = JSON.parse(saved);
     }
+    updateStreakDisplay();
 }
 
 function saveStats() {
@@ -1397,22 +1408,59 @@ function saveStats() {
 }
 
 function updateStats(won) {
-    playerStats.gamesPlayed++;
-    playerStats.difficultyStats[gameState.difficulty].played++;
+    const today = getDailySeed();
     
-    if (won) {
-        playerStats.gamesWon++;
-        playerStats.difficultyStats[gameState.difficulty].won++;
-        playerStats.currentStreak++;
+    // Check if this is a new day
+    if (playerStats.lastPlayDate !== today) {
+        playerStats.gamesPlayed++;
+        playerStats.difficultyStats[gameState.difficulty].played++;
         
-        if (playerStats.currentStreak > playerStats.maxStreak) {
-            playerStats.maxStreak = playerStats.currentStreak;
+        // Check if streak should continue
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdaySeed = yesterday.toISOString().split('T')[0];
+        
+        if (won) {
+            playerStats.gamesWon++;
+            playerStats.difficultyStats[gameState.difficulty].won++;
+            
+            // Update streak
+            if (playerStats.lastPlayDate === yesterdaySeed) {
+                // Played yesterday, continue streak
+                playerStats.currentStreak++;
+            } else if (!playerStats.lastPlayDate) {
+                // First time playing
+                playerStats.currentStreak = 1;
+            } else {
+                // Missed a day, restart streak
+                playerStats.currentStreak = 1;
+            }
+            
+            if (playerStats.currentStreak > playerStats.maxStreak) {
+                playerStats.maxStreak = playerStats.currentStreak;
+            }
+        } else {
+            // Lost the game, break the streak
+            playerStats.currentStreak = 0;
         }
-    } else {
-        playerStats.currentStreak = 0;
+        
+        playerStats.lastPlayDate = today;
+        saveStats();
+        updateStreakDisplay();
     }
+}
+
+function updateStreakDisplay() {
+    const streakDisplay = document.getElementById('streakDisplay');
+    const streakNumber = document.getElementById('streakNumber');
     
-    saveStats();
+    if (playerStats.currentStreak > 0) {
+        streakDisplay.classList.remove('no-streak');
+        streakNumber.textContent = playerStats.currentStreak;
+    } else {
+        streakDisplay.classList.add('no-streak');
+        streakNumber.textContent = '0';
+    }
 }
 
 function showStats() {
@@ -1541,12 +1589,35 @@ function hideReference() {
     document.getElementById('referenceModal').style.display = 'none';
 }
 
+// Tutorial functions
+function showTutorial() {
+    document.getElementById('tutorialModal').style.display = 'flex';
+}
+
+function hideTutorial() {
+    document.getElementById('tutorialModal').style.display = 'none';
+    localStorage.setItem('guiltyTutorialSeen', 'true');
+}
+
+// Check if first time player
+function checkFirstTimePlayer() {
+    const tutorialSeen = localStorage.getItem('guiltyTutorialSeen');
+    if (!tutorialSeen) {
+        // Show tutorial for first-time players
+        setTimeout(() => {
+            showTutorial();
+        }, 500);
+    }
+}
+
 // Make functions global
 window.shareResults = shareResults;
 window.showStats = showStats;
 window.hideStats = hideStats;
 window.showReference = showReference;
 window.hideReference = hideReference;
+window.showTutorial = showTutorial;
+window.hideTutorial = hideTutorial;
 window.resetGame = resetGame;
 window.getFeedbackForTrait = getFeedbackForTrait;
 
