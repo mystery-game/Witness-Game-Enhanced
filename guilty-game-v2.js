@@ -1521,24 +1521,12 @@ function showReference() {
     
     let html = `
         <div class="reference-legend">
-            <div class="reference-legend-title">How Trait Matching Works</div>
-            <div class="reference-legend-items">
-                <div class="reference-legend-item">
-                    <div class="reference-color-box green"></div>
-                    <span>Green = Exact match</span>
-                </div>
-                <div class="reference-legend-item">
-                    <div class="reference-color-box yellow"></div>
-                    <span>Yellow = Close match (adjacent on scale)</span>
-                </div>
-                <div class="reference-legend-item">
-                    <div class="reference-color-box gray"></div>
-                    <span>Gray = Not close</span>
-                </div>
+            <div class="reference-legend-title">Understanding Trait Relationships</div>
+            <div class="reference-description">
+                Each trait has 5 possible values arranged on a scale. Values that are next to each other 
+                on the scale are considered "close" matches. The game will tell you if your guess is an 
+                exact match, close (adjacent on the scale), or not close.
             </div>
-        </div>
-        <div class="reference-scale-note">
-            Each trait has a scale of values. Values next to each other on the scale are considered "close".
         </div>
         <div class="reference-table">
     `;
@@ -1550,25 +1538,29 @@ function showReference() {
                 <div class="reference-trait-title">${category.name}</div>
                 <div class="reference-scale-container">
                     <div class="reference-scale-line"></div>
+                    <div class="reference-scale-connector"></div>
                     <div class="reference-values-scale">
         `;
         
-        // Get all values in order
+        // Get exactly 5 values in order (sorted by suspicion internally)
         const allValues = Object.entries(category.values)
             .sort((a, b) => b[1].suspicion - a[1].suspicion)
+            .slice(0, 5) // Take only first 5
             .map(([value, data]) => ({ value, hint: data.hint }));
         
-        // Display values as a scale with dots
+        // Display exactly 5 values as a scale with dots
         allValues.forEach((item, index) => {
-            if (index < 5) {
-                const position = (index / 4) * 100; // Spread across 0-100%
-                html += `
-                    <div class="reference-scale-item" style="left: ${position}%;">
-                        <div class="reference-scale-dot"></div>
-                        <div class="reference-scale-label" title="${item.hint}">${item.value}</div>
-                    </div>
-                `;
-            }
+            const position = (index / 4) * 100; // Spread across 0-100%
+            const isFirst = index === 0;
+            const isLast = index === 4;
+            
+            html += `
+                <div class="reference-scale-item" style="left: ${position}%;">
+                    <div class="reference-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
+                    <div class="reference-scale-label" title="${item.hint}">${item.value}</div>
+                    ${index < 4 ? '<div class="reference-proximity-indicator">↔ close ↔</div>' : ''}
+                </div>
+            `;
         });
         
         html += `
