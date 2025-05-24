@@ -461,8 +461,7 @@ const TRAIT_CATEGORIES = {
             'Familiar': { suspicion: 4, hint: 'Some security knowledge' },
             'Basic': { suspicion: 3, hint: 'General awareness only' },
             'Limited': { suspicion: 2, hint: 'Minimal knowledge' },
-            'None': { suspicion: 1, hint: 'No security knowledge' },
-            'Outdated': { suspicion: 2, hint: 'Old information only' }
+            'None': { suspicion: 1, hint: 'No security knowledge' }
         }
     },
     motive: {
@@ -1571,11 +1570,17 @@ function showReference() {
                     <div class="reference-values-scale">
         `;
         
-        // Get exactly 5 values in order (sorted by suspicion internally)
-        const allValues = Object.entries(category.values)
-            .sort((a, b) => b[1].suspicion - a[1].suspicion)
-            .slice(0, 5) // Take only first 5
-            .map(([value, data]) => ({ value, hint: data.hint }));
+        // Get exactly 5 values in order from the trait array
+        const traitArray = currentCrime.traits[key];
+        if (!traitArray || traitArray.length !== 5) {
+            console.warn(`Trait ${key} does not have exactly 5 values:`, traitArray);
+        }
+        
+        // Map the trait array values to their data
+        const allValues = traitArray.map(value => ({
+            value,
+            hint: category.values[value] ? category.values[value].hint : ''
+        }));
         
         // Display exactly 5 values as a scale with dots
         allValues.forEach((item, index) => {
