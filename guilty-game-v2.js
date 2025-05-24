@@ -716,13 +716,19 @@ function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
         return 'correct';
     }
     
-    // For ordered traits, show if guess is higher/lower in suspicion
-    const currentTraitCategories = getTraitCategories(currentCrime);
-    const guessSusp = currentTraitCategories[traitCategory].values[guessValue].suspicion;
-    const culpritSusp = currentTraitCategories[traitCategory].values[culpritValue].suspicion;
+    // Get the trait array to check position-based adjacency
+    const traitArray = currentCrime.traits[traitCategory];
+    if (!traitArray) {
+        return 'wrong';
+    }
     
-    if (Math.abs(guessSusp - culpritSusp) <= 1) {
-        return 'close'; // Within 1 suspicion level
+    // Find positions in the array
+    const guessPosition = traitArray.indexOf(guessValue);
+    const culpritPosition = traitArray.indexOf(culpritValue);
+    
+    // Check if positions are adjacent (within 1 position)
+    if (Math.abs(guessPosition - culpritPosition) <= 1) {
+        return 'close'; // Adjacent in the trait array
     }
     
     return 'wrong';
@@ -809,12 +815,7 @@ function getDailySeed() {
 
 // Get current puzzle period for display
 function getPuzzlePeriod() {
-    const now = new Date();
-    
-    // Convert to EST
-    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const estTime = new Date(utcTime + (3600000 * -5));
-    
+    const estTime = getESTTime();
     return estTime.getHours() >= 12 ? 'PM' : 'AM';
 }
 
@@ -1160,7 +1161,9 @@ async function initGame() {
     
     // Display crime info
     const period = getPuzzlePeriod();
-    document.getElementById('crimeTitle').textContent = `Today's ${period} Crime: ${currentCrime.title}`;
+    const estTime = getESTTime();
+    const dateStr = estTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}`;
     document.getElementById('crimeDescription').textContent = currentCrime.description;
     
     // Load stats
@@ -1439,9 +1442,12 @@ function createTraitFeedback(traitKey, value) {
     // Add arrows for close guesses in easy mode
     let arrow = '';
     if (gameState.difficulty === 'easy' && feedback === 'close') {
-        const guessSusp = category.values[value].suspicion;
-        const culpritSusp = category.values[gameState.culprit[traitKey]].suspicion;
-        arrow = guessSusp < culpritSusp ? '↑' : '↓';
+        const traitArray = currentCrime.traits[traitKey];
+        if (traitArray) {
+            const guessPosition = traitArray.indexOf(value);
+            const culpritPosition = traitArray.indexOf(gameState.culprit[traitKey]);
+            arrow = guessPosition < culpritPosition ? '→' : '←';
+        }
     }
     
     return `
@@ -2031,4 +2037,18 @@ function displayInitialSuspect() {
     
     // Insert after crime box
     document.querySelector('.crime-box').after(initialDiv);
+}
+
+// Get current time in EST
+function getESTTime() {
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const estTime = new Date(utcTime + (3600000 * -5)); // EST is UTC-5
+    return estTime;
+}
+
+// Get current puzzle period for display
+function getPuzzlePeriod() {
+    const estTime = getESTTime();
+    return estTime.getHours() >= 12 ? 'PM' : 'AM';
 } 
