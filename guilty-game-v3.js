@@ -540,7 +540,7 @@ let currentCrime = null;
 // Generate suspects with logical consistency but no suspicion scores
 function generateSuspects(seed, crime) {
     const names = [
-        "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Jonas Davis",
+        "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Joney Davis",
         "Sarah Martin", "Roy Lee", "Hannah Anderson", "Lex Brown", "Aaron Johnson",
         "Neve Williams", "Cal Miller", "Faye Garcia", "David Rodriguez", "Elle Martinez",
         "Jonathan Smith", "Emily Taylor", "Charles Jones", "Ben Thomas", "Will Jackson",

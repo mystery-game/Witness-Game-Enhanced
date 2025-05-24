@@ -125,101 +125,101 @@ function getTraitCategories(crime) {
             access: {
                 name: 'Museum Access',
                 values: {
-                    'Staff': { suspicion: 5, hint: 'Has keys and knows security' },
-                    'Visitor': { suspicion: 2, hint: 'Limited access' },
-                    'VIP': { suspicion: 3, hint: 'Special access privileges' },
-                    'Contractor': { suspicion: 4, hint: 'Temporary access' },
-                    'None': { suspicion: 1, hint: 'No legitimate access' }
+                    'Staff': 'Has keys and knows security',
+                    'Visitor': 'Limited access',
+                    'VIP': 'Special access privileges',
+                    'Contractor': 'Temporary access',
+                    'None': 'No legitimate access'
                 }
             },
             timing: {
                 name: 'Alibi Time',
                 values: {
-                    'Working': { suspicion: 5, hint: 'Was at museum during crime' },
-                    'Home': { suspicion: 2, hint: 'Claims to be home' },
-                    'Out': { suspicion: 3, hint: 'Was out somewhere' },
-                    'Verified': { suspicion: 1, hint: 'Has witness confirmation' },
-                    'Asleep': { suspicion: 2, hint: 'Claims to be sleeping' }
+                    'Working': 'Was at museum during crime',
+                    'Home': 'Claims to be home',
+                    'Out': 'Was out somewhere',
+                    'Verified': 'Has witness confirmation',
+                    'Asleep': 'Claims to be sleeping'
                 }
             },
             knowledge: {
                 name: 'Security Knowledge',
                 values: {
-                    'Expert': { suspicion: 5, hint: 'Knows all security systems' },
-                    'Familiar': { suspicion: 4, hint: 'Some security knowledge' },
-                    'Basic': { suspicion: 3, hint: 'General awareness only' },
-                    'Limited': { suspicion: 2, hint: 'Minimal knowledge' },
-                    'None': { suspicion: 1, hint: 'No security knowledge' }
+                    'Expert': 'Knows all security systems',
+                    'Familiar': 'Some security knowledge',
+                    'Basic': 'General awareness only',
+                    'Limited': 'Minimal knowledge',
+                    'None': 'No security knowledge'
                 }
             },
             motive: {
                 name: 'Motive Strength',
                 values: {
-                    'Desperate': { suspicion: 5, hint: 'Urgent need for money' },
-                    'Greedy': { suspicion: 4, hint: 'Wants more wealth' },
-                    'Vengeful': { suspicion: 3, hint: 'Has grudge against museum' },
-                    'Curious': { suspicion: 2, hint: 'Fascinated by diamond' },
-                    'None': { suspicion: 1, hint: 'No clear motive' }
+                    'Desperate': 'Urgent need for money',
+                    'Greedy': 'Wants more wealth',
+                    'Vengeful': 'Has grudge against museum',
+                    'Curious': 'Fascinated by diamond',
+                    'None': 'No clear motive'
                 }
             },
             behavior: {
                 name: 'Recent Behavior',
                 values: {
-                    'Suspicious': { suspicion: 5, hint: 'Acting very strangely' },
-                    'Nervous': { suspicion: 4, hint: 'Seems anxious lately' },
-                    'Changed': { suspicion: 3, hint: 'Different than usual' },
-                    'Helpful': { suspicion: 2, hint: 'Cooperating fully' },
-                    'Normal': { suspicion: 1, hint: 'Nothing unusual' }
+                    'Suspicious': 'Acting very strangely',
+                    'Nervous': 'Seems anxious lately',
+                    'Changed': 'Different than usual',
+                    'Helpful': 'Cooperating fully',
+                    'Normal': 'Nothing unusual'
                 }
             },
             physical: {
                 name: 'Physical Evidence',
                 values: {
-                    'Matches': { suspicion: 5, hint: 'Size 10 boot, 5\'8"-5\'10"' },
-                    'Similar': { suspicion: 4, hint: 'Close to description' },
-                    'Partial': { suspicion: 3, hint: 'Some matches' },
-                    'Different': { suspicion: 2, hint: 'Doesn\'t match evidence' },
-                    'Excluded': { suspicion: 1, hint: 'Definitely not them' }
+                    'Matches': 'Size 10 boot, 5\'8"-5\'10"',
+                    'Similar': 'Close to description',
+                    'Partial': 'Some matches',
+                    'Different': 'Doesn\'t match evidence',
+                    'Excluded': 'Definitely not them'
                 }
             },
             tools: {
                 name: 'Tool Access',
                 values: {
-                    'Has All': { suspicion: 5, hint: 'Has lockpicks and equipment' },
-                    'Has Some': { suspicion: 4, hint: 'Has some needed tools' },
-                    'Could Get': { suspicion: 3, hint: 'Could obtain tools' },
-                    'Limited': { suspicion: 2, hint: 'Minimal tool access' },
-                    'No Access': { suspicion: 1, hint: 'No access to tools' }
+                    'Has All': 'Has lockpicks and equipment',
+                    'Has Some': 'Has some needed tools',
+                    'Could Get': 'Could obtain tools',
+                    'Limited': 'Minimal tool access',
+                    'No Access': 'No access to tools'
                 }
             },
             alibi: {
                 name: 'Alibi Strength',
                 values: {
-                    'None': { suspicion: 5, hint: 'No alibi at all' },
-                    'Weak': { suspicion: 4, hint: 'Unconvincing story' },
-                    'Partial': { suspicion: 3, hint: 'Some gaps in alibi' },
-                    'Strong': { suspicion: 2, hint: 'Good alibi' },
-                    'Verified': { suspicion: 1, hint: 'Confirmed by witnesses' }
+                    'None': 'No alibi at all',
+                    'Weak': 'Unconvincing story',
+                    'Partial': 'Some gaps in alibi',
+                    'Strong': 'Good alibi',
+                    'Verified': 'Confirmed by witnesses'
                 }
             },
             finances: {
                 name: 'Financial Status',
                 values: {
-                    'Desperate': { suspicion: 5, hint: 'Facing bankruptcy' },
-                    'Struggling': { suspicion: 4, hint: 'Mounting debts' },
-                    'Stable': { suspicion: 3, hint: 'Financially secure' },
-                    'Comfortable': { suspicion: 2, hint: 'Well off' },
-                    'Wealthy': { suspicion: 1, hint: 'No financial motive' }
+                    'Desperate': 'Facing bankruptcy',
+                    'Struggling': 'Mounting debts',
+                    'Stable': 'Financially secure',
+                    'Comfortable': 'Well off',
+                    'Wealthy': 'No financial motive'
                 }
             },
             technical: {
                 name: 'Technical Skills',
                 values: {
-                    'Expert': { suspicion: 5, hint: 'Can disable alarms' },
-                    'Skilled': { suspicion: 4, hint: 'Good with electronics' },
-                    'Basic': { suspicion: 3, hint: 'Some technical ability' },
-                    'Limited': { suspicion: 2, hint: 'Minimal skills' },
-                    'None': { suspicion: 1, hint: 'No technical skills' }
+                    'Expert': 'Can disable alarms',
+                    'Skilled': 'Good with electronics',
+                    'Basic': 'Some technical ability',
+                    'Limited': 'Minimal skills',
+                    'None': 'No technical skills'
                 }
             }
         },
@@ -227,101 +227,101 @@ function getTraitCategories(crime) {
             access: {
                 name: 'System Access',
                 values: {
-                    'Admin': { suspicion: 5, hint: 'Full system privileges' },
-                    'Developer': { suspicion: 4, hint: 'Code repository access' },
-                    'Employee': { suspicion: 2, hint: 'Basic network access' },
-                    'Contractor': { suspicion: 3, hint: 'Temporary credentials' },
-                    'None': { suspicion: 1, hint: 'Access level unclear' }
+                    'Admin': 'Full system privileges',
+                    'Developer': 'Code repository access',
+                    'Employee': 'Basic network access',
+                    'Contractor': 'Temporary credentials',
+                    'None': 'Access level unclear'
                 }
             },
             timing: {
                 name: 'Activity Log',
                 values: {
-                    'Online': { suspicion: 5, hint: 'Active during breach' },
-                    'Office': { suspicion: 4, hint: 'In building after hours' },
-                    'Home': { suspicion: 2, hint: 'Claims remote location' },
-                    'Logged': { suspicion: 1, hint: 'Verified elsewhere online' },
-                    'Offline': { suspicion: 3, hint: 'No digital activity' }
+                    'Online': 'Active during breach',
+                    'Office': 'In building after hours',
+                    'Home': 'Claims remote location',
+                    'Logged': 'Verified elsewhere online',
+                    'Offline': 'No digital activity'
                 }
             },
             knowledge: {
                 name: 'Technical Skills',
                 values: {
-                    'Expert': { suspicion: 5, hint: 'Could bypass all security' },
-                    'Advanced': { suspicion: 4, hint: 'Knows system architecture' },
-                    'Basic': { suspicion: 2, hint: 'General IT knowledge' },
-                    'Limited': { suspicion: 1, hint: 'Minimal tech skills' },
-                    'None': { suspicion: 1, hint: 'No programming skills' }
+                    'Expert': 'Could bypass all security',
+                    'Advanced': 'Knows system architecture',
+                    'Basic': 'General IT knowledge',
+                    'Limited': 'Minimal tech skills',
+                    'None': 'No programming skills'
                 }
             },
             motive: {
                 name: 'Potential Motive',
                 values: {
-                    'Profit': { suspicion: 5, hint: 'Needs money urgently' },
-                    'Revenge': { suspicion: 4, hint: 'Angry at company' },
-                    'Espionage': { suspicion: 5, hint: 'Suspected foreign ties' },
-                    'Curiosity': { suspicion: 2, hint: 'Intellectual interest' },
-                    'None': { suspicion: 1, hint: 'No apparent motive' }
+                    'Profit': 'Needs money urgently',
+                    'Revenge': 'Angry at company',
+                    'Espionage': 'Suspected foreign ties',
+                    'Curiosity': 'Intellectual interest',
+                    'None': 'No apparent motive'
                 }
             },
             behavior: {
                 name: 'Post-Breach Behavior',
                 values: {
-                    'Paranoid': { suspicion: 5, hint: 'Extremely nervous' },
-                    'Defensive': { suspicion: 4, hint: 'Quick to blame others' },
-                    'Evasive': { suspicion: 3, hint: 'Avoiding questions' },
-                    'Cooperative': { suspicion: 2, hint: 'Helping investigation' },
-                    'Normal': { suspicion: 1, hint: 'Business as usual' }
+                    'Paranoid': 'Extremely nervous',
+                    'Defensive': 'Quick to blame others',
+                    'Evasive': 'Avoiding questions',
+                    'Cooperative': 'Helping investigation',
+                    'Normal': 'Business as usual'
                 }
             },
             tools: {
                 name: 'Hacking Tools',
                 values: {
-                    'Has All': { suspicion: 5, hint: 'Custom pen-test tools' },
-                    'Has Some': { suspicion: 4, hint: 'Basic hacking software' },
-                    'Could Get': { suspicion: 3, hint: 'Access to tools' },
-                    'Limited': { suspicion: 2, hint: 'Minimal tools' },
-                    'No Access': { suspicion: 1, hint: 'No hacking tools' }
+                    'Has All': 'Custom pen-test tools',
+                    'Has Some': 'Basic hacking software',
+                    'Could Get': 'Access to tools',
+                    'Limited': 'Minimal tools',
+                    'No Access': 'No hacking tools'
                 }
             },
             history: {
                 name: 'Employment History',
                 values: {
-                    'Suspicious': { suspicion: 5, hint: 'Multiple terminations' },
-                    'Disgruntled': { suspicion: 4, hint: 'Recent conflicts' },
-                    'Clean': { suspicion: 2, hint: 'Good track record' },
-                    'Loyal': { suspicion: 1, hint: 'Long-term employee' },
-                    'New': { suspicion: 3, hint: 'Recently hired' }
+                    'Suspicious': 'Multiple terminations',
+                    'Disgruntled': 'Recent conflicts',
+                    'Clean': 'Good track record',
+                    'Loyal': 'Long-term employee',
+                    'New': 'Recently hired'
                 }
             },
             alibi: {
                 name: 'Digital Alibi',
                 values: {
-                    'None': { suspicion: 5, hint: 'No digital trail' },
-                    'Weak': { suspicion: 4, hint: 'Could be spoofed' },
-                    'Partial': { suspicion: 3, hint: 'Some gaps' },
-                    'Strong': { suspicion: 2, hint: 'Multiple logins elsewhere' },
-                    'Verified': { suspicion: 1, hint: 'Confirmed activity' }
+                    'None': 'No digital trail',
+                    'Weak': 'Could be spoofed',
+                    'Partial': 'Some gaps',
+                    'Strong': 'Multiple logins elsewhere',
+                    'Verified': 'Confirmed activity'
                 }
             },
             technical: {
                 name: 'Coding Ability',
                 values: {
-                    'Elite': { suspicion: 5, hint: 'Can code in sleep' },
-                    'Expert': { suspicion: 4, hint: 'Senior level skills' },
-                    'Skilled': { suspicion: 3, hint: 'Competent developer' },
-                    'Basic': { suspicion: 2, hint: 'Script kiddie level' },
-                    'Novice': { suspicion: 1, hint: 'Learning to code' }
+                    'Elite': 'Can code in sleep',
+                    'Expert': 'Senior level skills',
+                    'Skilled': 'Competent developer',
+                    'Basic': 'Script kiddie level',
+                    'Novice': 'Learning to code'
                 }
             },
             opportunity: {
                 name: 'Breach Window',
                 values: {
-                    'Perfect': { suspicion: 5, hint: 'Alone in office' },
-                    'Good': { suspicion: 4, hint: 'Had time and access' },
-                    'Possible': { suspicion: 3, hint: 'Could have done it' },
-                    'Limited': { suspicion: 2, hint: 'Small window' },
-                    'None': { suspicion: 1, hint: 'Proven elsewhere' }
+                    'Perfect': 'Alone in office',
+                    'Good': 'Had time and access',
+                    'Possible': 'Could have done it',
+                    'Limited': 'Small window',
+                    'None': 'Proven elsewhere'
                 }
             }
         },
@@ -329,101 +329,101 @@ function getTraitCategories(crime) {
             access: {
                 name: 'Kitchen Access',
                 values: {
-                    'Kitchen': { suspicion: 5, hint: 'Full kitchen privileges' },
-                    'Service': { suspicion: 3, hint: 'Limited kitchen entry' },
-                    'VIP': { suspicion: 3, hint: 'Guest with special access' },
-                    'Limited': { suspicion: 2, hint: 'Occasional access only' },
-                    'None': { suspicion: 1, hint: 'No legitimate access' }
+                    'Kitchen': 'Full kitchen privileges',
+                    'Service': 'Limited kitchen entry',
+                    'VIP': 'Guest with special access',
+                    'Limited': 'Occasional access only',
+                    'None': 'No legitimate access'
                 }
             },
             timing: {
                 name: 'Location at 7-8 PM',
                 values: {
-                    'Working': { suspicion: 5, hint: 'On shift in kitchen' },
-                    'Break': { suspicion: 4, hint: 'On break but present' },
-                    'Dining': { suspicion: 3, hint: 'Eating in restaurant' },
-                    'Documented': { suspicion: 1, hint: 'Confirmed elsewhere' },
-                    'Absent': { suspicion: 2, hint: 'Not in restaurant' }
+                    'Working': 'On shift in kitchen',
+                    'Break': 'On break but present',
+                    'Dining': 'Eating in restaurant',
+                    'Documented': 'Confirmed elsewhere',
+                    'Absent': 'Not in restaurant'
                 }
             },
             knowledge: {
                 name: 'Culinary Expertise',
                 values: {
-                    'Expert': { suspicion: 5, hint: 'Knows rare poisons' },
-                    'Professional': { suspicion: 4, hint: 'Trained chef' },
-                    'Amateur': { suspicion: 3, hint: 'Cooking enthusiast' },
-                    'Basic': { suspicion: 2, hint: 'Basic cooking skills' },
-                    'None': { suspicion: 1, hint: 'No cooking skills' }
+                    'Expert': 'Knows rare poisons',
+                    'Professional': 'Trained chef',
+                    'Amateur': 'Cooking enthusiast',
+                    'Basic': 'Basic cooking skills',
+                    'None': 'No cooking skills'
                 }
             },
             motive: {
                 name: 'Relationship to Victim',
                 values: {
-                    'Jealousy': { suspicion: 5, hint: 'Envious of success' },
-                    'Revenge': { suspicion: 5, hint: 'Past grievance' },
-                    'Inheritance': { suspicion: 4, hint: 'Financial beneficiary' },
-                    'Competition': { suspicion: 3, hint: 'Business rivalry' },
-                    'None': { suspicion: 1, hint: 'No known conflict' }
+                    'Jealousy': 'Envious of success',
+                    'Revenge': 'Past grievance',
+                    'Inheritance': 'Financial beneficiary',
+                    'Competition': 'Business rivalry',
+                    'None': 'No known conflict'
                 }
             },
             behavior: {
                 name: 'Reaction to Incident',
                 values: {
-                    'Agitated': { suspicion: 5, hint: 'Overly emotional' },
-                    'Guilty': { suspicion: 4, hint: 'Shows signs of guilt' },
-                    'Shocked': { suspicion: 2, hint: 'Genuinely surprised' },
-                    'Helpful': { suspicion: 1, hint: 'Actively assisting' },
-                    'Calm': { suspicion: 3, hint: 'Unusually composed' }
+                    'Agitated': 'Overly emotional',
+                    'Guilty': 'Shows signs of guilt',
+                    'Shocked': 'Genuinely surprised',
+                    'Helpful': 'Actively assisting',
+                    'Calm': 'Unusually composed'
                 }
             },
             physical: {
                 name: 'Physical Evidence',
                 values: {
-                    'Matches': { suspicion: 5, hint: 'Seen near office' },
-                    'Similar': { suspicion: 4, hint: 'Right build' },
-                    'Partial': { suspicion: 3, hint: 'Some similarities' },
-                    'Different': { suspicion: 2, hint: 'Wrong description' },
-                    'Excluded': { suspicion: 1, hint: 'Too tall/short' }
+                    'Matches': 'Seen near office',
+                    'Similar': 'Right build',
+                    'Partial': 'Some similarities',
+                    'Different': 'Wrong description',
+                    'Excluded': 'Too tall/short'
                 }
             },
             tools: {
                 name: 'Poison Access',
                 values: {
-                    'Has All': { suspicion: 5, hint: 'Access to fugu' },
-                    'Has Some': { suspicion: 4, hint: 'Kitchen chemicals' },
-                    'Could Get': { suspicion: 3, hint: 'Knows suppliers' },
-                    'Limited': { suspicion: 2, hint: 'Minimal access' },
-                    'No Access': { suspicion: 1, hint: 'No poison access' }
+                    'Has All': 'Access to fugu',
+                    'Has Some': 'Kitchen chemicals',
+                    'Could Get': 'Knows suppliers',
+                    'Limited': 'Minimal access',
+                    'No Access': 'No poison access'
                 }
             },
             alibi: {
                 name: 'Alibi Quality',
                 values: {
-                    'None': { suspicion: 5, hint: 'Can\'t explain whereabouts' },
-                    'Weak': { suspicion: 4, hint: 'Story doesn\'t add up' },
-                    'Partial': { suspicion: 3, hint: 'Some gaps' },
-                    'Strong': { suspicion: 2, hint: 'Multiple witnesses' },
-                    'Verified': { suspicion: 1, hint: 'Camera footage confirms' }
+                    'None': 'Can\'t explain whereabouts',
+                    'Weak': 'Story doesn\'t add up',
+                    'Partial': 'Some gaps',
+                    'Strong': 'Multiple witnesses',
+                    'Verified': 'Camera footage confirms'
                 }
             },
             relationships: {
                 name: 'Victim Relations',
                 values: {
-                    'Hostile': { suspicion: 5, hint: 'Public confrontations' },
-                    'Strained': { suspicion: 4, hint: 'Recent arguments' },
-                    'Neutral': { suspicion: 3, hint: 'Professional only' },
-                    'Friendly': { suspicion: 2, hint: 'Good colleagues' },
-                    'Excellent': { suspicion: 1, hint: 'Close friends' }
+                    'Hostile': 'Public confrontations',
+                    'Strained': 'Recent arguments',
+                    'Neutral': 'Professional only',
+                    'Friendly': 'Good colleagues',
+                    'Excellent': 'Close friends'
                 }
             },
             opportunity: {
                 name: 'Office Access Window',
                 values: {
-                    'Perfect': { suspicion: 5, hint: 'Alone near office' },
-                    'Good': { suspicion: 4, hint: 'Had opportunity' },
-                    'Possible': { suspicion: 3, hint: 'Could have done it' },
-                    'Limited': { suspicion: 2, hint: 'Brief window only' },
-                    'None': { suspicion: 1, hint: 'Never near office' }
+                    'Perfect': 'Alone near office',
+                    'Good': 'Had opportunity',
+                    'Possible': 'Could have done it',
+                    'Limited': 'Brief window only',
+                    'None': 'Never near office'
                 }
             }
         },
@@ -431,101 +431,101 @@ function getTraitCategories(crime) {
             access: {
                 name: 'Building Access',
                 values: {
-                    'Kitchen': { suspicion: 5, hint: 'Full kitchen and vault access' },
-                    'Office': { suspicion: 4, hint: 'Office and vault access' },
-                    'Delivery': { suspicion: 2, hint: 'Limited building access' },
-                    'Limited': { suspicion: 3, hint: 'Occasional access only' },
-                    'None': { suspicion: 1, hint: 'No legitimate access' }
+                    'Kitchen': 'Full kitchen and vault access',
+                    'Office': 'Office and vault access',
+                    'Delivery': 'Limited building access',
+                    'Limited': 'Occasional access only',
+                    'None': 'No legitimate access'
                 }
             },
             timing: {
                 name: 'Location at 7-8 PM',
                 values: {
-                    'Working': { suspicion: 5, hint: 'On shift during theft' },
-                    'Break': { suspicion: 4, hint: 'On break but present' },
-                    'Meeting': { suspicion: 3, hint: 'In meeting nearby' },
-                    'Documented': { suspicion: 1, hint: 'Confirmed elsewhere' },
-                    'Absent': { suspicion: 2, hint: 'Not in building' }
+                    'Working': 'On shift during theft',
+                    'Break': 'On break but present',
+                    'Meeting': 'In meeting nearby',
+                    'Documented': 'Confirmed elsewhere',
+                    'Absent': 'Not in building'
                 }
             },
             knowledge: {
                 name: 'Baking Expertise',
                 values: {
-                    'Expert': { suspicion: 5, hint: 'Master baker level' },
-                    'Professional': { suspicion: 4, hint: 'Trained baker' },
-                    'Amateur': { suspicion: 3, hint: 'Hobby baker' },
-                    'Basic': { suspicion: 2, hint: 'Basic baking skills' },
-                    'None': { suspicion: 1, hint: 'No baking skills' }
+                    'Expert': 'Master baker level',
+                    'Professional': 'Trained baker',
+                    'Amateur': 'Hobby baker',
+                    'Basic': 'Basic baking skills',
+                    'None': 'No baking skills'
                 }
             },
             motive: {
                 name: 'Potential Motive',
                 values: {
-                    'Competition': { suspicion: 5, hint: 'Rival bakery owner' },
-                    'Money': { suspicion: 4, hint: 'Financial gain' },
-                    'Recognition': { suspicion: 3, hint: 'Wants fame' },
-                    'Curiosity': { suspicion: 2, hint: 'Just curious' },
-                    'None': { suspicion: 1, hint: 'No clear motive' }
+                    'Competition': 'Rival bakery owner',
+                    'Money': 'Financial gain',
+                    'Recognition': 'Wants fame',
+                    'Curiosity': 'Just curious',
+                    'None': 'No clear motive'
                 }
             },
             behavior: {
                 name: 'Reaction to Theft',
                 values: {
-                    'Agitated': { suspicion: 5, hint: 'Overly emotional' },
-                    'Guilty': { suspicion: 4, hint: 'Shows signs of guilt' },
-                    'Shocked': { suspicion: 2, hint: 'Genuinely surprised' },
-                    'Helpful': { suspicion: 1, hint: 'Actively helping' },
-                    'Calm': { suspicion: 3, hint: 'Unusually composed' }
+                    'Agitated': 'Overly emotional',
+                    'Guilty': 'Shows signs of guilt',
+                    'Shocked': 'Genuinely surprised',
+                    'Helpful': 'Actively helping',
+                    'Calm': 'Unusually composed'
                 }
             },
             physical: {
                 name: 'Physical Evidence',
                 values: {
-                    'Matches': { suspicion: 5, hint: 'Flour on clothes, right height' },
-                    'Similar': { suspicion: 4, hint: 'Some matches' },
-                    'Different': { suspicion: 2, hint: 'Doesn\'t match' },
-                    'Partial': { suspicion: 3, hint: 'Some similarities' },
-                    'Excluded': { suspicion: 1, hint: 'Definitely not them' }
+                    'Matches': 'Flour on clothes, right height',
+                    'Similar': 'Some matches',
+                    'Different': 'Doesn\'t match',
+                    'Partial': 'Some similarities',
+                    'Excluded': 'Definitely not them'
                 }
             },
             tools: {
                 name: 'Vault Access',
                 values: {
-                    'Has All': { suspicion: 5, hint: 'Has vault key/code' },
-                    'Has Some': { suspicion: 4, hint: 'Partial access' },
-                    'Could Get': { suspicion: 3, hint: 'Could obtain access' },
-                    'Limited': { suspicion: 2, hint: 'Minimal access' },
-                    'No Access': { suspicion: 1, hint: 'No vault access' }
+                    'Has All': 'Has vault key/code',
+                    'Has Some': 'Partial access',
+                    'Could Get': 'Could obtain access',
+                    'Limited': 'Minimal access',
+                    'No Access': 'No vault access'
                 }
             },
             alibi: {
                 name: 'Alibi Quality',
                 values: {
-                    'None': { suspicion: 5, hint: 'Can\'t explain whereabouts' },
-                    'Weak': { suspicion: 4, hint: 'Story doesn\'t add up' },
-                    'Partial': { suspicion: 3, hint: 'Some gaps' },
-                    'Strong': { suspicion: 2, hint: 'Multiple witnesses' },
-                    'Verified': { suspicion: 1, hint: 'Camera footage confirms' }
+                    'None': 'Can\'t explain whereabouts',
+                    'Weak': 'Story doesn\'t add up',
+                    'Partial': 'Some gaps',
+                    'Strong': 'Multiple witnesses',
+                    'Verified': 'Camera footage confirms'
                 }
             },
             relationships: {
                 name: 'Company Relations',
                 values: {
-                    'Hostile': { suspicion: 5, hint: 'Known conflicts' },
-                    'Strained': { suspicion: 4, hint: 'Recent tensions' },
-                    'Neutral': { suspicion: 3, hint: 'Professional only' },
-                    'Friendly': { suspicion: 2, hint: 'Good colleague' },
-                    'Excellent': { suspicion: 1, hint: 'Trusted employee' }
+                    'Hostile': 'Known conflicts',
+                    'Strained': 'Recent tensions',
+                    'Neutral': 'Professional only',
+                    'Friendly': 'Good colleague',
+                    'Excellent': 'Trusted employee'
                 }
             },
             opportunity: {
                 name: 'Vault Access Window',
                 values: {
-                    'Perfect': { suspicion: 5, hint: 'Alone near vault' },
-                    'Good': { suspicion: 4, hint: 'Had opportunity' },
-                    'Possible': { suspicion: 3, hint: 'Could have done it' },
-                    'Limited': { suspicion: 2, hint: 'Brief window only' },
-                    'None': { suspicion: 1, hint: 'Never near vault' }
+                    'Perfect': 'Alone near vault',
+                    'Good': 'Had opportunity',
+                    'Possible': 'Could have done it',
+                    'Limited': 'Brief window only',
+                    'None': 'Never near vault'
                 }
             }
         }
@@ -594,7 +594,7 @@ let currentCrime = null;
 // Generate suspects with logical consistency
 function generateSuspects(seed, crime) {
     const names = [
-        "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Jonas Davis",
+        "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Joney Davis",
         "Sarah Martin", "Roy Lee", "Hannah Anderson", "Lex Brown", "Aaron Johnson",
         "Neve Williams", "Cal Miller", "Faye Garcia", "David Rodriguez", "Elle Martinez",
         "Jonathan Smith", "Emily Taylor", "Charles Jones", "Ben Thomas", "Will Jackson",
@@ -811,6 +811,14 @@ function getDailySeed() {
     const seed = parseInt(dateString) * periodMultiplier;
     
     return seed;
+}
+
+// Get current time in EST
+function getESTTime() {
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const estTime = new Date(utcTime + (3600000 * -5)); // EST is UTC-5
+    return estTime;
 }
 
 // Get current puzzle period for display
@@ -2038,17 +2046,4 @@ function displayInitialSuspect() {
     // Insert after crime box
     document.querySelector('.crime-box').after(initialDiv);
 }
-
-// Get current time in EST
-function getESTTime() {
-    const now = new Date();
-    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const estTime = new Date(utcTime + (3600000 * -5)); // EST is UTC-5
-    return estTime;
-}
-
-// Get current puzzle period for display
-function getPuzzlePeriod() {
-    const estTime = getESTTime();
-    return estTime.getHours() >= 12 ? 'PM' : 'AM';
-} 
+  
