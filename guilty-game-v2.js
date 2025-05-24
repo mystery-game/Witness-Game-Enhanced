@@ -1106,32 +1106,9 @@ function displaySuspects() {
             card.classList.add('eliminated');
         }
         
-        // Left click to guess (if not disabled)
-        if (!isGuessed && !isEliminated) {
-            card.onclick = () => makeGuess(index);
-        }
-        
-        // Right click to eliminate/restore
-        card.oncontextmenu = (e) => {
-            e.preventDefault();
-            toggleElimination(suspect.name);
-            displaySuspects();
-            return false;
-        };
-        
-        // Touch support for mobile
-        let touchTimer;
-        card.addEventListener('touchstart', (e) => {
-            touchTimer = setTimeout(() => {
-                e.preventDefault();
-                toggleElimination(suspect.name);
-                displaySuspects();
-            }, 500); // Long press for 500ms
-        });
-        
-        card.addEventListener('touchend', () => {
-            clearTimeout(touchTimer);
-        });
+        // Remove old click handlers
+        card.onclick = null;
+        card.oncontextmenu = null;
         
         // Add processing class if currently processing
         if (gameState.isProcessingGuess) {
@@ -1154,6 +1131,11 @@ function displaySuspects() {
         // Add elimination indicator
         const eliminationIndicator = isEliminated ? '<div class="elimination-mark">✕</div>' : '';
         
+        // Create action buttons
+        const accuseDisabled = isGuessed || gameState.isProcessingGuess || gameState.gameOver ? 'disabled' : '';
+        const exonerateDisabled = isGuessed || gameState.gameOver ? 'disabled' : '';
+        const exonerateText = isEliminated ? 'Restore' : 'Exonerate';
+        
         card.innerHTML = `
             ${eliminationIndicator}
             <div class="suspect-header">
@@ -1162,6 +1144,14 @@ function displaySuspects() {
             </div>
             <div class="suspect-traits">
                 ${traitsHTML}
+            </div>
+            <div class="suspect-actions">
+                <button class="suspect-button accuse-button" ${accuseDisabled} onclick="makeGuess(${index})">
+                    Accuse
+                </button>
+                <button class="suspect-button exonerate-button" ${exonerateDisabled} onclick="toggleEliminationButton('${suspect.name}')">
+                    ${exonerateText}
+                </button>
             </div>
         `;
         
@@ -1610,6 +1600,21 @@ function checkFirstTimePlayer() {
     }
 }
 
+// Toggle suspect elimination
+function toggleElimination(suspectName) {
+    if (gameState.eliminatedSuspects.has(suspectName)) {
+        gameState.eliminatedSuspects.delete(suspectName);
+    } else {
+        gameState.eliminatedSuspects.add(suspectName);
+    }
+}
+
+// Toggle elimination with button (wrapper function for onclick)
+function toggleEliminationButton(suspectName) {
+    toggleElimination(suspectName);
+    displaySuspects();
+}
+
 // Make functions global
 window.shareResults = shareResults;
 window.showStats = showStats;
@@ -1620,6 +1625,8 @@ window.showTutorial = showTutorial;
 window.hideTutorial = hideTutorial;
 window.resetGame = resetGame;
 window.getFeedbackForTrait = getFeedbackForTrait;
+window.makeGuess = makeGuess;
+window.toggleEliminationButton = toggleEliminationButton;
 
 // Generate initial suspect based on culprit and difficulty
 function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTraits = null) {
@@ -1769,13 +1776,4 @@ function displayInitialSuspect() {
     
     // Insert after crime box
     document.querySelector('.crime-box').after(initialDiv);
-}
-
-// Toggle suspect elimination
-function toggleElimination(suspectName) {
-    if (gameState.eliminatedSuspects.has(suspectName)) {
-        gameState.eliminatedSuspects.delete(suspectName);
-    } else {
-        gameState.eliminatedSuspects.add(suspectName);
-    }
 } 

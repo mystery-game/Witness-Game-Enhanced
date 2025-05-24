@@ -492,6 +492,68 @@
             gap: 3px;
         }
         
+        .suspect-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .suspect-button {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .accuse-button {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+        
+        .accuse-button:hover:not(:disabled) {
+            background: rgba(231, 76, 60, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        .exonerate-button {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+        
+        .exonerate-button:hover:not(:disabled) {
+            background: rgba(39, 174, 96, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+        }
+        
+        .suspect-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .suspect-card-v2.eliminated .exonerate-button {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+            border-color: #f39c12;
+        }
+        
+        .suspect-card-v2.eliminated .exonerate-button:hover:not(:disabled) {
+            background: rgba(243, 156, 18, 0.3);
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+        }
+        
         .trait-item {
             display: flex;
             justify-content: space-between;
@@ -978,7 +1040,7 @@
     <div class="suspects-section" id="suspectsSection">
         <div class="suspects-title">Choose a suspect:</div>
         <div class="suspects-grid" id="suspectsGrid"></div>
-        <div class="game-tip">💡 Right-click (or long-press on mobile) to eliminate suspects</div>
+        <div class="game-tip">💡 Use "Accuse" to guess the culprit or "Exonerate" to eliminate innocent suspects</div>
     </div>
     
     <div class="game-over" id="gameOver" style="display: none;">
@@ -1034,7 +1096,7 @@
                                 <div><span class="color-box gray"></span> <strong>Gray:</strong> This trait is far from the culprit</div>
                             </div>
                         </li>
-                        <li><strong>Make Guesses:</strong> Click suspects to guess. Each trait will show colored feedback.</li>
+                        <li><strong>Make Guesses:</strong> Click "Accuse" button to guess who the culprit is. Each trait will show colored feedback.</li>
                         <li><strong>Use Logic:</strong> If "Museum Access: Staff" shows green, the culprit has Staff access!</li>
                     </ol>
                 </div>
@@ -1042,7 +1104,9 @@
                 <div class="tutorial-section">
                     <h4>💡 Tips</h4>
                     <ul>
-                        <li>Right-click suspects to eliminate them (or long-press on mobile)</li>
+                        <li>Use "Accuse" button to guess who the culprit is</li>
+                        <li>Use "Exonerate" button to mark suspects as innocent (helps narrow down choices)</li>
+                        <li>Exonerated suspects can be restored with the "Restore" button</li>
                         <li>Check the Trait Guide to see suspicion levels for each trait value</li>
                         <li>In Easy mode, yellow traits show arrows (↑↓) indicating if you need higher or lower suspicion</li>
                         <li>Focus on green traits first - they're exact matches!</li>
