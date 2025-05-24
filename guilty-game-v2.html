@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GUILTY v2 - Daily Mystery Game</title>
+    <title>GUILTY - Mystery Deduction Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,9 +15,9 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #0a0a0a;
-            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: #e8e6f3;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -29,19 +32,22 @@
         }
         
         h1 {
-            font-size: 36px;
-            font-weight: 800;
-            letter-spacing: 0.1em;
+            font-family: 'Crimson Text', serif;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
             margin-bottom: 5px;
-            background: linear-gradient(45deg, #ff6b6b, #ff4444);
+            background: linear-gradient(45deg, #f39c12, #e74c3c);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(243, 156, 18, 0.3);
         }
         
         .subtitle {
             font-size: 14px;
-            color: #888;
+            color: #9b99a7;
             margin-bottom: 5px;
+            font-weight: 500;
         }
         
         .difficulty-selector {
@@ -53,51 +59,63 @@
         }
         
         .difficulty-selector label {
-            color: #888;
+            color: #9b99a7;
             font-size: 12px;
         }
         
         .difficulty-selector select {
-            background: #1a1a1a;
-            color: white;
-            border: 2px solid #333;
+            background: rgba(255, 255, 255, 0.05);
+            color: #e8e6f3;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             padding: 3px 8px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .difficulty-selector select:hover {
+            border-color: rgba(243, 156, 18, 0.5);
+            background: rgba(255, 255, 255, 0.08);
         }
         
         .crime-box {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 15px;
             max-width: 1200px;
             width: 100%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
         
         .crime-title {
-            color: #ff6b6b;
+            color: #f39c12;
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 8px;
+            letter-spacing: 0.15em;
+            margin-bottom: 10px;
+            font-weight: 600;
         }
         
         .crime-description {
             font-size: 16px;
-            line-height: 1.4;
+            line-height: 1.5;
+            color: #e8e6f3;
         }
         
         .initial-suspect-section {
-            background: #1a1a1a;
-            border: 2px solid #444;
-            border-radius: 8px;
-            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(243, 156, 18, 0.2);
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 15px;
             max-width: 1200px;
             width: 100%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(243, 156, 18, 0.1);
         }
         
         .initial-suspect-header {
@@ -106,13 +124,14 @@
         }
         
         .initial-suspect-header h3 {
-            color: #ff6b6b;
+            color: #f39c12;
             font-size: 18px;
             margin-bottom: 3px;
+            font-weight: 600;
         }
         
         .initial-suspect-note {
-            color: #888;
+            color: #9b99a7;
             font-size: 12px;
         }
         
@@ -125,78 +144,85 @@
         }
         
         .initial-trait {
-            background: #2a2a2a;
+            background: rgba(255, 255, 255, 0.05);
             border: 2px solid;
-            border-radius: 6px;
-            padding: 8px;
+            border-radius: 8px;
+            padding: 10px;
             text-align: center;
             min-width: 100px;
+            backdrop-filter: blur(5px);
         }
         
         .initial-trait.green {
-            border-color: #538d4e;
-            background: rgba(83, 141, 78, 0.2);
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.15);
+            box-shadow: 0 2px 10px rgba(39, 174, 96, 0.2);
         }
         
         .initial-trait.yellow {
-            border-color: #b59f3b;
-            background: rgba(181, 159, 59, 0.2);
+            border-color: #f39c12;
+            background: rgba(243, 156, 18, 0.15);
+            box-shadow: 0 2px 10px rgba(243, 156, 18, 0.2);
         }
         
         .initial-trait.gray {
-            border-color: #3a3a3c;
-            background: rgba(58, 58, 60, 0.2);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .initial-trait-label {
             font-size: 10px;
-            color: #888;
-            margin-bottom: 2px;
+            color: #9b99a7;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
         .initial-trait-value {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
-            color: #fff;
+            color: #e8e6f3;
         }
         
         .color-legend {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             font-size: 11px;
-            color: #888;
+            color: #9b99a7;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
         
         .color-box {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
             display: inline-block;
         }
         
         .color-box.green {
-            background: #538d4e;
+            background: #27ae60;
+            box-shadow: 0 0 5px rgba(39, 174, 96, 0.5);
         }
         
         .color-box.yellow {
-            background: #b59f3b;
+            background: #f39c12;
+            box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
         }
         
         .color-box.gray {
-            background: #3a3a3c;
+            background: rgba(255, 255, 255, 0.2);
         }
         
         .timer-display {
             text-align: center;
             font-size: 16px;
-            color: #ff6b6b;
+            color: #f39c12;
             margin-bottom: 10px;
             font-weight: 600;
             font-variant-numeric: tabular-nums;
@@ -205,7 +231,7 @@
         .guess-counter {
             text-align: center;
             font-size: 16px;
-            color: #ff6b6b;
+            color: #e74c3c;
             margin-bottom: 15px;
             font-weight: 600;
         }
@@ -214,33 +240,19 @@
             max-width: 1200px;
             width: 100%;
             margin-bottom: 20px;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-        
-        .game-board::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .game-board::-webkit-scrollbar-track {
-            background: #1a1a1a;
-            border-radius: 3px;
-        }
-        
-        .game-board::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 3px;
+            /* Removed max-height and overflow to prevent scrolling */
         }
         
         .guess-row-v2 {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
             opacity: 0;
             transform: translateY(10px);
             animation: slideIn 0.3s forwards;
+            backdrop-filter: blur(5px);
         }
         
         @keyframes slideIn {
@@ -257,13 +269,13 @@
         .guess-name {
             font-size: 16px;
             font-weight: 600;
-            color: #fff;
+            color: #e8e6f3;
             display: inline;
         }
         
         .guess-job {
             font-size: 12px;
-            color: #888;
+            color: #9b99a7;
             display: inline;
             margin-left: 8px;
         }
@@ -275,16 +287,16 @@
         }
         
         .trait-feedback {
-            background: #2a2a2a;
-            border: 2px solid #444;
-            border-radius: 6px;
-            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 8px 10px;
             text-align: center;
             opacity: 0;
             transform: scale(0.8);
             transition: all 0.3s;
             flex: 0 0 auto;
-            min-width: 70px;
+            min-width: 75px;
         }
         
         .trait-feedback.revealed {
@@ -293,18 +305,20 @@
         }
         
         .trait-feedback.correct {
-            background: #538d4e;
-            border-color: #538d4e;
+            background: rgba(39, 174, 96, 0.2);
+            border-color: #27ae60;
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
         }
         
         .trait-feedback.close {
-            background: #b59f3b;
-            border-color: #b59f3b;
+            background: rgba(243, 156, 18, 0.2);
+            border-color: #f39c12;
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
         }
         
         .trait-feedback.wrong {
-            background: #3a3a3c;
-            border-color: #3a3a3c;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
         }
         
         .trait-feedback-label {
@@ -312,6 +326,7 @@
             text-transform: uppercase;
             opacity: 0.8;
             margin-bottom: 2px;
+            letter-spacing: 0.05em;
         }
         
         .trait-feedback-value {
@@ -334,7 +349,8 @@
         .suspects-title {
             font-size: 16px;
             margin-bottom: 10px;
-            color: #888;
+            color: #9b99a7;
+            font-weight: 500;
         }
         
         .suspects-grid {
@@ -344,19 +360,21 @@
         }
         
         .suspect-card-v2 {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            backdrop-filter: blur(5px);
         }
         
         .suspect-card-v2:hover {
-            border-color: #666;
+            border-color: rgba(243, 156, 18, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.2);
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .suspect-card-v2.disabled {
@@ -365,19 +383,19 @@
         }
         
         .suspect-card-v2.disabled:hover {
-            border-color: #333;
+            border-color: rgba(255, 255, 255, 0.08);
             transform: none;
             box-shadow: none;
         }
         
         .suspect-card-v2.eliminated {
             opacity: 0.3;
-            background: #0a0a0a;
-            border-color: #222;
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.05);
         }
         
         .suspect-card-v2.eliminated:hover {
-            border-color: #444;
+            border-color: rgba(255, 255, 255, 0.08);
             transform: none;
             box-shadow: none;
         }
@@ -388,7 +406,7 @@
             right: 5px;
             width: 25px;
             height: 25px;
-            background: #ff4444;
+            background: #e74c3c;
             color: white;
             border-radius: 50%;
             display: flex;
@@ -397,6 +415,7 @@
             font-size: 18px;
             font-weight: bold;
             z-index: 1;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
         }
         
         .suspect-card-v2.processing {
@@ -412,11 +431,12 @@
         .suspect-name {
             font-size: 14px;
             font-weight: 600;
+            color: #e8e6f3;
         }
         
         .suspect-job {
             font-size: 11px;
-            color: #888;
+            color: #9b99a7;
             margin-top: 2px;
         }
         
@@ -436,7 +456,7 @@
         
         .trait-label {
             font-size: 9px;
-            color: #666;
+            color: #7b798a;
             flex-shrink: 0;
             text-align: left;
         }
@@ -444,7 +464,7 @@
         .trait-value {
             font-size: 10px;
             font-weight: 500;
-            color: #ccc;
+            color: #d8d6e3;
             text-align: right;
         }
         
@@ -457,31 +477,33 @@
         .game-over h2 {
             font-size: 28px;
             margin-bottom: 12px;
+            font-weight: 700;
         }
         
         .game-over.won h2 {
-            color: #538d4e;
+            color: #27ae60;
         }
         
         .game-over.lost h2 {
-            color: #ff4444;
+            color: #e74c3c;
         }
         
         .culprit-reveal {
             margin-top: 10px;
-            padding: 10px;
-            background: #2a2a2a;
-            border-radius: 5px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
             font-size: 13px;
-            color: #aaa;
+            color: #b8b6c3;
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
         
         .share-button {
-            background: #538d4e;
+            background: #27ae60;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
+            padding: 12px 24px;
+            border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
@@ -491,43 +513,50 @@
         
         .share-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(83, 141, 78, 0.4);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+            background: #2ecc71;
         }
         
         .stats-button {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: #1a1a1a;
-            border: 2px solid #333;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #e8e6f3;
+            padding: 8px 14px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             font-size: 12px;
+            backdrop-filter: blur(5px);
         }
         
         .stats-button:hover {
-            border-color: #666;
+            border-color: rgba(243, 156, 18, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
         }
         
         .reference-button {
             position: absolute;
             top: 10px;
             right: 100px;
-            background: #1a1a1a;
-            border: 2px solid #333;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #e8e6f3;
+            padding: 8px 14px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             font-size: 12px;
+            backdrop-filter: blur(5px);
         }
         
         .reference-button:hover {
-            border-color: #666;
+            border-color: rgba(243, 156, 18, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
         }
         
         .modal {
@@ -536,20 +565,22 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            backdrop-filter: blur(5px);
         }
         
         .modal-content {
-            background: #1a1a1a;
-            border: 2px solid #333;
+            background: #1a1a3e;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 25px;
             max-width: 400px;
             width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
         
         .modal-content-wide {
@@ -565,16 +596,16 @@
         
         .reference-trait {
             margin-bottom: 20px;
-            background: #0a0a0a;
-            border: 1px solid #333;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
             padding: 15px;
         }
         
         .reference-trait-title {
             font-size: 16px;
             font-weight: 600;
-            color: #ff6b6b;
+            color: #f39c12;
             margin-bottom: 10px;
         }
         
@@ -586,56 +617,58 @@
         
         .reference-value {
             padding: 8px;
-            border-radius: 4px;
+            border-radius: 6px;
             text-align: center;
             font-size: 12px;
-            border: 1px solid #333;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .reference-value.suspicion-5 {
-            background: rgba(255, 107, 107, 0.2);
-            border-color: #ff6b6b;
+            background: rgba(231, 76, 60, 0.2);
+            border-color: #e74c3c;
         }
         
         .reference-value.suspicion-4 {
-            background: rgba(255, 159, 107, 0.2);
-            border-color: #ff9f6b;
+            background: rgba(243, 156, 18, 0.2);
+            border-color: #f39c12;
         }
         
         .reference-value.suspicion-3 {
-            background: rgba(255, 215, 107, 0.2);
-            border-color: #ffd76b;
+            background: rgba(241, 196, 15, 0.2);
+            border-color: #f1c40f;
         }
         
         .reference-value.suspicion-2 {
-            background: rgba(107, 255, 159, 0.2);
-            border-color: #6bff9f;
+            background: rgba(46, 204, 113, 0.2);
+            border-color: #2ecc71;
         }
         
         .reference-value.suspicion-1 {
-            background: rgba(107, 215, 255, 0.2);
-            border-color: #6bd7ff;
+            background: rgba(52, 152, 219, 0.2);
+            border-color: #3498db;
         }
         
         .reference-proximity {
             margin-top: 10px;
             font-size: 11px;
-            color: #888;
+            color: #9b99a7;
         }
         
         .reference-legend {
             margin-bottom: 20px;
             padding: 15px;
-            background: #0a0a0a;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .reference-legend-title {
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #ff6b6b;
+            color: #f39c12;
         }
         
         .reference-legend-items {
@@ -659,15 +692,17 @@
         }
         
         .reference-color-box.green {
-            background: #538d4e;
+            background: #27ae60;
+            box-shadow: 0 0 5px rgba(39, 174, 96, 0.5);
         }
         
         .reference-color-box.yellow {
-            background: #b59f3b;
+            background: #f39c12;
+            box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
         }
         
         .reference-color-box.gray {
-            background: #3a3a3c;
+            background: rgba(255, 255, 255, 0.2);
         }
         
         .modal-header {
@@ -680,43 +715,44 @@
         .modal-title {
             font-size: 22px;
             font-weight: 700;
+            color: #e8e6f3;
         }
         
         .close-button {
             background: none;
             border: none;
-            color: #888;
+            color: #9b99a7;
             font-size: 24px;
             cursor: pointer;
             transition: color 0.2s;
         }
         
         .close-button:hover {
-            color: white;
+            color: #e8e6f3;
         }
         
         .stat-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #333;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .stat-label {
-            color: #888;
+            color: #9b99a7;
             font-size: 14px;
         }
         
         .stat-value {
             font-weight: 600;
-            color: #538d4e;
+            color: #27ae60;
             font-size: 14px;
         }
         
         .game-tip {
             text-align: center;
             font-size: 12px;
-            color: #666;
+            color: #7b798a;
             margin-top: 10px;
             font-style: italic;
         }
