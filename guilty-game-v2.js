@@ -1529,13 +1529,16 @@ function showReference() {
                 </div>
                 <div class="reference-legend-item">
                     <div class="reference-color-box yellow"></div>
-                    <span>Yellow = Close (within 1 level)</span>
+                    <span>Yellow = Close match (adjacent on scale)</span>
                 </div>
                 <div class="reference-legend-item">
                     <div class="reference-color-box gray"></div>
-                    <span>Gray = Far (2+ levels away)</span>
+                    <span>Gray = Not close</span>
                 </div>
             </div>
+        </div>
+        <div class="reference-scale-note">
+            Each trait has a scale of values. Values next to each other on the scale are considered "close".
         </div>
         <div class="reference-table">
     `;
@@ -1545,27 +1548,31 @@ function showReference() {
         html += `
             <div class="reference-trait">
                 <div class="reference-trait-title">${category.name}</div>
-                <div class="reference-values">
+                <div class="reference-scale-container">
+                    <div class="reference-scale-line"></div>
+                    <div class="reference-values-scale">
         `;
         
         // Get all values in order
         const allValues = Object.entries(category.values)
-            .sort((a, b) => b[1].suspicion - a[1].suspicion) // Still sort by suspicion internally
+            .sort((a, b) => b[1].suspicion - a[1].suspicion)
             .map(([value, data]) => ({ value, hint: data.hint }));
         
-        // Display exactly 5 values with rainbow colors
-        const colors = ['red', 'orange', 'yellow', 'green', 'blue'];
+        // Display values as a scale with dots
         allValues.forEach((item, index) => {
             if (index < 5) {
+                const position = (index / 4) * 100; // Spread across 0-100%
                 html += `
-                    <div class="reference-value color-${colors[index]}" title="${item.hint}">
-                        <div>${item.value}</div>
+                    <div class="reference-scale-item" style="left: ${position}%;">
+                        <div class="reference-scale-dot"></div>
+                        <div class="reference-scale-label" title="${item.hint}">${item.value}</div>
                     </div>
                 `;
             }
         });
         
         html += `
+                    </div>
                 </div>
             </div>
         `;

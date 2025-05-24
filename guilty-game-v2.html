@@ -773,47 +773,6 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
         
-        /* Rainbow colors for trait guide */
-        .reference-value.color-red {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            border-color: #e74c3c;
-            color: white;
-        }
-        
-        .reference-value.color-orange {
-            background: linear-gradient(135deg, #e67e22, #d35400);
-            border-color: #e67e22;
-            color: white;
-        }
-        
-        .reference-value.color-yellow {
-            background: linear-gradient(135deg, #f1c40f, #f39c12);
-            border-color: #f1c40f;
-            color: #333;
-        }
-        
-        .reference-value.color-green {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            border-color: #2ecc71;
-            color: white;
-        }
-        
-        .reference-value.color-blue {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-color: #3498db;
-            color: white;
-        }
-        
-        /* Remove old suspicion-based colors */
-        .reference-value.suspicion-1,
-        .reference-value.suspicion-2,
-        .reference-value.suspicion-3,
-        .reference-value.suspicion-4,
-        .reference-value.suspicion-5 {
-            /* Deprecated - using rainbow colors instead */
-            display: none;
-        }
-        
         .reference-proximity {
             display: none; /* No longer showing suspicion arrangement text */
         }
@@ -1042,6 +1001,102 @@
             .reference-values {
                 grid-template-columns: repeat(2, 1fr);
             }
+        }
+        
+        /* New scale-based trait guide styles */
+        .reference-scale-note {
+            text-align: center;
+            font-size: 13px;
+            color: #9b99a7;
+            margin: 15px 0 20px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            font-style: italic;
+        }
+        
+        .reference-scale-container {
+            position: relative;
+            height: 80px;
+            margin: 20px 0;
+            padding: 0 10px;
+        }
+        
+        .reference-scale-line {
+            position: absolute;
+            top: 30px;
+            left: 10px;
+            right: 10px;
+            height: 4px;
+            background: linear-gradient(to right, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.2) 50%, 
+                rgba(255, 255, 255, 0.1) 100%);
+            border-radius: 2px;
+        }
+        
+        .reference-values-scale {
+            position: relative;
+            height: 100%;
+        }
+        
+        .reference-scale-item {
+            position: absolute;
+            transform: translateX(-50%);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .reference-scale-dot {
+            width: 16px;
+            height: 16px;
+            background: #e8e6f3;
+            border: 3px solid rgba(243, 156, 18, 0.5);
+            border-radius: 50%;
+            position: relative;
+            top: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .reference-scale-item:hover .reference-scale-dot {
+            transform: scale(1.2);
+            border-color: #f39c12;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+        }
+        
+        .reference-scale-label {
+            position: relative;
+            top: 35px;
+            font-size: 11px;
+            color: #e8e6f3;
+            font-weight: 500;
+            white-space: nowrap;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Remove old rainbow colors and reference-value styles */
+        .reference-values {
+            display: none;
+        }
+        
+        .reference-value,
+        .reference-value.color-red,
+        .reference-value.color-orange,
+        .reference-value.color-yellow,
+        .reference-value.color-green,
+        .reference-value.color-blue {
+            display: none;
         }
     </style>
 </head>
