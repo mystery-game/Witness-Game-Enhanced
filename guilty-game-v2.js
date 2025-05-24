@@ -27,7 +27,7 @@ const CRIME_SCENARIOS = [
     {
         id: 'museum_heist',
         title: "The Museum Diamond Heist",
-        description: "The 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. The thief bypassed all security systems between 2-3 AM.",
+        description: "The priceless 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. Security footage shows the thief knew the guard rotation perfectly. The crime occurred between 2-3 AM.",
         setting: 'museum',
         traits: {
             access: ['Staff', 'Visitor', 'VIP', 'Contractor', 'None'],
@@ -56,14 +56,14 @@ const CRIME_SCENARIOS = [
     },
     {
         id: 'tech_breach',
-        title: "The TechCorp Data Breach",
-        description: "Someone hacked into TechCorp's servers last night and stole the AI research database. The breach occurred at 11:47 PM using admin credentials.",
+        title: "The Research Lab Data Theft",
+        description: "Someone copied confidential research data from TechCorp's environmental science lab last night. The breach occurred at 11:47 PM using valid credentials.",
         setting: 'tech_company',
         traits: {
             access: ['Admin', 'Developer', 'Employee', 'Contractor', 'None'],
             timing: ['Online', 'Office', 'Home', 'Logged', 'Offline'],
             knowledge: ['Expert', 'Advanced', 'Basic', 'Limited', 'None'],
-            motive: ['Profit', 'Revenge', 'Espionage', 'Curiosity', 'None'],
+            motive: ['Profit', 'Competition', 'Whistleblowing', 'Curiosity', 'None'],
             behavior: ['Paranoid', 'Defensive', 'Evasive', 'Normal', 'Cooperative'],
             tools: ['Has All', 'Has Some', 'Could Get', 'Limited', 'No Access'],
             history: ['Suspicious', 'Disgruntled', 'Clean', 'Loyal', 'New'],
@@ -86,15 +86,15 @@ const CRIME_SCENARIOS = [
         easyHint: "Check for someone with admin access and technical expertise..."
     },
     {
-        id: 'restaurant_poisoning',
-        title: "The Five-Star Poisoning",
-        description: "Celebrity chef Marcus Beaumont was poisoned during dinner service at Le Jardin. The poison was in his coffee, which he drank at 7:45 PM.",
-        setting: 'restaurant',
+        id: 'recipe_theft',
+        title: "The Secret Recipe Theft",
+        description: "The famous secret recipe for Grandma's Cookies was stolen from the company vault. The thief struck during the evening shift change at 7:45 PM.",
+        setting: 'bakery',
         traits: {
-            access: ['Kitchen', 'Service', 'VIP', 'Limited', 'None'],
-            timing: ['Working', 'Break', 'Dining', 'Documented', 'Absent'],
+            access: ['Kitchen', 'Office', 'Delivery', 'Limited', 'None'],
+            timing: ['Working', 'Break', 'Meeting', 'Documented', 'Absent'],
             knowledge: ['Expert', 'Professional', 'Amateur', 'Basic', 'None'],
-            motive: ['Jealousy', 'Revenge', 'Inheritance', 'Competition', 'None'],
+            motive: ['Competition', 'Money', 'Recognition', 'Curiosity', 'None'],
             behavior: ['Agitated', 'Guilty', 'Shocked', 'Helpful', 'Calm'],
             physical: ['Matches', 'Similar', 'Different', 'Partial', 'Excluded'],
             tools: ['Has All', 'Has Some', 'Could Get', 'Limited', 'No Access'],
@@ -103,18 +103,18 @@ const CRIME_SCENARIOS = [
             opportunity: ['Perfect', 'Good', 'Possible', 'Limited', 'None']
         },
         suspectJobs: [
-            { title: "Sous Chef", access: "Kitchen", knowledge: "Expert" },
-            { title: "Line Cook", access: "Kitchen", knowledge: "Professional" },
+            { title: "Head Baker", access: "Kitchen", knowledge: "Expert" },
+            { title: "Assistant Baker", access: "Kitchen", knowledge: "Professional" },
             { title: "Pastry Chef", access: "Kitchen", knowledge: "Professional" },
-            { title: "Head Waiter", access: "Service", knowledge: "Amateur" },
-            { title: "Sommelier", access: "Service", knowledge: "Amateur" },
-            { title: "Restaurant Critic", access: "VIP", knowledge: "None" },
-            { title: "Business Partner", access: "VIP", knowledge: "None" },
-            { title: "Rival Chef", access: "Limited", knowledge: "Expert" },
-            { title: "Dishwasher", access: "Kitchen", knowledge: "None" },
-            { title: "Marcus's Ex-Wife", access: "Limited", knowledge: "Amateur" }
+            { title: "Store Manager", access: "Office", knowledge: "Amateur" },
+            { title: "Cashier", access: "Limited", knowledge: "None" },
+            { title: "Competitor's Spy", access: "None", knowledge: "None" },
+            { title: "Business Partner", access: "Office", knowledge: "Basic" },
+            { title: "Delivery Driver", access: "Delivery", knowledge: "None" },
+            { title: "Recipe Developer", access: "Kitchen", knowledge: "Expert" },
+            { title: "Marketing Director", access: "Office", knowledge: "Basic" }
         ],
-        easyHint: "Someone with kitchen access and culinary knowledge is suspicious..."
+        easyHint: "Someone with kitchen access and baking knowledge is suspicious..."
     }
 ];
 
@@ -426,6 +426,108 @@ function getTraitCategories(crime) {
                     'None': { suspicion: 1, hint: 'Never near office' }
                 }
             }
+        },
+        recipe_theft: {
+            access: {
+                name: 'Building Access',
+                values: {
+                    'Kitchen': { suspicion: 5, hint: 'Full kitchen and vault access' },
+                    'Office': { suspicion: 4, hint: 'Office and vault access' },
+                    'Delivery': { suspicion: 2, hint: 'Limited building access' },
+                    'Limited': { suspicion: 3, hint: 'Occasional access only' },
+                    'None': { suspicion: 1, hint: 'No legitimate access' }
+                }
+            },
+            timing: {
+                name: 'Location at 7-8 PM',
+                values: {
+                    'Working': { suspicion: 5, hint: 'On shift during theft' },
+                    'Break': { suspicion: 4, hint: 'On break but present' },
+                    'Meeting': { suspicion: 3, hint: 'In meeting nearby' },
+                    'Documented': { suspicion: 1, hint: 'Confirmed elsewhere' },
+                    'Absent': { suspicion: 2, hint: 'Not in building' }
+                }
+            },
+            knowledge: {
+                name: 'Baking Expertise',
+                values: {
+                    'Expert': { suspicion: 5, hint: 'Master baker level' },
+                    'Professional': { suspicion: 4, hint: 'Trained baker' },
+                    'Amateur': { suspicion: 3, hint: 'Hobby baker' },
+                    'Basic': { suspicion: 2, hint: 'Basic baking skills' },
+                    'None': { suspicion: 1, hint: 'No baking skills' }
+                }
+            },
+            motive: {
+                name: 'Potential Motive',
+                values: {
+                    'Competition': { suspicion: 5, hint: 'Rival bakery owner' },
+                    'Money': { suspicion: 4, hint: 'Financial gain' },
+                    'Recognition': { suspicion: 3, hint: 'Wants fame' },
+                    'Curiosity': { suspicion: 2, hint: 'Just curious' },
+                    'None': { suspicion: 1, hint: 'No clear motive' }
+                }
+            },
+            behavior: {
+                name: 'Reaction to Theft',
+                values: {
+                    'Agitated': { suspicion: 5, hint: 'Overly emotional' },
+                    'Guilty': { suspicion: 4, hint: 'Shows signs of guilt' },
+                    'Shocked': { suspicion: 2, hint: 'Genuinely surprised' },
+                    'Helpful': { suspicion: 1, hint: 'Actively helping' },
+                    'Calm': { suspicion: 3, hint: 'Unusually composed' }
+                }
+            },
+            physical: {
+                name: 'Physical Evidence',
+                values: {
+                    'Matches': { suspicion: 5, hint: 'Flour on clothes, right height' },
+                    'Similar': { suspicion: 4, hint: 'Some matches' },
+                    'Different': { suspicion: 2, hint: 'Doesn\'t match' },
+                    'Partial': { suspicion: 3, hint: 'Some similarities' },
+                    'Excluded': { suspicion: 1, hint: 'Definitely not them' }
+                }
+            },
+            tools: {
+                name: 'Vault Access',
+                values: {
+                    'Has All': { suspicion: 5, hint: 'Has vault key/code' },
+                    'Has Some': { suspicion: 4, hint: 'Partial access' },
+                    'Could Get': { suspicion: 3, hint: 'Could obtain access' },
+                    'Limited': { suspicion: 2, hint: 'Minimal access' },
+                    'No Access': { suspicion: 1, hint: 'No vault access' }
+                }
+            },
+            alibi: {
+                name: 'Alibi Quality',
+                values: {
+                    'None': { suspicion: 5, hint: 'Can\'t explain whereabouts' },
+                    'Weak': { suspicion: 4, hint: 'Story doesn\'t add up' },
+                    'Partial': { suspicion: 3, hint: 'Some gaps' },
+                    'Strong': { suspicion: 2, hint: 'Multiple witnesses' },
+                    'Verified': { suspicion: 1, hint: 'Camera footage confirms' }
+                }
+            },
+            relationships: {
+                name: 'Company Relations',
+                values: {
+                    'Hostile': { suspicion: 5, hint: 'Known conflicts' },
+                    'Strained': { suspicion: 4, hint: 'Recent tensions' },
+                    'Neutral': { suspicion: 3, hint: 'Professional only' },
+                    'Friendly': { suspicion: 2, hint: 'Good colleague' },
+                    'Excellent': { suspicion: 1, hint: 'Trusted employee' }
+                }
+            },
+            opportunity: {
+                name: 'Vault Access Window',
+                values: {
+                    'Perfect': { suspicion: 5, hint: 'Alone near vault' },
+                    'Good': { suspicion: 4, hint: 'Had opportunity' },
+                    'Possible': { suspicion: 3, hint: 'Could have done it' },
+                    'Limited': { suspicion: 2, hint: 'Brief window only' },
+                    'None': { suspicion: 1, hint: 'Never near vault' }
+                }
+            }
         }
     };
     
@@ -492,9 +594,18 @@ let currentCrime = null;
 // Generate suspects with logical consistency
 function generateSuspects(seed, crime) {
     const names = [
-        "Alex Chen", "Maria Santos", "James Wilson", "Emma Thompson", "Robert Davis",
-        "Sophie Martin", "David Lee", "Lisa Anderson", "Michael Brown", "Sarah Johnson"
+        "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Jonas Davis",
+        "Sarah Martin", "Roy Lee", "Hannah Anderson", "Lex Brown", "Aaron Johnson",
+        "Neve Williams", "Cal Miller", "Faye Garcia", "David Rodriguez", "Elle Martinez",
+        "Jonathan Smith", "Emily Taylor", "Charles Jones", "Ben Thomas", "Will Jackson",
+        "Sam White", "Juliette Harris"
     ];
+    
+    // Shuffle names based on seed to get different combinations each day
+    const shuffledNames = [...names].sort(() => seededRandom(seed * 7) - 0.5);
+    
+    // Take first 10 names for this puzzle
+    const selectedNames = shuffledNames.slice(0, 10);
     
     const jobs = crime.suspectJobs;
     const traitCategories = getTraitCategories(crime);
@@ -575,7 +686,7 @@ function generateSuspects(seed, crime) {
             });
             
             suspect = {
-                name: names[i],
+                name: selectedNames[i],
                 job: job.title,
                 ...allTraits,
                 suspicionScore: totalSuspicion
@@ -677,10 +788,34 @@ function seededRandom(seed) {
     return x - Math.floor(x);
 }
 
-// Get daily seed
+// Get daily seed (now supports AM/PM puzzles)
 function getDailySeed() {
-    const today = new Date();
-    return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    const now = new Date();
+    
+    // Convert to EST
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const estTime = new Date(utcTime + (3600000 * -5)); // EST is UTC-5
+    
+    // Check if we're in AM (midnight to noon) or PM (noon to midnight)
+    const isPM = estTime.getHours() >= 12;
+    const dateString = estTime.toISOString().split('T')[0].replace(/-/g, '');
+    
+    // Create different seeds for AM and PM
+    const periodMultiplier = isPM ? 2 : 1;
+    const seed = parseInt(dateString) * periodMultiplier;
+    
+    return seed;
+}
+
+// Get current puzzle period for display
+function getPuzzlePeriod() {
+    const now = new Date();
+    
+    // Convert to EST
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const estTime = new Date(utcTime + (3600000 * -5));
+    
+    return estTime.getHours() >= 12 ? 'PM' : 'AM';
 }
 
 // Setup difficulty toggle
@@ -1024,7 +1159,8 @@ async function initGame() {
     currentCrime = CRIME_SCENARIOS[crimeIndex];
     
     // Display crime info
-    document.getElementById('crimeTitle').textContent = `Today's Crime: ${currentCrime.title}`;
+    const period = getPuzzlePeriod();
+    document.getElementById('crimeTitle').textContent = `Today's ${period} Crime: ${currentCrime.title}`;
     document.getElementById('crimeDescription').textContent = currentCrime.description;
     
     // Load stats
