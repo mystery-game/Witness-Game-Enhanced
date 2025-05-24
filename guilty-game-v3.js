@@ -1170,6 +1170,11 @@ async function makeGuess(suspectIndex) {
         return; // Can't guess eliminated suspects
     }
     
+    // Start timer on first guess
+    if (gameState.currentGuess === 0 && !gameState.startTime) {
+        startTimer();
+    }
+    
     gameState.isProcessingGuess = true;
     
     try {
@@ -1364,11 +1369,20 @@ function updateStats(won) {
             won: 0,
             currentStreak: 0,
             maxStreak: 0,
-            guessDistribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
+            guessDistribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
+            completionTimes: [],  // Array to store completion times
+            bestTime: null,       // Best completion time in milliseconds
+            averageTime: null,    // Average completion time
+            puzzleCompletions: {} // Track which puzzles have been completed
         };
     }
     
     const stats = JSON.parse(localStorage.getItem('guiltyStats')) || gameState.stats;
+    
+    // Generate a unique puzzle ID based on date and period
+    const period = getPuzzlePeriod();
+    const estTime = getESTTime();
+    const puzzleId = estTime.toISOString().split('T')[0] + '-' + period + '-' + currentCrime.id;
     
     stats.played++;
     if (won) {
@@ -1376,6 +1390,31 @@ function updateStats(won) {
         stats.currentStreak++;
         stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak);
         stats.guessDistribution[gameState.currentGuess] = (stats.guessDistribution[gameState.currentGuess] || 0) + 1;
+        
+        // Track completion time only for first completion of this puzzle
+        if (!stats.puzzleCompletions) {
+            stats.puzzleCompletions = {};
+        }
+        
+        if (!stats.puzzleCompletions[puzzleId]) {
+            // First time completing this puzzle
+            stats.puzzleCompletions[puzzleId] = true;
+            
+            // Initialize arrays if they don't exist
+            if (!stats.completionTimes) stats.completionTimes = [];
+            
+            // Add the completion time
+            stats.completionTimes.push(gameState.elapsedTime);
+            
+            // Update best time
+            if (!stats.bestTime || gameState.elapsedTime < stats.bestTime) {
+                stats.bestTime = gameState.elapsedTime;
+            }
+            
+            // Calculate average time
+            const totalTime = stats.completionTimes.reduce((sum, time) => sum + time, 0);
+            stats.averageTime = Math.floor(totalTime / stats.completionTimes.length);
+        }
     } else {
         stats.currentStreak = 0;
     }
@@ -1399,15 +1438,54 @@ function showStats() {
         won: 0,
         currentStreak: 0,
         maxStreak: 0,
-        guessDistribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
+        guessDistribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
+        completionTimes: [],
+        bestTime: null,
+        averageTime: null,
+        puzzleCompletions: {}
     };
     
     const winRate = stats.played > 0 ? Math.round((stats.won / stats.played) * 100) : 0;
+    
+    // Format time for display
+    function formatTime(milliseconds) {
+        if (milliseconds === null || milliseconds === undefined) return '--:--';
+        const seconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const displaySeconds = seconds % 60;
+        return `${minutes}:${displaySeconds.toString().padStart(2, '0')}`;
+    }
     
     document.getElementById('gamesPlayed').textContent = stats.played;
     document.getElementById('winRate').textContent = `${winRate}%`;
     document.getElementById('currentStreak').textContent = stats.currentStreak;
     document.getElementById('maxStreak').textContent = stats.maxStreak;
+    
+    // Add time stats to the modal - we'll need to add these elements
+    const statsGrid = document.querySelector('.stats-grid');
+    
+    // Check if time stat boxes already exist, if not create them
+    if (!document.getElementById('avgTime')) {
+        const avgTimeBox = document.createElement('div');
+        avgTimeBox.className = 'stat-box';
+        avgTimeBox.innerHTML = `
+            <div class="stat-number" id="avgTime">--:--</div>
+            <div class="stat-label">Average Time</div>
+        `;
+        statsGrid.appendChild(avgTimeBox);
+        
+        const bestTimeBox = document.createElement('div');
+        bestTimeBox.className = 'stat-box';
+        bestTimeBox.innerHTML = `
+            <div class="stat-number" id="bestTime">--:--</div>
+            <div class="stat-label">Best Time</div>
+        `;
+        statsGrid.appendChild(bestTimeBox);
+    }
+    
+    // Update time displays
+    document.getElementById('avgTime').textContent = formatTime(stats.averageTime);
+    document.getElementById('bestTime').textContent = formatTime(stats.bestTime);
     
     // Update guess distribution
     const maxCount = Math.max(...Object.values(stats.guessDistribution), 1);
