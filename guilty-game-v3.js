@@ -693,7 +693,8 @@ let gameState = {
     startTime: null,
     timerInterval: null,
     elapsedTime: 0,
-    eliminatedSuspects: new Set()
+    eliminatedSuspects: new Set(),
+    betaMode: false
 };
 
 // Initialize game on load
@@ -715,7 +716,12 @@ function getDailySeed() {
     
     // Convert to EST
     const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const estTime = new Date(utcTime + (3600000 * -5)); // EST is UTC-5
+    let estTime = new Date(utcTime + (3600000 * -5)); // EST is UTC-5
+    
+    // Check if we're in beta mode (preview 5 hours ahead)
+    if (gameState.betaMode) {
+        estTime = new Date(estTime.getTime() + (5 * 3600000)); // Add 5 hours
+    }
     
     // Check if we're in AM (midnight to noon) or PM (noon to midnight)
     const isPM = estTime.getHours() >= 12;
@@ -731,6 +737,13 @@ function getDailySeed() {
 // Get current puzzle period for display
 function getPuzzlePeriod() {
     const estTime = getESTTime();
+    
+    // In beta mode, show the period we're testing
+    if (gameState.betaMode) {
+        const betaTime = new Date(estTime.getTime() + (5 * 3600000));
+        return betaTime.getHours() >= 12 ? 'PM' : 'AM';
+    }
+    
     return estTime.getHours() >= 12 ? 'PM' : 'AM';
 }
 
@@ -782,15 +795,22 @@ function setupDevMode() {
                 <button onclick="cycleScenario(1)">Next Scenario →</button>
                 <button onclick="randomScenario()">Random Scenario</button>
                 <button onclick="showAllSuspects()">Show All Info</button>
+                <button onclick="toggleBetaMode()" id="betaModeBtn">🔮 Beta Mode: OFF</button>
                 <button onclick="toggleDevMode()">Exit Dev Mode</button>
             </div>
             <div class="dev-info">
                 <div>Current: <span id="currentScenarioName">${CRIME_SCENARIOS[0].title}</span></div>
                 <div>Culprit: <span id="devCulpritInfo">-</span></div>
+                <div id="betaInfo" style="display: none; color: #FFC107; margin-top: 8px;">
+                    ⚠️ Beta Mode: Testing puzzle for <span id="betaTime"></span>
+                </div>
             </div>
             <div class="dev-feedback">
                 <textarea id="devNotes" placeholder="Enter feedback/notes about this scenario..." rows="3"></textarea>
-                <button onclick="saveDevNotes()">Save Notes</button>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button onclick="saveDevNotes()" style="flex: 1;">Save Notes</button>
+                    <button onclick="generateBetaReport()" id="betaReportBtn" style="flex: 1; display: none; background: #FF9800;">Generate Beta Report</button>
+                </div>
             </div>
         `;
         
@@ -838,6 +858,17 @@ function setupDevMode() {
             .dev-buttons button:hover {
                 background: #333;
                 border-color: #666;
+            }
+            
+            #betaModeBtn {
+                background: #2a2a2a;
+                border-color: #666;
+            }
+            
+            #betaModeBtn.active {
+                background: #FFC107;
+                color: #000;
+                border-color: #FFC107;
             }
             
             .dev-info {
@@ -897,6 +928,89 @@ function setupDevMode() {
     }
 }
 
+// Toggle beta mode
+window.toggleBetaMode = function() {
+    gameState.betaMode = !gameState.betaMode;
+    
+    const betaBtn = document.getElementById('betaModeBtn');
+    const betaInfo = document.getElementById('betaInfo');
+    const betaTime = document.getElementById('betaTime');
+    const betaReportBtn = document.getElementById('betaReportBtn');
+    
+    if (gameState.betaMode) {
+        betaBtn.textContent = '🔮 Beta Mode: ON';
+        betaBtn.classList.add('active');
+        betaInfo.style.display = 'block';
+        if (betaReportBtn) betaReportBtn.style.display = 'block';
+        
+        // Calculate and display what time we're testing
+        const estTime = getESTTime();
+        const betaTestTime = new Date(estTime.getTime() + (5 * 3600000));
+        const betaPeriod = betaTestTime.getHours() >= 12 ? 'PM' : 'AM';
+        const betaDateStr = betaTestTime.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        betaTime.textContent = `${betaDateStr} EST (${betaPeriod} puzzle)`;
+        
+        // Show warning in main game area
+        showBetaWarning();
+    } else {
+        betaBtn.textContent = '🔮 Beta Mode: OFF';
+        betaBtn.classList.remove('active');
+        betaInfo.style.display = 'none';
+        if (betaReportBtn) betaReportBtn.style.display = 'none';
+        
+        // Remove beta warning
+        removeBetaWarning();
+    }
+    
+    // Reset game with new mode
+    resetGame();
+}
+
+// Show beta warning
+function showBetaWarning() {
+    const existingWarning = document.getElementById('betaWarning');
+    if (existingWarning) return;
+    
+    const warning = document.createElement('div');
+    warning.id = 'betaWarning';
+    warning.style.cssText = `
+        background: #FFC107;
+        color: #000;
+        padding: 12px 20px;
+        text-align: center;
+        font-weight: 600;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    `;
+    
+    const estTime = getESTTime();
+    const betaTestTime = new Date(estTime.getTime() + (5 * 3600000));
+    const betaHour = betaTestTime.getHours();
+    const nextRelease = betaHour >= 12 ? '12:00 AM' : '12:00 PM';
+    
+    warning.innerHTML = `⚠️ BETA TEST MODE - Testing puzzle that will be released at ${nextRelease} EST`;
+    document.body.appendChild(warning);
+}
+
+// Remove beta warning
+function removeBetaWarning() {
+    const warning = document.getElementById('betaWarning');
+    if (warning) {
+        warning.remove();
+    }
+}
+
 // Developer mode functions
 window.cycleScenario = function(direction) {
     gameState.currentScenarioIndex = (gameState.currentScenarioIndex + direction + CRIME_SCENARIOS.length) % CRIME_SCENARIOS.length;
@@ -936,10 +1050,28 @@ window.toggleDevMode = function() {
 window.saveDevNotes = function() {
     const notes = document.getElementById('devNotes').value;
     const scenarioNotes = JSON.parse(localStorage.getItem('guiltyScenarioNotes') || '{}');
-    scenarioNotes[currentCrime.id] = {
+    
+    // Create a unique key for this test
+    let noteKey = currentCrime.id;
+    if (gameState.betaMode) {
+        const period = getPuzzlePeriod();
+        const estTime = getESTTime();
+        const betaTime = new Date(estTime.getTime() + (5 * 3600000));
+        const betaDateStr = betaTime.toISOString().split('T')[0];
+        noteKey = `beta_${betaDateStr}_${period}_${currentCrime.id}`;
+    }
+    
+    scenarioNotes[noteKey] = {
         notes,
         timestamp: new Date().toISOString(),
-        difficulty: gameState.difficulty
+        difficulty: gameState.difficulty,
+        betaTest: gameState.betaMode,
+        puzzleData: gameState.betaMode ? {
+            culprit: gameState.culprit,
+            initialSuspect: gameState.initialSuspect,
+            seed: getDailySeed(),
+            crime: currentCrime.id
+        } : null
     };
     localStorage.setItem('guiltyScenarioNotes', JSON.stringify(scenarioNotes));
     
@@ -951,6 +1083,78 @@ window.saveDevNotes = function() {
         button.textContent = originalText;
         button.style.background = '';
     }, 2000);
+}
+
+// Generate beta test report
+window.generateBetaReport = function() {
+    if (!gameState.betaMode) return;
+    
+    const report = {
+        testTime: new Date().toISOString(),
+        puzzleTime: new Date(getESTTime().getTime() + (5 * 3600000)).toISOString(),
+        period: getPuzzlePeriod(),
+        crime: currentCrime,
+        culprit: gameState.culprit,
+        initialSuspect: gameState.initialSuspect,
+        seed: getDailySeed(),
+        difficulty: gameState.difficulty,
+        suspects: gameState.suspects,
+        notes: document.getElementById('devNotes').value
+    };
+    
+    // Check for logical consistency issues
+    const issues = [];
+    
+    // Check if culprit has all traits
+    const traitCategories = getTraitCategories(currentCrime);
+    Object.keys(traitCategories).forEach(trait => {
+        if (!gameState.culprit[trait]) {
+            issues.push(`Culprit missing trait: ${trait}`);
+        }
+    });
+    
+    // Check if initial suspect feedback is correct
+    Object.keys(traitCategories).forEach(trait => {
+        if (gameState.initialSuspect[trait]) {
+            const feedback = getFeedbackForTrait(
+                gameState.initialSuspect[trait], 
+                gameState.culprit[trait], 
+                trait
+            );
+            const expectedGreen = gameState.difficulty === 'easy' ? 2 : 1;
+            // Add more validation as needed
+        }
+    });
+    
+    // Check suspect diversity
+    const traitCombos = new Set();
+    gameState.suspects.forEach(suspect => {
+        const combo = Object.keys(traitCategories)
+            .map(trait => suspect[trait] || 'undefined')
+            .join('-');
+        if (traitCombos.has(combo)) {
+            issues.push(`Duplicate suspect profile found`);
+        }
+        traitCombos.add(combo);
+    });
+    
+    report.issues = issues;
+    
+    // Save report
+    const betaReports = JSON.parse(localStorage.getItem('guiltyBetaReports') || '[]');
+    betaReports.push(report);
+    localStorage.setItem('guiltyBetaReports', JSON.stringify(betaReports));
+    
+    // Display report summary
+    alert(`Beta Test Report Generated:
+Crime: ${currentCrime.title}
+Period: ${getPuzzlePeriod()}
+Issues Found: ${issues.length}
+${issues.length > 0 ? '\nIssues:\n' + issues.join('\n') : '\n✅ No issues detected'}
+
+Report saved to localStorage.`);
+    
+    return report;
 }
 
 function resetGameForNewScenario() {
@@ -1019,9 +1223,20 @@ function resetGameForNewScenario() {
     if (gameState.devMode) {
         document.getElementById('devCulpritInfo').textContent = `${gameState.culprit.name} (${gameState.culprit.job})`;
         
+        // Load appropriate notes
         const scenarioNotes = JSON.parse(localStorage.getItem('guiltyScenarioNotes') || '{}');
-        if (scenarioNotes[currentCrime.id]) {
-            document.getElementById('devNotes').value = scenarioNotes[currentCrime.id].notes;
+        let noteKey = currentCrime.id;
+        
+        if (gameState.betaMode) {
+            const period = getPuzzlePeriod();
+            const estTime = getESTTime();
+            const betaTime = new Date(estTime.getTime() + (5 * 3600000));
+            const betaDateStr = betaTime.toISOString().split('T')[0];
+            noteKey = `beta_${betaDateStr}_${period}_${currentCrime.id}`;
+        }
+        
+        if (scenarioNotes[noteKey]) {
+            document.getElementById('devNotes').value = scenarioNotes[noteKey].notes;
         } else {
             document.getElementById('devNotes').value = '';
         }
@@ -1042,10 +1257,19 @@ async function initGame() {
     
     // Determine crime scenario
     let crimeIndex;
-    if (gameState.devMode) {
+    if (gameState.devMode && !gameState.betaMode) {
+        // In dev mode but not beta mode, use the selected scenario
         crimeIndex = gameState.currentScenarioIndex;
     } else {
-        const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        // In normal mode or beta mode, use date-based selection
+        const estTime = getESTTime();
+        let testTime = estTime;
+        
+        if (gameState.betaMode) {
+            testTime = new Date(estTime.getTime() + (5 * 3600000)); // Add 5 hours for beta
+        }
+        
+        const dayOfYear = Math.floor((testTime - new Date(testTime.getFullYear(), 0, 0)) / 86400000);
         crimeIndex = dayOfYear % CRIME_SCENARIOS.length;
     }
     currentCrime = CRIME_SCENARIOS[crimeIndex];
@@ -1053,8 +1277,16 @@ async function initGame() {
     // Display crime info
     const period = getPuzzlePeriod();
     const estTime = getESTTime();
-    const dateStr = estTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}`;
+    let displayTime = estTime;
+    let displayLabel = '';
+    
+    if (gameState.betaMode) {
+        displayTime = new Date(estTime.getTime() + (5 * 3600000));
+        displayLabel = ' [BETA TEST]';
+    }
+    
+    const dateStr = displayTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}${displayLabel}`;
     document.getElementById('crimeDescription').textContent = currentCrime.description;
     
     // Load stats
@@ -1106,12 +1338,34 @@ async function initGame() {
     
     if (gameState.devMode) {
         document.getElementById('devCulpritInfo').textContent = `${gameState.culprit.name} (${gameState.culprit.job})`;
+        
+        // Load appropriate notes
+        const scenarioNotes = JSON.parse(localStorage.getItem('guiltyScenarioNotes') || '{}');
+        let noteKey = currentCrime.id;
+        
+        if (gameState.betaMode) {
+            const period = getPuzzlePeriod();
+            const estTime = getESTTime();
+            const betaTime = new Date(estTime.getTime() + (5 * 3600000));
+            const betaDateStr = betaTime.toISOString().split('T')[0];
+            noteKey = `beta_${betaDateStr}_${period}_${currentCrime.id}`;
+        }
+        
+        if (scenarioNotes[noteKey]) {
+            document.getElementById('devNotes').value = scenarioNotes[noteKey].notes;
+        } else {
+            document.getElementById('devNotes').value = '';
+        }
     }
     
     displayInitialSuspect();
     displaySuspects();
     updateGuessCounter();
-    startTimer();
+    
+    // Don't start timer in dev/beta mode until first guess
+    if (!gameState.devMode && !gameState.betaMode) {
+        startTimer();
+    }
 }
 
 // Display suspects
