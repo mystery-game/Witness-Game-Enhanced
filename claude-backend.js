@@ -22,12 +22,11 @@ app.use(express.static(path.join(__dirname)));
 
 // Main routes - serve HTML files
 app.get('/', (req, res) => {
-    const filePath = path.join(__dirname, 'game-index.html');
+    const filePath = path.join(__dirname, 'guilty-game-v2.html');
     res.sendFile(filePath, (err) => {
         if (err) {
-            console.error('Error serving game-index.html:', err);
-            // Fallback to witness game if index doesn't exist
-            res.sendFile(path.join(__dirname, 'index.html'));
+            console.error('Error serving guilty-game-v2.html:', err);
+            res.status(404).send('GUILTY game not found');
         }
     });
 });

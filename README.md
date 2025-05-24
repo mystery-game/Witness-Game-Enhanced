@@ -1,111 +1,58 @@
-# The Witness - A Daily Mystery Game
+# GUILTY - A Mystery Deduction Game
 
-A sophisticated daily mystery game where players interrogate witnesses to solve crimes. Features dynamic AI-powered responses and adaptive difficulty.
+A Wordle-style daily mystery game where players deduce the culprit by analyzing suspect traits and patterns. Built by a non-programmer using Claude AI to demonstrate how AI enables anyone to create sophisticated web applications.
 
-## Overview
+## Play the Game
 
-The Witness presents players with a new mystery each day. You must:
-1. Examine the crime scene
-2. Question a unique witness with their own personality
-3. Unlock evidence through smart questioning
-4. Make your accusation
+🎮 **[Play GUILTY online](https://witness-game-[something].onrender.com)** (Link will be updated after deployment)
 
-## Features
+## About the Game
 
-### 3 Balanced Mysteries
-- **Easy (Friday)**: The Gallery Gambit - Art heist with a nervous witness
-- **Medium (Monday)**: The Laboratory Accident - Your original paranoid witness mystery
-- **Hard (Saturday)**: Inheritance of Lies - Complex mansion murder with misdirection
+GUILTY is a daily mystery game inspired by Wordle but focused on deductive reasoning:
 
-### Dynamic Gameplay
-- Evidence photos unlock based on your questions
-- Witness responses vary by tone and specificity
-- Adaptive difficulty based on your performance
-- Daily challenges with different witness personalities
+- **Daily Mysteries**: Three rotating crime scenarios (Museum Heist, TechCorp Breach, Restaurant Poisoning)
+- **Pattern Matching**: 15 suspects with 15 different traits to analyze
+- **Visual Feedback**: Color-coded clues guide your deduction (green = exact match, yellow = close, gray = wrong)
+- **Progressive Difficulty**: Easy (8 guesses), Medium (6 guesses), Hard (4 guesses)
+- **Stats Tracking**: Win streaks, success rates, and shareable results
 
-### Player Progression
-- Track your solve rate and streaks
-- Performance statistics by difficulty level
-- Adaptive question allowance for struggling players
+## Key Features
 
-## Setup
+- **15 Trait Categories**: Access Level, Timing, Knowledge, Motive, Behavior, Physical Evidence, and more
+- **Smart Suspect Generation**: Logically consistent suspect profiles
+- **Detailed Crime Scenarios**: Rich narratives with multiple clues and red herrings
+- **Mobile Responsive**: Works perfectly on phones, tablets, and desktops
+- **No Login Required**: Play instantly, stats saved locally
 
-### Prerequisites
-- Node.js installed on your system
-- Claude API key (optional - game works without it)
+## The Story Behind This Game
 
-### Installation
+This game was created by someone with no programming experience to prove that AI can empower anyone to build real, functional applications. Using Claude AI as a coding partner, we built:
 
-1. Navigate to the project directory:
-```bash
-cd /Users/HenryAppel/witness-game-enhanced
-```
+- A complete Node.js/Express backend
+- Claude API integration for dynamic content
+- Sophisticated game logic and state management
+- Professional UI/UX design
+- Deployment-ready architecture
 
-2. Install dependencies:
-```bash
-npm install
-```
+## Technical Stack
 
-3. Create a `.env` file and add your Claude API key:
-```
-ANTHROPIC_API_KEY=your-api-key-here
-```
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **Backend**: Node.js, Express.js
+- **AI Integration**: Claude API (Anthropic)
+- **Deployment**: Render (free tier)
 
-4. Start the game:
-```bash
-npm start
-```
+## Local Development
 
-5. Open your browser to `http://localhost:3000`
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Add your Claude API key to `.env`: `ANTHROPIC_API_KEY=your_key_here`
+4. Run the server: `npm start`
+5. Open http://localhost:3000
 
-## How to Play
+## Deployment
 
-### Examining the Scene
-- Read the crime scene description carefully
-- Look for clues about timing, location, and evidence
-- Visual scenes provide additional context
+The game is designed to run on any Node.js hosting platform. The free tier of Render.com works perfectly for demo purposes.
 
-### Questioning Strategy
-- **Easy Mode**: Be gentle with the nervous witness - they'll reveal more
-- **Medium Mode**: Your tone matters! Kind questions get better responses
-- **Hard Mode**: Expect misdirection - cross-reference everything
+---
 
-### Evidence System
-- Evidence photos are locked initially
-- Ask questions with specific keywords to unlock them
-- Each piece of evidence has different importance levels
-
-### Making Your Accusation
-- You get 2-3 questions depending on difficulty and performance
-- Choose your suspect carefully after questioning
-- Connect the evidence to identify the culprit
-
-## Technical Details
-
-### Without Claude API
-- Uses sophisticated scripted responses
-- Still provides full gameplay experience
-- Responses are tailored to each mystery and witness type
-
-### With Claude API
-- Dynamic, contextual responses
-- Witnesses remember previous questions
-- More natural conversation flow
-
-## Game Design Philosophy
-
-Originally featuring 7 mysteries, the game was refactored to 3 well-balanced experiences. This change ensures:
-- Consistent difficulty progression
-- Clear information delivery
-- Balanced evidence systems
-- Satisfying player experience
-
-Each mystery is carefully crafted with:
-- Unique witness personality
-- Specific evidence unlocking keywords
-- Appropriate red herrings
-- Clear solution path
-
-## Credits
-
-Created by a beginner programmer with the assistance of Claude Opus, demonstrating how AI can empower non-programmers to create sophisticated games. 
+**Built with ❤️ and AI to show that anyone can code** 
