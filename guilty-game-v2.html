@@ -773,41 +773,49 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
         
-        /* Gradient from blue (low suspicion) to dark red (high suspicion) */
-        .reference-value.suspicion-1 {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-color: #3498db;
+        /* Rainbow colors for trait guide */
+        .reference-value.color-red {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-color: #e74c3c;
             color: white;
         }
         
-        .reference-value.suspicion-2 {
-            background: linear-gradient(135deg, #27ae60, #229954);
-            border-color: #27ae60;
-            color: white;
-        }
-        
-        .reference-value.suspicion-3 {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            border-color: #f39c12;
-            color: white;
-        }
-        
-        .reference-value.suspicion-4 {
+        .reference-value.color-orange {
             background: linear-gradient(135deg, #e67e22, #d35400);
             border-color: #e67e22;
             color: white;
         }
         
-        .reference-value.suspicion-5 {
-            background: linear-gradient(135deg, #c0392b, #8b0000);
-            border-color: #c0392b;
+        .reference-value.color-yellow {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            border-color: #f1c40f;
+            color: #333;
+        }
+        
+        .reference-value.color-green {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border-color: #2ecc71;
             color: white;
         }
         
+        .reference-value.color-blue {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border-color: #3498db;
+            color: white;
+        }
+        
+        /* Remove old suspicion-based colors */
+        .reference-value.suspicion-1,
+        .reference-value.suspicion-2,
+        .reference-value.suspicion-3,
+        .reference-value.suspicion-4,
+        .reference-value.suspicion-5 {
+            /* Deprecated - using rainbow colors instead */
+            display: none;
+        }
+        
         .reference-proximity {
-            margin-top: 10px;
-            font-size: 11px;
-            color: #9b99a7;
+            display: none; /* No longer showing suspicion arrangement text */
         }
         
         .reference-legend {

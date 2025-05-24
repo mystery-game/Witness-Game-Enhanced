@@ -1529,11 +1529,11 @@ function showReference() {
                 </div>
                 <div class="reference-legend-item">
                     <div class="reference-color-box yellow"></div>
-                    <span>Yellow = Close (similar suspicion)</span>
+                    <span>Yellow = Close (within 1 level)</span>
                 </div>
                 <div class="reference-legend-item">
                     <div class="reference-color-box gray"></div>
-                    <span>Gray = Far (different suspicion)</span>
+                    <span>Gray = Far (2+ levels away)</span>
                 </div>
             </div>
         </div>
@@ -1548,32 +1548,24 @@ function showReference() {
                 <div class="reference-values">
         `;
         
-        // Group values by suspicion level
-        const valuesBySuspicion = {};
-        Object.entries(category.values).forEach(([value, data]) => {
-            if (!valuesBySuspicion[data.suspicion]) {
-                valuesBySuspicion[data.suspicion] = [];
+        // Get all values in order
+        const allValues = Object.entries(category.values)
+            .sort((a, b) => b[1].suspicion - a[1].suspicion) // Still sort by suspicion internally
+            .map(([value, data]) => ({ value, hint: data.hint }));
+        
+        // Display exactly 5 values with rainbow colors
+        const colors = ['red', 'orange', 'yellow', 'green', 'blue'];
+        allValues.forEach((item, index) => {
+            if (index < 5) {
+                html += `
+                    <div class="reference-value color-${colors[index]}" title="${item.hint}">
+                        <div>${item.value}</div>
+                    </div>
+                `;
             }
-            valuesBySuspicion[data.suspicion].push({ value, hint: data.hint });
         });
         
-        // Display values grouped by suspicion level (but without showing the number)
-        Object.keys(valuesBySuspicion)
-            .sort((a, b) => b - a) // Sort by suspicion level (high to low)
-            .forEach(suspicion => {
-                valuesBySuspicion[suspicion].forEach(({ value, hint }) => {
-                    html += `
-                        <div class="reference-value suspicion-${suspicion}" title="${hint}">
-                            <div>${value}</div>
-                        </div>
-                    `;
-                });
-            });
-        
         html += `
-                </div>
-                <div class="reference-proximity">
-                    <em>Values are arranged from most to least suspicious</em>
                 </div>
             </div>
         `;
