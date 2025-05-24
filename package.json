@@ -1,27 +1,20 @@
 {
-  "name": "witness-game-enhanced",
-  "version": "2.0.0",
-  "description": "Enhanced daily mystery game with AI integration",
-  "main": "claude-backend.js",
+  "name": "guilty-game",
+  "version": "1.0.0",
+  "description": "GUILTY - A Mystery Deduction Game",
+  "main": "simple-server.js",
   "scripts": {
-    "start": "node claude-backend.js",
-    "dev": "nodemon claude-backend.js"
+    "start": "node simple-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "mystery",
     "game",
-    "ai",
-    "claude"
+    "mystery",
+    "deduction"
   ],
-  "author": "Created with AI assistance",
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
     "express": "^4.18.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
   }
 }
