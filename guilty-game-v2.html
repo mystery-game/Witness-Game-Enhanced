@@ -1076,23 +1076,17 @@
         }
         
         .reference-proximity-indicator {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            color: #666;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.2s;
-            font-style: italic;
-            width: 80px;
-            text-align: center;
+            display: none; /* Removed in favor of always-visible arrows */
         }
         
-        .reference-scale-item:hover .reference-proximity-indicator,
-        .reference-scale-item:hover + .reference-scale-item .reference-proximity-indicator {
-            opacity: 1;
+        .reference-proximity-arrow {
+            position: absolute;
+            top: 38px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+            z-index: 1;
         }
         
         .reference-values-scale {

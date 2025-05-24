@@ -30,16 +30,16 @@ const CRIME_SCENARIOS = [
         description: "The 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. The thief bypassed all security systems between 2-3 AM.",
         setting: 'museum',
         traits: {
-            access: ['Staff', 'Visitor', 'VIP', 'Contractor'],
-            timing: ['Working', 'Home', 'Out', 'Verified'],
-            knowledge: ['Expert', 'Familiar', 'Basic', 'None'],
-            motive: ['Desperate', 'Greedy', 'Vengeful', 'None'],
-            behavior: ['Suspicious', 'Nervous', 'Changed', 'Normal'],
-            physical: ['Matches', 'Similar', 'Different', 'Excluded'],
-            tools: ['Has All', 'Has Some', 'Could Get', 'No Access'],
-            alibi: ['None', 'Weak', 'Partial', 'Strong'],
-            finances: ['Desperate', 'Struggling', 'Stable', 'Wealthy'],
-            technical: ['Expert', 'Skilled', 'Basic', 'None']
+            access: ['Staff', 'Visitor', 'VIP', 'Contractor', 'None'],
+            timing: ['Working', 'Home', 'Out', 'Verified', 'Asleep'],
+            knowledge: ['Expert', 'Familiar', 'Basic', 'Limited', 'None'],
+            motive: ['Desperate', 'Greedy', 'Vengeful', 'Curious', 'None'],
+            behavior: ['Suspicious', 'Nervous', 'Changed', 'Normal', 'Helpful'],
+            physical: ['Matches', 'Similar', 'Different', 'Partial', 'Excluded'],
+            tools: ['Has All', 'Has Some', 'Could Get', 'Limited', 'No Access'],
+            alibi: ['None', 'Weak', 'Partial', 'Strong', 'Verified'],
+            finances: ['Desperate', 'Struggling', 'Stable', 'Comfortable', 'Wealthy'],
+            technical: ['Expert', 'Skilled', 'Basic', 'Limited', 'None']
         },
         suspectJobs: [
             { title: "Security Guard", access: "Staff", knowledge: "Expert" },
@@ -60,16 +60,16 @@ const CRIME_SCENARIOS = [
         description: "Someone hacked into TechCorp's servers last night and stole the AI research database. The breach occurred at 11:47 PM using admin credentials.",
         setting: 'tech_company',
         traits: {
-            access: ['Admin', 'Developer', 'Employee', 'Contractor'],
-            timing: ['Online', 'Office', 'Home', 'Logged'],
-            knowledge: ['Expert', 'Advanced', 'Basic', 'None'],
-            motive: ['Profit', 'Revenge', 'Espionage', 'None'],
-            behavior: ['Paranoid', 'Defensive', 'Evasive', 'Normal'],
-            tools: ['Has All', 'Has Some', 'Could Get', 'No Access'],
-            history: ['Suspicious', 'Disgruntled', 'Clean', 'Loyal'],
-            alibi: ['None', 'Weak', 'Partial', 'Strong'],
-            technical: ['Elite', 'Expert', 'Skilled', 'Basic'],
-            opportunity: ['Perfect', 'Good', 'Possible', 'None']
+            access: ['Admin', 'Developer', 'Employee', 'Contractor', 'None'],
+            timing: ['Online', 'Office', 'Home', 'Logged', 'Offline'],
+            knowledge: ['Expert', 'Advanced', 'Basic', 'Limited', 'None'],
+            motive: ['Profit', 'Revenge', 'Espionage', 'Curiosity', 'None'],
+            behavior: ['Paranoid', 'Defensive', 'Evasive', 'Normal', 'Cooperative'],
+            tools: ['Has All', 'Has Some', 'Could Get', 'Limited', 'No Access'],
+            history: ['Suspicious', 'Disgruntled', 'Clean', 'Loyal', 'New'],
+            alibi: ['None', 'Weak', 'Partial', 'Strong', 'Verified'],
+            technical: ['Elite', 'Expert', 'Skilled', 'Basic', 'Novice'],
+            opportunity: ['Perfect', 'Good', 'Possible', 'Limited', 'None']
         },
         suspectJobs: [
             { title: "System Admin", access: "Admin", knowledge: "Expert" },
@@ -91,16 +91,16 @@ const CRIME_SCENARIOS = [
         description: "Celebrity chef Marcus Beaumont was poisoned during dinner service at Le Jardin. The poison was in his coffee, which he drank at 7:45 PM.",
         setting: 'restaurant',
         traits: {
-            access: ['Kitchen', 'Service', 'VIP', 'Limited'],
-            timing: ['Working', 'Break', 'Dining', 'Documented'],
-            knowledge: ['Expert', 'Professional', 'Amateur', 'None'],
-            motive: ['Jealousy', 'Revenge', 'Inheritance', 'None'],
-            behavior: ['Agitated', 'Guilty', 'Shocked', 'Helpful'],
-            physical: ['Matches', 'Similar', 'Different', 'Excluded'],
-            tools: ['Has All', 'Has Some', 'Could Get', 'No Access'],
-            alibi: ['None', 'Weak', 'Partial', 'Strong'],
-            relationships: ['Hostile', 'Strained', 'Neutral', 'Excellent'],
-            opportunity: ['Perfect', 'Good', 'Possible', 'None']
+            access: ['Kitchen', 'Service', 'VIP', 'Limited', 'None'],
+            timing: ['Working', 'Break', 'Dining', 'Documented', 'Absent'],
+            knowledge: ['Expert', 'Professional', 'Amateur', 'Basic', 'None'],
+            motive: ['Jealousy', 'Revenge', 'Inheritance', 'Competition', 'None'],
+            behavior: ['Agitated', 'Guilty', 'Shocked', 'Helpful', 'Calm'],
+            physical: ['Matches', 'Similar', 'Different', 'Partial', 'Excluded'],
+            tools: ['Has All', 'Has Some', 'Could Get', 'Limited', 'No Access'],
+            alibi: ['None', 'Weak', 'Partial', 'Strong', 'Verified'],
+            relationships: ['Hostile', 'Strained', 'Neutral', 'Friendly', 'Excellent'],
+            opportunity: ['Perfect', 'Good', 'Possible', 'Limited', 'None']
         },
         suspectJobs: [
             { title: "Sous Chef", access: "Kitchen", knowledge: "Expert" },
@@ -138,7 +138,8 @@ function getTraitCategories(crime) {
                     'Working': { suspicion: 5, hint: 'Was at museum during crime' },
                     'Home': { suspicion: 2, hint: 'Claims to be home' },
                     'Out': { suspicion: 3, hint: 'Was out somewhere' },
-                    'Verified': { suspicion: 1, hint: 'Has witness confirmation' }
+                    'Verified': { suspicion: 1, hint: 'Has witness confirmation' },
+                    'Asleep': { suspicion: 2, hint: 'Claims to be sleeping' }
                 }
             },
             knowledge: {
@@ -147,6 +148,7 @@ function getTraitCategories(crime) {
                     'Expert': { suspicion: 5, hint: 'Knows all security systems' },
                     'Familiar': { suspicion: 4, hint: 'Some security knowledge' },
                     'Basic': { suspicion: 3, hint: 'General awareness only' },
+                    'Limited': { suspicion: 2, hint: 'Minimal knowledge' },
                     'None': { suspicion: 1, hint: 'No security knowledge' }
                 }
             },
@@ -156,6 +158,7 @@ function getTraitCategories(crime) {
                     'Desperate': { suspicion: 5, hint: 'Urgent need for money' },
                     'Greedy': { suspicion: 4, hint: 'Wants more wealth' },
                     'Vengeful': { suspicion: 3, hint: 'Has grudge against museum' },
+                    'Curious': { suspicion: 2, hint: 'Fascinated by diamond' },
                     'None': { suspicion: 1, hint: 'No clear motive' }
                 }
             },
@@ -165,6 +168,7 @@ function getTraitCategories(crime) {
                     'Suspicious': { suspicion: 5, hint: 'Acting very strangely' },
                     'Nervous': { suspicion: 4, hint: 'Seems anxious lately' },
                     'Changed': { suspicion: 3, hint: 'Different than usual' },
+                    'Helpful': { suspicion: 2, hint: 'Cooperating fully' },
                     'Normal': { suspicion: 1, hint: 'Nothing unusual' }
                 }
             },
@@ -173,6 +177,7 @@ function getTraitCategories(crime) {
                 values: {
                     'Matches': { suspicion: 5, hint: 'Size 10 boot, 5\'8"-5\'10"' },
                     'Similar': { suspicion: 4, hint: 'Close to description' },
+                    'Partial': { suspicion: 3, hint: 'Some matches' },
                     'Different': { suspicion: 2, hint: 'Doesn\'t match evidence' },
                     'Excluded': { suspicion: 1, hint: 'Definitely not them' }
                 }
@@ -183,6 +188,7 @@ function getTraitCategories(crime) {
                     'Has All': { suspicion: 5, hint: 'Has lockpicks and equipment' },
                     'Has Some': { suspicion: 4, hint: 'Has some needed tools' },
                     'Could Get': { suspicion: 3, hint: 'Could obtain tools' },
+                    'Limited': { suspicion: 2, hint: 'Minimal tool access' },
                     'No Access': { suspicion: 1, hint: 'No access to tools' }
                 }
             },
@@ -192,7 +198,8 @@ function getTraitCategories(crime) {
                     'None': { suspicion: 5, hint: 'No alibi at all' },
                     'Weak': { suspicion: 4, hint: 'Unconvincing story' },
                     'Partial': { suspicion: 3, hint: 'Some gaps in alibi' },
-                    'Strong': { suspicion: 2, hint: 'Good alibi' }
+                    'Strong': { suspicion: 2, hint: 'Good alibi' },
+                    'Verified': { suspicion: 1, hint: 'Confirmed by witnesses' }
                 }
             },
             finances: {
@@ -200,7 +207,8 @@ function getTraitCategories(crime) {
                 values: {
                     'Desperate': { suspicion: 5, hint: 'Facing bankruptcy' },
                     'Struggling': { suspicion: 4, hint: 'Mounting debts' },
-                    'Stable': { suspicion: 2, hint: 'Financially secure' },
+                    'Stable': { suspicion: 3, hint: 'Financially secure' },
+                    'Comfortable': { suspicion: 2, hint: 'Well off' },
                     'Wealthy': { suspicion: 1, hint: 'No financial motive' }
                 }
             },
@@ -210,6 +218,7 @@ function getTraitCategories(crime) {
                     'Expert': { suspicion: 5, hint: 'Can disable alarms' },
                     'Skilled': { suspicion: 4, hint: 'Good with electronics' },
                     'Basic': { suspicion: 3, hint: 'Some technical ability' },
+                    'Limited': { suspicion: 2, hint: 'Minimal skills' },
                     'None': { suspicion: 1, hint: 'No technical skills' }
                 }
             }
@@ -231,7 +240,8 @@ function getTraitCategories(crime) {
                     'Online': { suspicion: 5, hint: 'Active during breach' },
                     'Office': { suspicion: 4, hint: 'In building after hours' },
                     'Home': { suspicion: 2, hint: 'Claims remote location' },
-                    'Logged': { suspicion: 1, hint: 'Verified elsewhere online' }
+                    'Logged': { suspicion: 1, hint: 'Verified elsewhere online' },
+                    'Offline': { suspicion: 3, hint: 'No digital activity' }
                 }
             },
             knowledge: {
@@ -240,6 +250,7 @@ function getTraitCategories(crime) {
                     'Expert': { suspicion: 5, hint: 'Could bypass all security' },
                     'Advanced': { suspicion: 4, hint: 'Knows system architecture' },
                     'Basic': { suspicion: 2, hint: 'General IT knowledge' },
+                    'Limited': { suspicion: 1, hint: 'Minimal tech skills' },
                     'None': { suspicion: 1, hint: 'No programming skills' }
                 }
             },
@@ -249,6 +260,7 @@ function getTraitCategories(crime) {
                     'Profit': { suspicion: 5, hint: 'Needs money urgently' },
                     'Revenge': { suspicion: 4, hint: 'Angry at company' },
                     'Espionage': { suspicion: 5, hint: 'Suspected foreign ties' },
+                    'Curiosity': { suspicion: 2, hint: 'Intellectual interest' },
                     'None': { suspicion: 1, hint: 'No apparent motive' }
                 }
             },
@@ -258,6 +270,7 @@ function getTraitCategories(crime) {
                     'Paranoid': { suspicion: 5, hint: 'Extremely nervous' },
                     'Defensive': { suspicion: 4, hint: 'Quick to blame others' },
                     'Evasive': { suspicion: 3, hint: 'Avoiding questions' },
+                    'Cooperative': { suspicion: 2, hint: 'Helping investigation' },
                     'Normal': { suspicion: 1, hint: 'Business as usual' }
                 }
             },
@@ -267,6 +280,7 @@ function getTraitCategories(crime) {
                     'Has All': { suspicion: 5, hint: 'Custom pen-test tools' },
                     'Has Some': { suspicion: 4, hint: 'Basic hacking software' },
                     'Could Get': { suspicion: 3, hint: 'Access to tools' },
+                    'Limited': { suspicion: 2, hint: 'Minimal tools' },
                     'No Access': { suspicion: 1, hint: 'No hacking tools' }
                 }
             },
@@ -276,7 +290,8 @@ function getTraitCategories(crime) {
                     'Suspicious': { suspicion: 5, hint: 'Multiple terminations' },
                     'Disgruntled': { suspicion: 4, hint: 'Recent conflicts' },
                     'Clean': { suspicion: 2, hint: 'Good track record' },
-                    'Loyal': { suspicion: 1, hint: 'Long-term employee' }
+                    'Loyal': { suspicion: 1, hint: 'Long-term employee' },
+                    'New': { suspicion: 3, hint: 'Recently hired' }
                 }
             },
             alibi: {
@@ -285,7 +300,8 @@ function getTraitCategories(crime) {
                     'None': { suspicion: 5, hint: 'No digital trail' },
                     'Weak': { suspicion: 4, hint: 'Could be spoofed' },
                     'Partial': { suspicion: 3, hint: 'Some gaps' },
-                    'Strong': { suspicion: 2, hint: 'Multiple logins elsewhere' }
+                    'Strong': { suspicion: 2, hint: 'Multiple logins elsewhere' },
+                    'Verified': { suspicion: 1, hint: 'Confirmed activity' }
                 }
             },
             technical: {
@@ -294,7 +310,8 @@ function getTraitCategories(crime) {
                     'Elite': { suspicion: 5, hint: 'Can code in sleep' },
                     'Expert': { suspicion: 4, hint: 'Senior level skills' },
                     'Skilled': { suspicion: 3, hint: 'Competent developer' },
-                    'Basic': { suspicion: 2, hint: 'Script kiddie level' }
+                    'Basic': { suspicion: 2, hint: 'Script kiddie level' },
+                    'Novice': { suspicion: 1, hint: 'Learning to code' }
                 }
             },
             opportunity: {
@@ -303,6 +320,7 @@ function getTraitCategories(crime) {
                     'Perfect': { suspicion: 5, hint: 'Alone in office' },
                     'Good': { suspicion: 4, hint: 'Had time and access' },
                     'Possible': { suspicion: 3, hint: 'Could have done it' },
+                    'Limited': { suspicion: 2, hint: 'Small window' },
                     'None': { suspicion: 1, hint: 'Proven elsewhere' }
                 }
             }
@@ -324,7 +342,8 @@ function getTraitCategories(crime) {
                     'Working': { suspicion: 5, hint: 'On shift in kitchen' },
                     'Break': { suspicion: 4, hint: 'On break but present' },
                     'Dining': { suspicion: 3, hint: 'Eating in restaurant' },
-                    'Documented': { suspicion: 1, hint: 'Confirmed elsewhere' }
+                    'Documented': { suspicion: 1, hint: 'Confirmed elsewhere' },
+                    'Absent': { suspicion: 2, hint: 'Not in restaurant' }
                 }
             },
             knowledge: {
@@ -332,7 +351,8 @@ function getTraitCategories(crime) {
                 values: {
                     'Expert': { suspicion: 5, hint: 'Knows rare poisons' },
                     'Professional': { suspicion: 4, hint: 'Trained chef' },
-                    'Amateur': { suspicion: 2, hint: 'Cooking enthusiast' },
+                    'Amateur': { suspicion: 3, hint: 'Cooking enthusiast' },
+                    'Basic': { suspicion: 2, hint: 'Basic cooking skills' },
                     'None': { suspicion: 1, hint: 'No cooking skills' }
                 }
             },
@@ -342,6 +362,7 @@ function getTraitCategories(crime) {
                     'Jealousy': { suspicion: 5, hint: 'Envious of success' },
                     'Revenge': { suspicion: 5, hint: 'Past grievance' },
                     'Inheritance': { suspicion: 4, hint: 'Financial beneficiary' },
+                    'Competition': { suspicion: 3, hint: 'Business rivalry' },
                     'None': { suspicion: 1, hint: 'No known conflict' }
                 }
             },
@@ -351,7 +372,8 @@ function getTraitCategories(crime) {
                     'Agitated': { suspicion: 5, hint: 'Overly emotional' },
                     'Guilty': { suspicion: 4, hint: 'Shows signs of guilt' },
                     'Shocked': { suspicion: 2, hint: 'Genuinely surprised' },
-                    'Helpful': { suspicion: 1, hint: 'Actively assisting' }
+                    'Helpful': { suspicion: 1, hint: 'Actively assisting' },
+                    'Calm': { suspicion: 3, hint: 'Unusually composed' }
                 }
             },
             physical: {
@@ -359,6 +381,7 @@ function getTraitCategories(crime) {
                 values: {
                     'Matches': { suspicion: 5, hint: 'Seen near office' },
                     'Similar': { suspicion: 4, hint: 'Right build' },
+                    'Partial': { suspicion: 3, hint: 'Some similarities' },
                     'Different': { suspicion: 2, hint: 'Wrong description' },
                     'Excluded': { suspicion: 1, hint: 'Too tall/short' }
                 }
@@ -369,6 +392,7 @@ function getTraitCategories(crime) {
                     'Has All': { suspicion: 5, hint: 'Access to fugu' },
                     'Has Some': { suspicion: 4, hint: 'Kitchen chemicals' },
                     'Could Get': { suspicion: 3, hint: 'Knows suppliers' },
+                    'Limited': { suspicion: 2, hint: 'Minimal access' },
                     'No Access': { suspicion: 1, hint: 'No poison access' }
                 }
             },
@@ -378,7 +402,8 @@ function getTraitCategories(crime) {
                     'None': { suspicion: 5, hint: 'Can\'t explain whereabouts' },
                     'Weak': { suspicion: 4, hint: 'Story doesn\'t add up' },
                     'Partial': { suspicion: 3, hint: 'Some gaps' },
-                    'Strong': { suspicion: 2, hint: 'Multiple witnesses' }
+                    'Strong': { suspicion: 2, hint: 'Multiple witnesses' },
+                    'Verified': { suspicion: 1, hint: 'Camera footage confirms' }
                 }
             },
             relationships: {
@@ -387,6 +412,7 @@ function getTraitCategories(crime) {
                     'Hostile': { suspicion: 5, hint: 'Public confrontations' },
                     'Strained': { suspicion: 4, hint: 'Recent arguments' },
                     'Neutral': { suspicion: 3, hint: 'Professional only' },
+                    'Friendly': { suspicion: 2, hint: 'Good colleagues' },
                     'Excellent': { suspicion: 1, hint: 'Close friends' }
                 }
             },
@@ -396,6 +422,7 @@ function getTraitCategories(crime) {
                     'Perfect': { suspicion: 5, hint: 'Alone near office' },
                     'Good': { suspicion: 4, hint: 'Had opportunity' },
                     'Possible': { suspicion: 3, hint: 'Could have done it' },
+                    'Limited': { suspicion: 2, hint: 'Brief window only' },
                     'None': { suspicion: 1, hint: 'Never near office' }
                 }
             }
@@ -423,7 +450,8 @@ const TRAIT_CATEGORIES = {
             'Working': { suspicion: 5, hint: 'Was at museum during crime' },
             'Home': { suspicion: 2, hint: 'Claims to be home' },
             'Out': { suspicion: 3, hint: 'Was out somewhere' },
-            'Verified': { suspicion: 1, hint: 'Has witness confirmation' }
+            'Verified': { suspicion: 1, hint: 'Has witness confirmation' },
+            'Asleep': { suspicion: 2, hint: 'Claims to be sleeping' }
         }
     },
     knowledge: {
@@ -432,6 +460,7 @@ const TRAIT_CATEGORIES = {
             'Expert': { suspicion: 5, hint: 'Knows all security systems' },
             'Familiar': { suspicion: 4, hint: 'Some security knowledge' },
             'Basic': { suspicion: 3, hint: 'General awareness only' },
+            'Limited': { suspicion: 2, hint: 'Minimal knowledge' },
             'None': { suspicion: 1, hint: 'No security knowledge' },
             'Outdated': { suspicion: 2, hint: 'Old information only' }
         }
@@ -452,8 +481,8 @@ const TRAIT_CATEGORIES = {
             'Suspicious': { suspicion: 5, hint: 'Acting very strangely' },
             'Nervous': { suspicion: 4, hint: 'Seems anxious lately' },
             'Changed': { suspicion: 3, hint: 'Different than usual' },
-            'Normal': { suspicion: 1, hint: 'Nothing unusual' },
-            'Helpful': { suspicion: 2, hint: 'Cooperating fully' }
+            'Helpful': { suspicion: 2, hint: 'Cooperating fully' },
+            'Normal': { suspicion: 1, hint: 'Nothing unusual' }
         }
     }
 };
@@ -1558,9 +1587,19 @@ function showReference() {
                 <div class="reference-scale-item" style="left: ${position}%;">
                     <div class="reference-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
                     <div class="reference-scale-label" title="${item.hint}">${item.value}</div>
-                    ${index < 4 ? '<div class="reference-proximity-indicator">↔ close ↔</div>' : ''}
                 </div>
             `;
+            
+            // Add proximity indicator between values (not on the last one)
+            if (index < 4) {
+                const nextPosition = ((index + 1) / 4) * 100;
+                const midPosition = (position + nextPosition) / 2;
+                html += `
+                    <div class="reference-proximity-arrow" style="left: ${midPosition}%;">
+                        ↔
+                    </div>
+                `;
+            }
         });
         
         html += `
