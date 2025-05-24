@@ -1518,11 +1518,11 @@ function showReference() {
                 </div>
                 <div class="reference-legend-item">
                     <div class="reference-color-box yellow"></div>
-                    <span>Yellow = Close (±1 suspicion level)</span>
+                    <span>Yellow = Close (similar suspicion)</span>
                 </div>
                 <div class="reference-legend-item">
                     <div class="reference-color-box gray"></div>
-                    <span>Gray = Far (2+ suspicion levels away)</span>
+                    <span>Gray = Far (different suspicion)</span>
                 </div>
             </div>
         </div>
@@ -1546,7 +1546,7 @@ function showReference() {
             valuesBySuspicion[data.suspicion].push({ value, hint: data.hint });
         });
         
-        // Display values grouped by suspicion level
+        // Display values grouped by suspicion level (but without showing the number)
         Object.keys(valuesBySuspicion)
             .sort((a, b) => b - a) // Sort by suspicion level (high to low)
             .forEach(suspicion => {
@@ -1554,7 +1554,6 @@ function showReference() {
                     html += `
                         <div class="reference-value suspicion-${suspicion}" title="${hint}">
                             <div>${value}</div>
-                            <div style="font-size: 10px; color: #888;">Level ${suspicion}</div>
                         </div>
                     `;
                 });
@@ -1563,7 +1562,7 @@ function showReference() {
         html += `
                 </div>
                 <div class="reference-proximity">
-                    <strong>Yellow matches:</strong> Values that are ±1 suspicion level from each other
+                    <em>Values are arranged from most to least suspicious</em>
                 </div>
             </div>
         `;
