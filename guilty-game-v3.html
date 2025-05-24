@@ -40,6 +40,16 @@
             background-clip: text;
         }
         
+        .subtitle {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         .header-controls {
             display: flex;
             justify-content: center;
@@ -655,6 +665,11 @@
                 letter-spacing: 4px;
             }
             
+            .subtitle {
+                font-size: 14px;
+                padding: 0 10px;
+            }
+            
             .header-controls {
                 flex-direction: column;
                 gap: 10px;
@@ -682,6 +697,7 @@
 <body>
     <div class="header">
         <h1 class="title">GUILTY</h1>
+        <p class="subtitle">Find the culprit using logical deduction! New puzzles will appear at 12am EST and 12pm EST each day.</p>
         <div class="header-controls">
             <div class="header-buttons">
                 <button onclick="showStats()">📊 Stats</button>
