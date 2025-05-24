@@ -1776,6 +1776,79 @@ function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTra
     return initialSuspect;
 }
 
+// Generate trait guide HTML (reusable)
+function generateTraitGuideHTML() {
+    const traitCategories = getTraitCategories(currentCrime);
+    
+    let html = `
+        <div class="trait-guide-section">
+            <div class="trait-guide-header">
+                <h4>Trait Value Reference</h4>
+                <p class="trait-guide-note">Adjacent values (↔) are considered "close" matches</p>
+            </div>
+            <div class="trait-guide-content">
+    `;
+    
+    // For each trait category
+    Object.entries(traitCategories).forEach(([key, category]) => {
+        html += `
+            <div class="trait-guide-item">
+                <div class="trait-guide-title">${category.name}</div>
+                <div class="trait-scale-container">
+                    <div class="trait-scale-line"></div>
+                    <div class="trait-scale-connector"></div>
+                    <div class="trait-values-scale">
+        `;
+        
+        // Get exactly 5 values in order from the trait array
+        const traitArray = currentCrime.traits[key];
+        if (!traitArray || traitArray.length !== 5) {
+            console.warn(`Trait ${key} does not have exactly 5 values:`, traitArray);
+        }
+        
+        // Map the trait array values to their data
+        const allValues = traitArray.map(value => ({
+            value,
+            hint: category.values[value] ? category.values[value].hint : ''
+        }));
+        
+        // Display exactly 5 values as a scale with dots
+        allValues.forEach((item, index) => {
+            const position = (index / 4) * 100; // Spread across 0-100%
+            const isFirst = index === 0;
+            const isLast = index === 4;
+            
+            html += `
+                <div class="trait-scale-item" style="left: ${position}%;">
+                    <div class="trait-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
+                    <div class="trait-scale-label" title="${item.hint}">${item.value}</div>
+                </div>
+            `;
+            
+            // Add proximity indicator between values (not on the last one)
+            if (index < 4) {
+                const nextPosition = ((index + 1) / 4) * 100;
+                const midPosition = (position + nextPosition) / 2;
+                html += `
+                    <div class="trait-proximity-arrow" style="left: ${midPosition}%;">
+                        ↔
+                    </div>
+                `;
+            }
+        });
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div></div>';
+    
+    return html;
+}
+
 // Display initial suspect with colored trait indicators
 function displayInitialSuspect() {
     const existingDiv = document.getElementById('initialSuspect');
@@ -1817,6 +1890,7 @@ function displayInitialSuspect() {
             <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
             <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
         </div>
+        ${generateTraitGuideHTML()}
     `;
     
     // Insert after crime box
