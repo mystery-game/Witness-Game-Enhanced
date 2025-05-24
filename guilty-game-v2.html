@@ -658,31 +658,10 @@
             transform: translateY(-1px);
         }
         
-        .reference-button {
-            position: absolute;
-            top: 10px;
-            right: 100px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: #e8e6f3;
-            padding: 8px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
-            backdrop-filter: blur(5px);
-        }
-        
-        .reference-button:hover {
-            border-color: rgba(243, 156, 18, 0.5);
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-1px);
-        }
-        
         .tutorial-button {
             position: absolute;
             top: 10px;
-            right: 200px;
+            right: 100px;
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(255, 255, 255, 0.1);
             color: #e8e6f3;
@@ -954,7 +933,7 @@
                 font-size: 28px;
             }
             
-            .stats-button, .reference-button, .tutorial-button {
+            .stats-button, .tutorial-button {
                 position: static;
                 margin-bottom: 5px;
                 margin-right: 5px;
@@ -1144,8 +1123,7 @@
         }
         
         .trait-guide-content {
-            max-height: 400px;
-            overflow-y: auto;
+            /* Removed max-height and overflow to show full content */
             padding-right: 10px;
         }
         
@@ -1261,10 +1239,6 @@
         
         /* Responsive adjustments for inline trait guide */
         @media (max-width: 768px) {
-            .trait-guide-content {
-                max-height: 300px;
-            }
-            
             .trait-scale-container {
                 padding: 0 20px;
             }
@@ -1284,7 +1258,6 @@
 </head>
 <body>
     <button class="stats-button" onclick="showStats()">📊 Stats</button>
-    <button class="reference-button" onclick="showReference()">📋 Trait Guide</button>
     <button class="tutorial-button" onclick="showTutorial()">❓ How to Play</button>
     
     <div class="header">
@@ -1328,17 +1301,6 @@
                 <button class="close-button" onclick="hideStats()">&times;</button>
             </div>
             <div id="statsDisplay"></div>
-        </div>
-    </div>
-    
-    <!-- Reference Modal -->
-    <div class="modal" id="referenceModal">
-        <div class="modal-content modal-content-wide">
-            <div class="modal-header">
-                <h3 class="modal-title">Trait Value Reference</h3>
-                <button class="close-button" onclick="hideReference()">&times;</button>
-            </div>
-            <div id="referenceDisplay"></div>
         </div>
     </div>
     
