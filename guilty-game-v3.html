@@ -407,7 +407,7 @@
         
         .suspects-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
         }
         
@@ -415,7 +415,7 @@
             background: rgba(255, 255, 255, 0.03);
             border: 2px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
-            padding: 12px;
+            padding: 10px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
@@ -481,13 +481,13 @@
         }
         
         .suspect-name {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #e8e6f3;
         }
         
         .suspect-job {
-            font-size: 11px;
+            font-size: 10px;
             color: #9b99a7;
             margin-top: 2px;
         }
@@ -913,17 +913,24 @@
             }
         }
         
-        /* Medium screens */
-        @media (max-width: 1200px) {
+        /* Standard screens */
+        @media (max-width: 1399px) and (min-width: 1000px) {
             .suspects-grid {
                 grid-template-columns: repeat(4, 1fr);
             }
         }
         
-        /* Small screens */
-        @media (max-width: 900px) {
+        /* Medium screens */
+        @media (max-width: 999px) and (min-width: 700px) {
             .suspects-grid {
                 grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* Small screens */
+        @media (max-width: 699px) {
+            .suspects-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
         
@@ -938,11 +945,6 @@
                 margin-bottom: 5px;
                 margin-right: 5px;
                 display: inline-block;
-            }
-            
-            .suspects-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
             }
             
             .suspect-traits {

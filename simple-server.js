@@ -6,14 +6,24 @@ const app = express();
 // Serve static files
 app.use(express.static(path.join(__dirname)));
 
+// Logging middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
 // Main route - redirect to GUILTY game
 app.get('/', (req, res) => {
+    console.log('Serving guilty-game-v2.html');
     res.sendFile(path.join(__dirname, 'guilty-game-v2.html'));
 });
 
 // Add route for GUILTY v3 (cleaned up version)
 app.get('/guilty-v3', (req, res) => {
-    res.sendFile(path.join(__dirname, 'guilty-game-v3.html'));
+    console.log('Serving guilty-game-v3.html');
+    const filePath = path.join(__dirname, 'guilty-game-v3.html');
+    console.log('File path:', filePath);
+    res.sendFile(filePath);
 });
 
 // Health check endpoint for Render
@@ -24,4 +34,7 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`GUILTY game running on port ${PORT}`);
+    console.log('Available routes:');
+    console.log('  / - GUILTY v2');
+    console.log('  /guilty-v3 - GUILTY v3 with beta testing');
 }); 

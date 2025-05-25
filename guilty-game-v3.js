@@ -51,7 +51,13 @@ const CRIME_SCENARIOS = [
             { title: "Art Student", access: "Visitor", knowledge: "None" },
             { title: "Security Consultant", access: "Contractor", knowledge: "Expert" },
             { title: "Night Watchman", access: "Staff", knowledge: "Expert" },
-            { title: "Private Collector", access: "VIP", knowledge: "Basic" }
+            { title: "Private Collector", access: "VIP", knowledge: "Basic" },
+            { title: "Museum Administrator", access: "Staff", knowledge: "Basic" },
+            { title: "Restoration Expert", access: "Contractor", knowledge: "Limited" },
+            { title: "Insurance Investigator", access: "VIP", knowledge: "Familiar" },
+            { title: "Archaeologist", access: "VIP", knowledge: "None" },
+            { title: "Gift Shop Employee", access: "Staff", knowledge: "Limited" },
+            { title: "Delivery Driver", access: "Contractor", knowledge: "None" }
         ]
     },
     {
@@ -81,7 +87,13 @@ const CRIME_SCENARIOS = [
             { title: "Intern", access: "Developer", knowledge: "Basic" },
             { title: "Former Employee", access: "Employee", knowledge: "Expert" },
             { title: "Database Admin", access: "Admin", knowledge: "Advanced" },
-            { title: "QA Tester", access: "Developer", knowledge: "Basic" }
+            { title: "QA Tester", access: "Developer", knowledge: "Basic" },
+            { title: "Network Engineer", access: "Admin", knowledge: "Expert" },
+            { title: "DevOps Engineer", access: "Developer", knowledge: "Advanced" },
+            { title: "Technical Writer", access: "Employee", knowledge: "Limited" },
+            { title: "Compliance Officer", access: "Employee", knowledge: "Basic" },
+            { title: "Remote Contractor", access: "Contractor", knowledge: "Advanced" },
+            { title: "UI Designer", access: "Developer", knowledge: "Limited" }
         ],
         easyHint: "Check for someone with admin access and technical expertise..."
     },
@@ -112,7 +124,13 @@ const CRIME_SCENARIOS = [
             { title: "Business Partner", access: "Office", knowledge: "Basic" },
             { title: "Delivery Driver", access: "Delivery", knowledge: "None" },
             { title: "Recipe Developer", access: "Kitchen", knowledge: "Expert" },
-            { title: "Marketing Director", access: "Office", knowledge: "Basic" }
+            { title: "Marketing Director", access: "Office", knowledge: "Basic" },
+            { title: "Night Baker", access: "Kitchen", knowledge: "Professional" },
+            { title: "Kitchen Assistant", access: "Kitchen", knowledge: "Amateur" },
+            { title: "Food Blogger", access: "Limited", knowledge: "Amateur" },
+            { title: "Supply Manager", access: "Delivery", knowledge: "Basic" },
+            { title: "Franchise Owner", access: "Office", knowledge: "Basic" },
+            { title: "Evening Supervisor", access: "Kitchen", knowledge: "Professional" }
         ],
         easyHint: "Someone with kitchen access and baking knowledge is suspicious..."
     },
@@ -143,7 +161,13 @@ const CRIME_SCENARIOS = [
             { title: "Apprentice Chef", access: "Kitchen", knowledge: "Professional" },
             { title: "Waiter", access: "Service", knowledge: "Basic" },
             { title: "Celebrity Guest", access: "VIP", knowledge: "None" },
-            { title: "Rival Chef", access: "None", knowledge: "Expert" }
+            { title: "Rival Chef", access: "None", knowledge: "Expert" },
+            { title: "Prep Cook", access: "Kitchen", knowledge: "Amateur" },
+            { title: "Head Waiter", access: "Service", knowledge: "Basic" },
+            { title: "Kitchen Manager", access: "Kitchen", knowledge: "Professional" },
+            { title: "Wine Supplier", access: "Limited", knowledge: "None" },
+            { title: "Health Inspector", access: "VIP", knowledge: "Basic" },
+            { title: "Pastry Chef", access: "Kitchen", knowledge: "Amateur" }
         ]
     }
 ];
@@ -628,24 +652,37 @@ function generateSuspects(seed, crime) {
         "Sarah Martin", "Roy Lee", "Hannah Anderson", "Lex Brown", "Aaron Johnson",
         "Neve Williams", "Cal Miller", "Faye Garcia", "David Rodriguez", "Elle Martinez",
         "Jonathan Smith", "Emily Taylor", "Charles Jones", "Ben Thomas", "Will Jackson",
-        "Sam White", "Juliette Harris"
+        "Sam White", "Juliette Harris", "Mike Chen", "Lisa Park", "Ryan Kumar",
+        "Nina Patel", "Oscar Blake", "Maya Singh", "Felix Wong", "Grace Kim",
+        "Victor Cruz", "Zoe Thompson", "Ian Foster", "Rita Sharma", "Noah Clark",
+        "Luna Martinez", "Ethan Scott", "Aria Nguyen", "Jake Rivera", "Chloe Adams"
     ];
     
     // Shuffle names based on seed to get different combinations each day
     const shuffledNames = [...names].sort(() => seededRandom(seed * 7) - 0.5);
     
-    // Take first 10 names for this puzzle
-    const selectedNames = shuffledNames.slice(0, 10);
+    // Take first 16 names for this puzzle (increased from 10)
+    const selectedNames = shuffledNames.slice(0, 16);
     
+    // Expand job list to support 16 suspects
     const jobs = crime.suspectJobs;
+    // If we don't have enough jobs, duplicate some with variations
+    while (jobs.length < 16) {
+        const baseJob = jobs[jobs.length % crime.suspectJobs.length];
+        jobs.push({
+            ...baseJob,
+            title: baseJob.title + " (Night Shift)" // Add variation
+        });
+    }
+    
     const traitCategories = getTraitCategories(crime);
     
     const suspects = [];
     const usedCombos = new Set();
     
     // Create diverse suspects with logical trait combinations
-    for (let i = 0; i < 10; i++) {
-        const job = jobs[i];
+    for (let i = 0; i < 16; i++) {
+        const job = jobs[i % jobs.length];
         let suspect;
         let combo;
         
@@ -1284,7 +1321,7 @@ function resetGameForNewScenario() {
     });
     
     // CRITICAL: Ensure at LEAST half the suspects could be the culprit based on initial info
-    const minFullMatches = 5;  // At least 5 suspects (including culprit) must fully match
+    const minFullMatches = 8;  // At least 8 suspects (including culprit) must fully match (50% of 16)
     
     if (fullMatches.length < minFullMatches) {
         // Force more suspects to match
@@ -1303,7 +1340,7 @@ function resetGameForNewScenario() {
         });
     }
     
-    // Select all 10 suspects (including culprit)
+    // Select all 16 suspects (including culprit)
     gameState.suspects = [...allSuspects];
     
     // Shuffle suspects
@@ -1505,7 +1542,7 @@ async function initGame() {
     });
     
     // CRITICAL: Ensure at LEAST half the suspects could be the culprit based on initial info
-    const minFullMatches = 5;  // At least 5 suspects (including culprit) must fully match
+    const minFullMatches = 8;  // At least 8 suspects (including culprit) must fully match (50% of 16)
     
     if (fullMatches.length < minFullMatches) {
         // Force more suspects to match
@@ -1524,7 +1561,7 @@ async function initGame() {
         });
     }
     
-    // Select all 10 suspects (including culprit)
+    // Select all 16 suspects (including culprit)
     gameState.suspects = [...allSuspects];
     
     // Shuffle suspects
