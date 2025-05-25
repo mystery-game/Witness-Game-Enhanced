@@ -1721,6 +1721,55 @@ const GameManager = (function() {
             for (let i = 0; i < numRuns; i++) {
                 // Cycle through all scenarios
                 const scenarioIndex = i % scenarioCount;
+                publicState.currentScenarioIndex = scenarioIndex;
+                publicState.devMode = true;
+                this.resetGame();
+                // Simulate random guesses until win or out of guesses
+                let guesses = 0;
+                let won = false;
+                while (!publicState.gameOver && guesses < DIFFICULTY_SETTINGS[publicState.difficulty].maxGuesses) {
+                    // Pick a random suspect not yet guessed
+                    const suspects = privateState.suspects.filter(s => !publicState.guesses.some(g => g.name === s.name));
+                    if (suspects.length === 0) break;
+                    const suspect = suspects[Math.floor(Math.random() * suspects.length)];
+                    const index = privateState.suspects.findIndex(s => s.name === suspect.name);
+                    this.makeGuess(index);
+                    guesses++;
+                    if (publicState.gameOver && publicState.won) won = true;
+                }
+                winCount += won ? 1 : 0;
+                totalViable += publicState.viableSuspectsCount;
+                const scenarioId = CRIME_SCENARIOS[scenarioIndex].id;
+                if (!themeStats[scenarioId]) themeStats[scenarioId] = { games: 0, wins: 0, viable: 0 };
+                themeStats[scenarioId].games++;
+                themeStats[scenarioId].wins += won ? 1 : 0;
+                themeStats[scenarioId].viable += publicState.viableSuspectsCount;
+                results.push({ scenario: scenarioId, won, viable: publicState.viableSuspectsCount });
+            }
+            // Summary
+            const winRate = (winCount / numRuns) * 100;
+            const avgViable = totalViable / numRuns;
+            console.log(`AI Test Results: ${numRuns} games`);
+            console.log(`Overall win rate: ${winRate.toFixed(1)}%`);
+            console.log(`Average viable suspects remaining: ${avgViable.toFixed(2)}`);
+            Object.entries(themeStats).forEach(([theme, stat]) => {
+                console.log(`Theme: ${theme} | Games: ${stat.games} | Win rate: ${(stat.wins/stat.games*100).toFixed(1)}% | Avg viable ${(stat.viable/stat.games).toFixed(2)}`);
+            });
+            // Prose summary
+            let prose = `\nSummary of AI findings after ${numRuns} games:\n`;
+            prose += `- Overall win rate: ${winRate.toFixed(1)}%.\n`;
+            prose += `- Average viable suspects remaining: ${avgViable.toFixed(2)}.\n`;
+            prose += `- Theme breakdown:\n`;
+            Object.entries(themeStats).forEach(([theme, stat]) => {
+                prose += `  - ${theme}: Win rate ${(stat.wins/stat.games*100).toFixed(1)}%, Avg viable ${(stat.viable/stat.games).toFixed(2)}\n`;
+            });
+            prose += `\nNo major issues detected, but review any themes with low win rates or high viable counts for balance tweaks.`;
+            console.log(prose);
+            return prose;
         }
     };
 })();
+
+if (typeof window !== 'undefined') {
+    window.runAITests = GameManager.runAITests;
+}
