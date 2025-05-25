@@ -201,6 +201,98 @@ const GameManager = (function() {
                 { title: "Health Inspector", access: "VIP", knowledge: "Basic" },
                 { title: "Pastry Chef", access: "Kitchen", knowledge: "Amateur" }
             ]
+        },
+        {
+            id: 'underwater_mystery',
+            title: "The Sunken Treasure Sabotage",
+            description: "A priceless artifact vanished from the deep-sea research base. Only those with access to the submersible bay could have done it. The theft occurred during a bioluminescent blackout.",
+            setting: 'underwater',
+            traits: {
+                access: ['Diver', 'Scientist', 'Technician', 'Visitor', 'None'],
+                timing: ['On Duty', 'Resting', 'Exploring', 'Logged', 'Missing'],
+                knowledge: ['Marine Expert', 'Engineer', 'Biologist', 'Basic', 'None'],
+                motive: ['Discovery', 'Profit', 'Sabotage', 'Curiosity', 'None'],
+                behavior: ['Secretive', 'Nervous', 'Calm', 'Helpful', 'Absent']
+            },
+            suspectJobs: [
+                { title: "Lead Diver", access: "Diver", knowledge: "Marine Expert" },
+                { title: "Marine Biologist", access: "Scientist", knowledge: "Biologist" },
+                { title: "Sub Technician", access: "Technician", knowledge: "Engineer" },
+                { title: "Tourist", access: "Visitor", knowledge: "None" },
+                { title: "Research Director", access: "Scientist", knowledge: "Marine Expert" },
+                { title: "Maintenance Crew", access: "Technician", knowledge: "Basic" },
+                { title: "Documentarian", access: "Visitor", knowledge: "Basic" },
+                { title: "Security Officer", access: "Diver", knowledge: "Engineer" }
+            ]
+        },
+        {
+            id: 'animal_escape',
+            title: "The Zoo Animal Escape",
+            description: "A rare animal has mysteriously escaped from the city zoo. Only those with access to the enclosures could have orchestrated it. The incident happened during the morning feeding.",
+            setting: 'zoo',
+            traits: {
+                access: ['Keeper', 'Vet', 'Volunteer', 'Visitor', 'None'],
+                timing: ['Feeding', 'Cleaning', 'Tour', 'Break', 'Absent'],
+                knowledge: ['Animal Expert', 'Medical', 'Basic', 'Limited', 'None'],
+                motive: ['Activism', 'Negligence', 'Profit', 'Curiosity', 'None'],
+                behavior: ['Nervous', 'Calm', 'Excited', 'Helpful', 'Missing']
+            },
+            suspectJobs: [
+                { title: "Head Keeper", access: "Keeper", knowledge: "Animal Expert" },
+                { title: "Veterinarian", access: "Vet", knowledge: "Medical" },
+                { title: "Volunteer", access: "Volunteer", knowledge: "Basic" },
+                { title: "Tourist", access: "Visitor", knowledge: "None" },
+                { title: "Animal Trainer", access: "Keeper", knowledge: "Animal Expert" },
+                { title: "Janitor", access: "Volunteer", knowledge: "Limited" },
+                { title: "Photographer", access: "Visitor", knowledge: "Basic" },
+                { title: "Security Guard", access: "Keeper", knowledge: "Basic" }
+            ]
+        },
+        {
+            id: 'space_station',
+            title: "The Space Station Sabotage",
+            description: "Critical systems were tampered with aboard the international space station. Only crew with access to engineering modules could have done it. The sabotage occurred during a solar storm blackout.",
+            setting: 'space',
+            traits: {
+                access: ['Commander', 'Engineer', 'Scientist', 'Visitor', 'None'],
+                timing: ['On Shift', 'Sleeping', 'Experiment', 'Logged', 'Missing'],
+                knowledge: ['Astro Expert', 'Engineer', 'Biologist', 'Basic', 'None'],
+                motive: ['Sabotage', 'Experiment', 'Profit', 'Curiosity', 'None'],
+                behavior: ['Secretive', 'Nervous', 'Calm', 'Helpful', 'Absent']
+            },
+            suspectJobs: [
+                { title: "Commander", access: "Commander", knowledge: "Astro Expert" },
+                { title: "Flight Engineer", access: "Engineer", knowledge: "Engineer" },
+                { title: "Mission Scientist", access: "Scientist", knowledge: "Biologist" },
+                { title: "Space Tourist", access: "Visitor", knowledge: "None" },
+                { title: "Payload Specialist", access: "Scientist", knowledge: "Engineer" },
+                { title: "Medical Officer", access: "Engineer", knowledge: "Basic" },
+                { title: "Communications Officer", access: "Commander", knowledge: "Basic" },
+                { title: "Security Officer", access: "Engineer", knowledge: "Engineer" }
+            ]
+        },
+        {
+            id: 'school_cheating',
+            title: "The School Exam Scandal",
+            description: "The answers to the final exam were leaked at the prestigious academy. Only those with access to the teacher's lounge could have done it. The leak happened during lunch break.",
+            setting: 'school',
+            traits: {
+                access: ['Teacher', 'Student', 'Staff', 'Visitor', 'None'],
+                timing: ['Class', 'Break', 'Lunch', 'Absent', 'Excused'],
+                knowledge: ['Subject Expert', 'Tutor', 'Basic', 'Limited', 'None'],
+                motive: ['Grades', 'Revenge', 'Money', 'Curiosity', 'None'],
+                behavior: ['Nervous', 'Calm', 'Excited', 'Helpful', 'Missing']
+            },
+            suspectJobs: [
+                { title: "Math Teacher", access: "Teacher", knowledge: "Subject Expert" },
+                { title: "Student Council", access: "Student", knowledge: "Tutor" },
+                { title: "Janitor", access: "Staff", knowledge: "Limited" },
+                { title: "Parent Visitor", access: "Visitor", knowledge: "None" },
+                { title: "Principal", access: "Staff", knowledge: "Subject Expert" },
+                { title: "Tutor", access: "Staff", knowledge: "Tutor" },
+                { title: "Exchange Student", access: "Student", knowledge: "Basic" },
+                { title: "Security Officer", access: "Staff", knowledge: "Basic" }
+            ]
         }
     ];
     
@@ -261,6 +353,62 @@ const GameManager = (function() {
                 '--font-family': '"Times New Roman", serif'
             },
             icon: '🍷'
+        },
+        underwater_mystery: {
+            name: 'Underwater Base',
+            cssVars: {
+                '--bg-gradient': 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
+                '--primary': '#00bcd4',
+                '--secondary': '#009688',
+                '--accent': '#00e5ff',
+                '--text': '#e0f7fa',
+                '--card-bg': 'rgba(0, 188, 212, 0.15)',
+                '--button-gradient': 'linear-gradient(145deg, #00e5ff, #009688)',
+                '--font-family': 'Trebuchet MS, sans-serif'
+            },
+            icon: '🌊'
+        },
+        animal_escape: {
+            name: 'City Zoo',
+            cssVars: {
+                '--bg-gradient': 'linear-gradient(135deg, #f7b733 0%, #fc4a1a 100%)',
+                '--primary': '#8d5524',
+                '--secondary': '#c68642',
+                '--accent': '#e0ac69',
+                '--text': '#4e342e',
+                '--card-bg': 'rgba(247, 183, 51, 0.15)',
+                '--button-gradient': 'linear-gradient(145deg, #fc4a1a, #f7b733)',
+                '--font-family': 'Verdana, sans-serif'
+            },
+            icon: '🦁'
+        },
+        space_station: {
+            name: 'Space Station',
+            cssVars: {
+                '--bg-gradient': 'linear-gradient(135deg, #232526 0%, #414345 100%)',
+                '--primary': '#ffffff',
+                '--secondary': '#00bcd4',
+                '--accent': '#ffeb3b',
+                '--text': '#e1f5fe',
+                '--card-bg': 'rgba(33, 150, 243, 0.15)',
+                '--button-gradient': 'linear-gradient(145deg, #00bcd4, #ffeb3b)',
+                '--font-family': 'Orbitron, sans-serif'
+            },
+            icon: '🚀'
+        },
+        school_cheating: {
+            name: 'Academy',
+            cssVars: {
+                '--bg-gradient': 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
+                '--primary': '#283e51',
+                '--secondary': '#485563',
+                '--accent': '#ffd200',
+                '--text': '#212121',
+                '--card-bg': 'rgba(255, 210, 0, 0.15)',
+                '--button-gradient': 'linear-gradient(145deg, #ffd200, #f7971e)',
+                '--font-family': 'Arial, sans-serif'
+            },
+            icon: '🏫'
         }
     };
     
@@ -1560,6 +1708,19 @@ const GameManager = (function() {
                 suspect: privateState.initialSuspect,
                 feedback: {}
             };
+        },
+        
+        // AI agent for automated testing
+        runAITests: async function(numRuns = 100) {
+            const results = [];
+            const scenarioCount = CRIME_SCENARIOS.length;
+            let winCount = 0;
+            let totalViable = 0;
+            let themeStats = {};
+
+            for (let i = 0; i < numRuns; i++) {
+                // Cycle through all scenarios
+                const scenarioIndex = i % scenarioCount;
         }
     };
 })();
