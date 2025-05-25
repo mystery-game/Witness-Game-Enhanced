@@ -14,14 +14,14 @@ app.use((req, res, next) => {
 
 // Main route - redirect to GUILTY game
 app.get('/', (req, res) => {
-    console.log('Serving guilty-game-v4-themed.html');
-    res.sendFile(path.join(__dirname, 'guilty-game-v4-themed.html'));
+    console.log('Serving guilty-game-v5-themed.html');
+    res.sendFile(path.join(__dirname, 'guilty-game-v5-themed.html'));
 });
 
 // Add route for GUILTY v3 (cleaned up version)
 app.get('/guilty-v3', (req, res) => {
-    console.log('Serving guilty-game-v4-themed.html');
-    const filePath = path.join(__dirname, 'guilty-game-v4-themed.html');
+    console.log('Serving guilty-game-v5-themed.html');
+    const filePath = path.join(__dirname, 'guilty-game-v5-themed.html');
     console.log('File path:', filePath);
     res.sendFile(filePath);
 });

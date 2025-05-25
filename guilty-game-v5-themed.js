@@ -181,6 +181,139 @@ const CRIME_SCENARIOS = [
     }
 ];
 
+// Visual themes for each crime scenario
+const CRIME_THEMES = {
+    museum_heist: {
+        name: 'Classical Museum',
+        background: 'linear-gradient(135deg, #8B4513 0%, #D2B48C 50%, #F5DEB3 100%)',
+        primaryColor: '#8B4513',
+        secondaryColor: '#D2B48C',
+        accentColor: '#DAA520',
+        textColor: '#2F1B14',
+        fontFamily: 'Georgia, serif',
+        icon: '🏛️',
+        cardBackground: 'rgba(245, 222, 179, 0.9)',
+        buttonStyle: {
+            background: 'linear-gradient(145deg, #DAA520, #B8860B)',
+            border: '2px solid #8B4513',
+            color: '#2F1B14'
+        }
+    },
+    tech_breach: {
+        name: 'Cyber Tech',
+        background: 'linear-gradient(135deg, #0F0F23 0%, #1a1a2e 50%, #16213e 100%)',
+        primaryColor: '#00ff41',
+        secondaryColor: '#0066cc',
+        accentColor: '#00ccff',
+        textColor: '#00ff41',
+        fontFamily: 'Courier New, monospace',
+        icon: '💻',
+        cardBackground: 'rgba(15, 15, 35, 0.9)',
+        buttonStyle: {
+            background: 'linear-gradient(145deg, #00ccff, #0066cc)',
+            border: '2px solid #00ff41',
+            color: '#0F0F23'
+        }
+    },
+    recipe_theft: {
+        name: 'Warm Bakery',
+        background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%)',
+        primaryColor: '#8B4513',
+        secondaryColor: '#D2691E',
+        accentColor: '#FF6B35',
+        textColor: '#4A2C2A',
+        fontFamily: 'Comic Sans MS, cursive',
+        icon: '🍞',
+        cardBackground: 'rgba(255, 210, 63, 0.9)',
+        buttonStyle: {
+            background: 'linear-gradient(145deg, #FF6B35, #D2691E)',
+            border: '2px solid #8B4513',
+            color: '#4A2C2A'
+        }
+    },
+    restaurant_poisoning: {
+        name: 'Elegant Restaurant',
+        background: 'linear-gradient(135deg, #2C1810 0%, #8B0000 50%, #4A0E0E 100%)',
+        primaryColor: '#FFD700',
+        secondaryColor: '#8B0000',
+        accentColor: '#DC143C',
+        textColor: '#FFD700',
+        fontFamily: 'Times New Roman, serif',
+        icon: '🍷',
+        cardBackground: 'rgba(139, 0, 0, 0.9)',
+        buttonStyle: {
+            background: 'linear-gradient(145deg, #FFD700, #DAA520)',
+            border: '2px solid #8B0000',
+            color: '#2C1810'
+        }
+    }
+};
+
+// Apply visual theme based on crime scenario
+function applyTheme(crimeId) {
+    const theme = CRIME_THEMES[crimeId];
+    if (!theme) return;
+
+    // Apply background gradient
+    document.body.style.background = theme.background;
+    document.body.style.fontFamily = theme.fontFamily;
+    document.body.style.color = theme.textColor;
+
+    // Update header with theme icon and colors
+    const header = document.querySelector('h1');
+    if (header) {
+        header.style.color = theme.primaryColor;
+        header.innerHTML = `${theme.icon} GUILTY ${theme.icon}`;
+    }
+
+    // Update subtitle
+    const subtitle = document.querySelector('.subtitle');
+    if (subtitle) {
+        subtitle.style.color = theme.secondaryColor;
+    }
+
+    // Style all cards
+    const cards = document.querySelectorAll('.card, .suspect-card, .guess-card');
+    cards.forEach(card => {
+        card.style.background = theme.cardBackground;
+        card.style.border = `2px solid ${theme.primaryColor}`;
+        card.style.color = theme.textColor;
+    });
+
+    // Style buttons
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.style.background = theme.buttonStyle.background;
+        button.style.border = theme.buttonStyle.border;
+        button.style.color = theme.buttonStyle.color;
+        button.style.fontFamily = theme.fontFamily;
+    });
+
+    // Style input fields
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.style.background = theme.cardBackground;
+        input.style.border = `1px solid ${theme.primaryColor}`;
+        input.style.color = theme.textColor;
+    });
+
+    // Style trait feedback
+    const traitElements = document.querySelectorAll('.trait');
+    traitElements.forEach(trait => {
+        trait.style.fontFamily = theme.fontFamily;
+    });
+
+    // Update modal backgrounds
+    const modals = document.querySelectorAll('.modal-content');
+    modals.forEach(modal => {
+        modal.style.background = theme.cardBackground;
+        modal.style.border = `3px solid ${theme.primaryColor}`;
+        modal.style.color = theme.textColor;
+    });
+
+    console.log(`Applied ${theme.name} theme for ${crimeId}`);
+}
+
 // Dynamic trait categories based on current crime
 function getTraitCategories(crime) {
     const baseCategories = {
@@ -1579,13 +1712,15 @@ async function initGame() {
     
     currentCrime = CRIME_SCENARIOS[crimeIndex];
     
+    // Apply visual theme for this crime scenario
+    applyTheme(currentCrime.id);
+    
     // Display crime info
     const period = getPuzzlePeriod();
     const estTime = getESTTime();
     const dateStr = estTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}`;
     document.getElementById('crimeDescription').textContent = currentCrime.description;
-    applyTheme(currentCrime);
     
     // Load stats
     loadStats();
@@ -2219,3 +2354,19 @@ window.resetGame = resetGame;
 window.getFeedbackForTrait = getFeedbackForTrait;
 window.makeGuess = makeGuess;
 window.toggleEliminationButton = toggleEliminationButton;
+
+// Initialize game when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('GUILTY v5 Themed - Initializing...');
+    
+    // Setup difficulty toggle
+    setupDifficultyToggle();
+    
+    // Setup developer mode if enabled
+    setupDevMode();
+    
+    // Initialize the game
+    initGame();
+    
+    console.log('GUILTY v5 Themed - Ready!');
+});

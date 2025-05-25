@@ -1690,7 +1690,7 @@ function generateTraitGuideHTML() {
         
         // Display exactly 5 values as a scale with dots
         traitArray.forEach((value, index) => {
-            const position = (index / 4) * 100; // Spread across 0-100%
+            const position = (index / 4) * 100; // Spread across 0-100
             const isFirst = index === 0;
             const isLast = index === 4;
             const hint = category.values[value] || '';
