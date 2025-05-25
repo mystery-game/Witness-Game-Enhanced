@@ -1196,7 +1196,7 @@ function resetGameForNewScenario() {
     const traitKeys = Object.keys(getTraitCategories(currentCrime));
     let greenCount;
     if (gameState.difficulty === 'easy') {
-        greenCount = 2;
+        greenCount = 1;  // Only 1 green trait for easy mode now
     } else if (gameState.difficulty === 'medium') {
         greenCount = 1;
     } else {
@@ -1232,10 +1232,10 @@ function resetGameForNewScenario() {
     // This prevents the culprit from being uniquely identifiable
     allSuspects.forEach((suspect, index) => {
         if (index !== culpritIndex) {
-            // 30-40% chance for other suspects to share the same pattern
+            // Increased chance for other suspects to share the same pattern
             const shareChance = seededRandom(seed + index * 100);
             
-            if (shareChance > 0.7) {
+            if (shareChance > 0.5) {  // Changed from 0.7 to 0.5 (50% chance)
                 // Share ALL green traits (exact matches)
                 greenTraits.forEach(trait => {
                     suspect[trait] = gameState.culprit[trait];
@@ -1245,7 +1245,7 @@ function resetGameForNewScenario() {
                 yellowTraits.forEach(yellowTrait => {
                     suspect[yellowTrait.trait] = yellowTrait.value;
                 });
-            } else if (shareChance > 0.4) {
+            } else if (shareChance > 0.2) {  // Changed from 0.4 to 0.2 (30% chance for partial)
                 // Share SOME of the pattern (to add complexity)
                 // Randomly share some green traits
                 greenTraits.forEach(trait => {
@@ -1264,7 +1264,7 @@ function resetGameForNewScenario() {
         }
     });
     
-    // Ensure at least 2-3 suspects (besides culprit) match the full pattern
+    // Ensure at least 4-5 suspects (besides culprit) match the full pattern
     const matchingPattern = allSuspects.filter((suspect, index) => {
         if (index === culpritIndex) return true; // culprit always matches
         
@@ -1280,10 +1280,11 @@ function resetGameForNewScenario() {
     });
     
     // If too few suspects match the pattern, force some to match
-    if (matchingPattern.length < 3) {
+    const minMatches = gameState.difficulty === 'easy' ? 4 : gameState.difficulty === 'medium' ? 6 : 7;  // More matches for harder modes
+    if (matchingPattern.length < minMatches) {
         let added = 0;
         allSuspects.forEach((suspect, index) => {
-            if (index !== culpritIndex && !matchingPattern.includes(suspect) && added < (3 - matchingPattern.length)) {
+            if (index !== culpritIndex && !matchingPattern.includes(suspect) && added < (minMatches - matchingPattern.length)) {
                 // Make this suspect match the pattern
                 greenTraits.forEach(trait => {
                     suspect[trait] = gameState.culprit[trait];
@@ -1292,6 +1293,25 @@ function resetGameForNewScenario() {
                     suspect[yellowTrait.trait] = yellowTrait.value;
                 });
                 added++;
+            }
+        });
+    }
+    
+    // For medium and hard modes, add more suspects with PARTIAL yellow matches
+    // This creates more confusion as you can't immediately eliminate them
+    if (gameState.difficulty !== 'easy') {
+        const partialMatchChance = gameState.difficulty === 'hard' ? 0.8 : 0.6;
+        allSuspects.forEach((suspect, index) => {
+            if (index !== culpritIndex && !matchingPattern.includes(suspect)) {
+                if (seededRandom(seed + index * 400) < partialMatchChance) {
+                    // Give them 1-2 of the yellow traits randomly
+                    const numYellowToShare = Math.floor(seededRandom(seed + index * 500) * 2) + 1;
+                    const yellowsToShare = [...yellowTraits].sort(() => seededRandom(seed + index * 600) - 0.5).slice(0, numYellowToShare);
+                    
+                    yellowsToShare.forEach(yellowTrait => {
+                        suspect[yellowTrait.trait] = yellowTrait.value;
+                    });
+                }
             }
         });
     }
@@ -1410,16 +1430,16 @@ async function initGame() {
     const traitKeys = Object.keys(getTraitCategories(currentCrime));
     let greenCount;
     if (gameState.difficulty === 'easy') {
-        greenCount = 2;
+        greenCount = 1;  // 1 green trait for easy mode
     } else if (gameState.difficulty === 'medium') {
-        greenCount = 1;
+        greenCount = 0;  // NO green traits for medium!
     } else {
-        greenCount = 1;
+        greenCount = 0;  // NO green traits for hard!
     }
     
-    // Randomly select which traits will be green
+    // Randomly select which traits will be green (if any)
     const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 1000) - 0.5);
-    const greenTraits = shuffledTraits.slice(0, greenCount);
+    const greenTraits = greenCount > 0 ? shuffledTraits.slice(0, greenCount) : [];
     
     // Generate initial suspect based on culprit
     gameState.initialSuspect = generateInitialSuspect(gameState.culprit, gameState.difficulty, seed, greenTraits);
@@ -1446,10 +1466,10 @@ async function initGame() {
     // This prevents the culprit from being uniquely identifiable
     allSuspects.forEach((suspect, index) => {
         if (index !== culpritIndex) {
-            // 30-40% chance for other suspects to share the same pattern
+            // Increased chance for other suspects to share the same pattern
             const shareChance = seededRandom(seed + index * 100);
             
-            if (shareChance > 0.7) {
+            if (shareChance > 0.5) {  // Changed from 0.7 to 0.5 (50% chance)
                 // Share ALL green traits (exact matches)
                 greenTraits.forEach(trait => {
                     suspect[trait] = gameState.culprit[trait];
@@ -1459,7 +1479,7 @@ async function initGame() {
                 yellowTraits.forEach(yellowTrait => {
                     suspect[yellowTrait.trait] = yellowTrait.value;
                 });
-            } else if (shareChance > 0.4) {
+            } else if (shareChance > 0.2) {  // Changed from 0.4 to 0.2 (30% chance for partial)
                 // Share SOME of the pattern (to add complexity)
                 // Randomly share some green traits
                 greenTraits.forEach(trait => {
@@ -1478,7 +1498,7 @@ async function initGame() {
         }
     });
     
-    // Ensure at least 2-3 suspects (besides culprit) match the full pattern
+    // Ensure at least 4-5 suspects (besides culprit) match the full pattern
     const matchingPattern = allSuspects.filter((suspect, index) => {
         if (index === culpritIndex) return true; // culprit always matches
         
@@ -1494,10 +1514,11 @@ async function initGame() {
     });
     
     // If too few suspects match the pattern, force some to match
-    if (matchingPattern.length < 3) {
+    const minMatches = gameState.difficulty === 'easy' ? 4 : gameState.difficulty === 'medium' ? 6 : 7;  // More matches for harder modes
+    if (matchingPattern.length < minMatches) {
         let added = 0;
         allSuspects.forEach((suspect, index) => {
-            if (index !== culpritIndex && !matchingPattern.includes(suspect) && added < (3 - matchingPattern.length)) {
+            if (index !== culpritIndex && !matchingPattern.includes(suspect) && added < (minMatches - matchingPattern.length)) {
                 // Make this suspect match the pattern
                 greenTraits.forEach(trait => {
                     suspect[trait] = gameState.culprit[trait];
@@ -1506,6 +1527,25 @@ async function initGame() {
                     suspect[yellowTrait.trait] = yellowTrait.value;
                 });
                 added++;
+            }
+        });
+    }
+    
+    // For medium and hard modes, add more suspects with PARTIAL yellow matches
+    // This creates more confusion as you can't immediately eliminate them
+    if (gameState.difficulty !== 'easy') {
+        const partialMatchChance = gameState.difficulty === 'hard' ? 0.8 : 0.6;
+        allSuspects.forEach((suspect, index) => {
+            if (index !== culpritIndex && !matchingPattern.includes(suspect)) {
+                if (seededRandom(seed + index * 400) < partialMatchChance) {
+                    // Give them 1-2 of the yellow traits randomly
+                    const numYellowToShare = Math.floor(seededRandom(seed + index * 500) * 2) + 1;
+                    const yellowsToShare = [...yellowTraits].sort(() => seededRandom(seed + index * 600) - 0.5).slice(0, numYellowToShare);
+                    
+                    yellowsToShare.forEach(yellowTrait => {
+                        suspect[yellowTrait.trait] = yellowTrait.value;
+                    });
+                }
             }
         });
     }
@@ -2124,17 +2164,17 @@ function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTra
     let greenCount, yellowCount;
     
     if (difficulty === 'easy') {
-        greenCount = 2;  // 2 exact matches
-        yellowCount = 2; // 2 close matches  
-        // 6 wrong - still challenging but more clues
+        greenCount = 1;  // 1 exact match
+        yellowCount = 2; // 2 close matches (reduced from 3)
+        // 7 wrong - still need deduction
     } else if (difficulty === 'medium') {
-        greenCount = 1;  // 1 exact match
-        yellowCount = 2; // 2 close matches
-        // 7 wrong - harder to narrow down
+        greenCount = 0;  // NO exact matches! 
+        yellowCount = 3; // 3 close matches
+        // 7 wrong - much harder, need to triangulate
     } else {
-        greenCount = 1;  // 1 exact match
-        yellowCount = 1; // 1 close match
-        // 8 wrong - very difficult
+        greenCount = 0;  // NO exact matches!
+        yellowCount = 2; // Only 2 close matches
+        // 8 wrong - very difficult, need careful deduction
     }
     
     // Use predetermined green traits or randomly decide
