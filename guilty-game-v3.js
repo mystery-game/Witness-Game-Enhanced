@@ -1929,8 +1929,8 @@ function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTra
     
     if (difficulty === 'easy') {
         greenCount = 2;  // 2 exact matches
-        yellowCount = 3; // 3 close matches
-        // 5 wrong - still challenging but more clues
+        yellowCount = 2; // 2 close matches  
+        // 6 wrong - still challenging but more clues
     } else if (difficulty === 'medium') {
         greenCount = 1;  // 1 exact match
         yellowCount = 2; // 2 close matches
