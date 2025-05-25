@@ -1263,77 +1263,117 @@ function resetGameForNewScenario() {
     // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
     // This prevents the culprit from being uniquely identifiable
     
-    // CRITICAL CHANGE: For ALL difficulty levels, ensure EVERY suspect could potentially match
+    // CRITICAL FIX: Suspects should be adjacent to CULPRIT, not match initial suspect's values
     allSuspects.forEach((suspect, index) => {
         if (index !== culpritIndex) {
-            // Force ALL suspects to have at least some matching traits
-            const shareType = seededRandom(seed + index * 100);
-            
-            if (shareType > 0.2) {  // 80% of suspects will fully or partially match
-                // Determine how much they match
-                const matchLevel = seededRandom(seed + index * 101);
+            // Each suspect needs traits that would produce similar feedback patterns
+            traitKeys.forEach(trait => {
+                const randomChoice = seededRandom(seed + index * 200 + trait.charCodeAt(0));
                 
-                if (matchLevel > 0.5) {  // 50% get FULL pattern match
-                    // Share ALL green traits (if any)
-                    greenTraits.forEach(trait => {
-                        suspect[trait] = gameState.culprit[trait];
-                    });
+                // Check what feedback the initial suspect shows
+                if (gameState.initialSuspect[trait] !== undefined && gameState.culprit[trait] !== undefined) {
+                    const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
                     
-                    // Share ALL yellow trait values
-                    yellowTraits.forEach(yellowTrait => {
-                        suspect[yellowTrait.trait] = yellowTrait.value;
-                    });
-                } else {  // 50% get partial pattern match
-                    // Always share green traits (if any) - these are exact matches
-                    greenTraits.forEach(trait => {
-                        suspect[trait] = gameState.culprit[trait];
-                    });
-                    
-                    // Share MOST yellow traits (leave 1 different for variation)
-                    if (yellowTraits.length > 1) {
-                        const yellowsToShare = [...yellowTraits].slice(0, yellowTraits.length - 1);
-                        yellowsToShare.forEach(yellowTrait => {
-                            suspect[yellowTrait.trait] = yellowTrait.value;
-                        });
-                    } else if (yellowTraits.length === 1) {
-                        // 70% chance to share the single yellow trait
-                        if (seededRandom(seed + index * 102) > 0.3) {
-                            suspect[yellowTraits[0].trait] = yellowTraits[0].value;
+                    if (initialFeedback === 'close') {
+                        // Initial suspect is adjacent to culprit
+                        // Make this suspect ALSO adjacent to culprit (not same as initial!)
+                        if (randomChoice > 0.2) { // 80% chance
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            const adjacentPositions = [];
+                            
+                            if (culpritPos > 0) adjacentPositions.push(culpritPos - 1);
+                            if (culpritPos < 4) adjacentPositions.push(culpritPos + 1);
+                            
+                            if (adjacentPositions.length > 0) {
+                                const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + index * 201 + trait.charCodeAt(0)) * adjacentPositions.length)];
+                                suspect[trait] = traitArray[chosenPos];
+                            }
+                        }
+                    } else if (initialFeedback === 'wrong') {
+                        // Initial suspect is far from culprit
+                        // Make this suspect also far from culprit
+                        if (randomChoice > 0.3) { // 70% chance
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            const farPositions = [];
+                            
+                            for (let i = 0; i < 5; i++) {
+                                if (Math.abs(i - culpritPos) >= 2) {
+                                    farPositions.push(i);
+                                }
+                            }
+                            
+                            if (farPositions.length > 0) {
+                                const chosenPos = farPositions[Math.floor(seededRandom(seed + index * 202 + trait.charCodeAt(0)) * farPositions.length)];
+                                suspect[trait] = traitArray[chosenPos];
+                            }
                         }
                     }
                 }
-            }
-            // The remaining 20% keep their original random traits
+            });
         }
     });
     
-    // Ensure minimum suspects match the FULL pattern (culprit could be any of them)
-    const fullMatches = allSuspects.filter((suspect, index) => {
-        // Check if suspect matches all green traits (if any)
-        const matchesGreen = greenTraits.length === 0 || greenTraits.every(trait => suspect[trait] === gameState.culprit[trait]);
+    // Count how many suspects produce identical feedback patterns to initial suspect
+    const identicalFeedback = allSuspects.filter(suspect => {
+        let identical = true;
         
-        // Check if suspect matches all yellow traits
-        const matchesYellow = yellowTraits.every(yellowTrait => 
-            suspect[yellowTrait.trait] === yellowTrait.value
-        );
+        traitKeys.forEach(trait => {
+            if (gameState.initialSuspect[trait] !== undefined && suspect[trait] !== undefined) {
+                const suspectFeedback = getFeedbackForTrait(suspect[trait], gameState.culprit[trait], trait);
+                const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+                
+                if (suspectFeedback !== initialFeedback) {
+                    identical = false;
+                }
+            }
+        });
         
-        return matchesGreen && matchesYellow;
+        return identical;
     });
     
-    // CRITICAL: Ensure at LEAST half the suspects could be the culprit based on initial info
-    const minFullMatches = 8;  // At least 8 suspects (including culprit) must fully match (50% of 16)
-    
-    if (fullMatches.length < minFullMatches) {
-        // Force more suspects to match
+    // Ensure at least 12 suspects (75%) produce similar feedback patterns
+    const minIdentical = 12;
+    if (identicalFeedback.length < minIdentical) {
         let added = 0;
         allSuspects.forEach((suspect, index) => {
-            if (!fullMatches.includes(suspect) && added < (minFullMatches - fullMatches.length)) {
-                // Make this suspect fully match the pattern
-                greenTraits.forEach(trait => {
-                    suspect[trait] = gameState.culprit[trait];
-                });
-                yellowTraits.forEach(yellowTrait => {
-                    suspect[yellowTrait.trait] = yellowTrait.value;
+            if (index !== culpritIndex && !identicalFeedback.includes(suspect) && added < (minIdentical - identicalFeedback.length)) {
+                // Force this suspect to produce identical feedback
+                traitKeys.forEach(trait => {
+                    if (gameState.initialSuspect[trait] !== undefined) {
+                        const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+                        
+                        if (initialFeedback === 'close') {
+                            // Make adjacent to culprit
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            
+                            if (culpritPos === 0) {
+                                suspect[trait] = traitArray[1];
+                            } else if (culpritPos === 4) {
+                                suspect[trait] = traitArray[3];
+                            } else {
+                                // Choose different adjacent position than initial suspect
+                                const initialPos = traitArray.indexOf(gameState.initialSuspect[trait]);
+                                if (initialPos < culpritPos) {
+                                    suspect[trait] = traitArray[culpritPos + 1];
+                                } else {
+                                    suspect[trait] = traitArray[culpritPos - 1];
+                                }
+                            }
+                        } else if (initialFeedback === 'wrong') {
+                            // Make far from culprit
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            
+                            if (culpritPos <= 2) {
+                                suspect[trait] = traitArray[4];
+                            } else {
+                                suspect[trait] = traitArray[0];
+                            }
+                        }
+                    }
                 });
                 added++;
             }
@@ -1484,77 +1524,117 @@ async function initGame() {
     // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
     // This prevents the culprit from being uniquely identifiable
     
-    // CRITICAL CHANGE: For ALL difficulty levels, ensure EVERY suspect could potentially match
+    // CRITICAL FIX: Suspects should be adjacent to CULPRIT, not match initial suspect's values
     allSuspects.forEach((suspect, index) => {
         if (index !== culpritIndex) {
-            // Force ALL suspects to have at least some matching traits
-            const shareType = seededRandom(seed + index * 100);
-            
-            if (shareType > 0.2) {  // 80% of suspects will fully or partially match
-                // Determine how much they match
-                const matchLevel = seededRandom(seed + index * 101);
+            // Each suspect needs traits that would produce similar feedback patterns
+            traitKeys.forEach(trait => {
+                const randomChoice = seededRandom(seed + index * 200 + trait.charCodeAt(0));
                 
-                if (matchLevel > 0.5) {  // 50% get FULL pattern match
-                    // Share ALL green traits (if any)
-                    greenTraits.forEach(trait => {
-                        suspect[trait] = gameState.culprit[trait];
-                    });
+                // Check what feedback the initial suspect shows
+                if (gameState.initialSuspect[trait] !== undefined && gameState.culprit[trait] !== undefined) {
+                    const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
                     
-                    // Share ALL yellow trait values
-                    yellowTraits.forEach(yellowTrait => {
-                        suspect[yellowTrait.trait] = yellowTrait.value;
-                    });
-                } else {  // 50% get partial pattern match
-                    // Always share green traits (if any) - these are exact matches
-                    greenTraits.forEach(trait => {
-                        suspect[trait] = gameState.culprit[trait];
-                    });
-                    
-                    // Share MOST yellow traits (leave 1 different for variation)
-                    if (yellowTraits.length > 1) {
-                        const yellowsToShare = [...yellowTraits].slice(0, yellowTraits.length - 1);
-                        yellowsToShare.forEach(yellowTrait => {
-                            suspect[yellowTrait.trait] = yellowTrait.value;
-                        });
-                    } else if (yellowTraits.length === 1) {
-                        // 70% chance to share the single yellow trait
-                        if (seededRandom(seed + index * 102) > 0.3) {
-                            suspect[yellowTraits[0].trait] = yellowTraits[0].value;
+                    if (initialFeedback === 'close') {
+                        // Initial suspect is adjacent to culprit
+                        // Make this suspect ALSO adjacent to culprit (not same as initial!)
+                        if (randomChoice > 0.2) { // 80% chance
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            const adjacentPositions = [];
+                            
+                            if (culpritPos > 0) adjacentPositions.push(culpritPos - 1);
+                            if (culpritPos < 4) adjacentPositions.push(culpritPos + 1);
+                            
+                            if (adjacentPositions.length > 0) {
+                                const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + index * 201 + trait.charCodeAt(0)) * adjacentPositions.length)];
+                                suspect[trait] = traitArray[chosenPos];
+                            }
+                        }
+                    } else if (initialFeedback === 'wrong') {
+                        // Initial suspect is far from culprit
+                        // Make this suspect also far from culprit
+                        if (randomChoice > 0.3) { // 70% chance
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            const farPositions = [];
+                            
+                            for (let i = 0; i < 5; i++) {
+                                if (Math.abs(i - culpritPos) >= 2) {
+                                    farPositions.push(i);
+                                }
+                            }
+                            
+                            if (farPositions.length > 0) {
+                                const chosenPos = farPositions[Math.floor(seededRandom(seed + index * 202 + trait.charCodeAt(0)) * farPositions.length)];
+                                suspect[trait] = traitArray[chosenPos];
+                            }
                         }
                     }
                 }
-            }
-            // The remaining 20% keep their original random traits
+            });
         }
     });
     
-    // Ensure minimum suspects match the FULL pattern (culprit could be any of them)
-    const fullMatches = allSuspects.filter((suspect, index) => {
-        // Check if suspect matches all green traits (if any)
-        const matchesGreen = greenTraits.length === 0 || greenTraits.every(trait => suspect[trait] === gameState.culprit[trait]);
+    // Count how many suspects produce identical feedback patterns to initial suspect
+    const identicalFeedback = allSuspects.filter(suspect => {
+        let identical = true;
         
-        // Check if suspect matches all yellow traits
-        const matchesYellow = yellowTraits.every(yellowTrait => 
-            suspect[yellowTrait.trait] === yellowTrait.value
-        );
+        traitKeys.forEach(trait => {
+            if (gameState.initialSuspect[trait] !== undefined && suspect[trait] !== undefined) {
+                const suspectFeedback = getFeedbackForTrait(suspect[trait], gameState.culprit[trait], trait);
+                const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+                
+                if (suspectFeedback !== initialFeedback) {
+                    identical = false;
+                }
+            }
+        });
         
-        return matchesGreen && matchesYellow;
+        return identical;
     });
     
-    // CRITICAL: Ensure at LEAST half the suspects could be the culprit based on initial info
-    const minFullMatches = 8;  // At least 8 suspects (including culprit) must fully match (50% of 16)
-    
-    if (fullMatches.length < minFullMatches) {
-        // Force more suspects to match
+    // Ensure at least 12 suspects (75%) produce similar feedback patterns
+    const minIdentical = 12;
+    if (identicalFeedback.length < minIdentical) {
         let added = 0;
         allSuspects.forEach((suspect, index) => {
-            if (!fullMatches.includes(suspect) && added < (minFullMatches - fullMatches.length)) {
-                // Make this suspect fully match the pattern
-                greenTraits.forEach(trait => {
-                    suspect[trait] = gameState.culprit[trait];
-                });
-                yellowTraits.forEach(yellowTrait => {
-                    suspect[yellowTrait.trait] = yellowTrait.value;
+            if (index !== culpritIndex && !identicalFeedback.includes(suspect) && added < (minIdentical - identicalFeedback.length)) {
+                // Force this suspect to produce identical feedback
+                traitKeys.forEach(trait => {
+                    if (gameState.initialSuspect[trait] !== undefined) {
+                        const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+                        
+                        if (initialFeedback === 'close') {
+                            // Make adjacent to culprit
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            
+                            if (culpritPos === 0) {
+                                suspect[trait] = traitArray[1];
+                            } else if (culpritPos === 4) {
+                                suspect[trait] = traitArray[3];
+                            } else {
+                                // Choose different adjacent position than initial suspect
+                                const initialPos = traitArray.indexOf(gameState.initialSuspect[trait]);
+                                if (initialPos < culpritPos) {
+                                    suspect[trait] = traitArray[culpritPos + 1];
+                                } else {
+                                    suspect[trait] = traitArray[culpritPos - 1];
+                                }
+                            }
+                        } else if (initialFeedback === 'wrong') {
+                            // Make far from culprit
+                            const traitArray = currentCrime.traits[trait];
+                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                            
+                            if (culpritPos <= 2) {
+                                suspect[trait] = traitArray[4];
+                            } else {
+                                suspect[trait] = traitArray[0];
+                            }
+                        }
+                    }
                 });
                 added++;
             }
