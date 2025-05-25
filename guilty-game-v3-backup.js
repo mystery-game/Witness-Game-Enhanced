@@ -4,24 +4,15 @@
 const DIFFICULTY_SETTINGS = {
     easy: {
         maxGuesses: 8,
-        name: 'Easy',
-        minViableSuspects: 12, // At least 12 suspects must remain viable after guess 1
-        minSecondGuessViable: 6,  // At least 6 suspects must remain viable after guess 2
-        yellowTraits: 2 // Number of "close" traits in initial suspect
+        name: 'Easy'
     },
     medium: {
         maxGuesses: 6,
-        name: 'Medium',
-        minViableSuspects: 14, // Harder - more suspects remain viable
-        minSecondGuessViable: 8,
-        yellowTraits: 1
+        name: 'Medium'
     },
     hard: {
         maxGuesses: 4,
-        name: 'Hard',
-        minViableSuspects: 15, // Nearly all suspects remain viable
-        minSecondGuessViable: 10,
-        yellowTraits: 1
+        name: 'Hard'
     }
 };
 
@@ -810,75 +801,6 @@ function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
     return 'wrong';
 }
 
-// Generate adjacent value (for yellow/close matches)
-function generateAdjacentValue(culpritValue, trait, seed) {
-    const traitArray = currentCrime.traits[trait];
-    const culpritPos = traitArray.indexOf(culpritValue);
-    
-    // Get valid adjacent positions
-    const adjacentPositions = [];
-    if (culpritPos > 0) adjacentPositions.push(culpritPos - 1);
-    if (culpritPos < traitArray.length - 1) adjacentPositions.push(culpritPos + 1);
-    
-    if (adjacentPositions.length === 0) {
-        return culpritValue; // Fallback
-    }
-    
-    const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0)) * adjacentPositions.length)];
-    return traitArray[chosenPos];
-}
-
-// Generate distant value (for gray/wrong matches)
-function generateDistantValue(culpritValue, trait, seed) {
-    const traitArray = currentCrime.traits[trait];
-    const culpritPos = traitArray.indexOf(culpritValue);
-    
-    // Find positions that are 2+ steps away
-    const distantPositions = [];
-    for (let i = 0; i < traitArray.length; i++) {
-        if (Math.abs(i - culpritPos) >= 2) {
-            distantPositions.push(i);
-        }
-    }
-    
-    if (distantPositions.length === 0) {
-        // Fallback: any position except culprit
-        const otherPositions = [];
-        for (let i = 0; i < traitArray.length; i++) {
-            if (i !== culpritPos) {
-                otherPositions.push(i);
-            }
-        }
-        if (otherPositions.length > 0) {
-            const chosenPos = otherPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 3) * otherPositions.length)];
-            return traitArray[chosenPos];
-        }
-        return culpritValue;
-    }
-    
-    const chosenPos = distantPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * distantPositions.length)];
-    return traitArray[chosenPos];
-}
-
-// Check if a suspect would produce similar feedback pattern
-function wouldProduceSimilarFeedback(suspect, culprit, targetFeedback, similarityThreshold = 0.75) {
-    const traitKeys = Object.keys(targetFeedback);
-    let matches = 0;
-    let total = 0;
-    
-    traitKeys.forEach(trait => {
-        if (suspect[trait] !== undefined && targetFeedback[trait] !== undefined) {
-            const suspectFeedback = getFeedbackForTrait(suspect[trait], culprit[trait], trait);
-            if (suspectFeedback === targetFeedback[trait]) {
-                matches++;
-            }
-            total++;
-        }
-    });
-    
-    return total > 0 && (matches / total) >= similarityThreshold;
-}
-
 // Timer functions
 function startTimer() {
     gameState.startTime = Date.now();
@@ -926,12 +848,6 @@ let gameState = {
     eliminatedSuspects: new Set(),  // Track eliminated suspects
     betaMode: false  // Add beta mode flag
 };
-
-// Check if dev mode is stuck and clear it
-if (localStorage.getItem('guiltyDevMode') === 'true' && !window.location.search.includes('dev=true')) {
-    console.log('Clearing stuck dev mode');
-    localStorage.removeItem('guiltyDevMode');
-}
 
 // Initialize game on load
 document.addEventListener('DOMContentLoaded', () => {
@@ -1344,33 +1260,6 @@ function resetGameForNewScenario() {
         }
     });
     
-    // Test viability of suspect configuration
-    const testViability = () => {
-        // Create feedback pattern from initial suspect
-        const initialFeedback = {};
-        traitKeys.forEach(trait => {
-            if (gameState.initialSuspect[trait] !== undefined) {
-                initialFeedback[trait] = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-            }
-        });
-        
-        // Count viable suspects after first guess
-        const viableAfterFirst = allSuspects.filter(suspect => 
-            wouldProduceSimilarFeedback(suspect, gameState.culprit, initialFeedback, 0.75)
-        );
-        
-        // Ensure we meet difficulty requirements
-        const difficultySettings = DIFFICULTY_SETTINGS[gameState.difficulty];
-        return viableAfterFirst.length >= difficultySettings.minViableSuspects;
-    };
-    
-    // If current configuration doesn't meet viability requirements, adjust suspects
-    if (!testViability()) {
-        // Add more yellow traits to increase chances of viable suspects
-        const additionalYellowTraits = shuffledTraits.slice(0, difficultySettings.yellowTraits - yellowTraits.length);
-        yellowTraits.push(...additionalYellowTraits);
-    }
-    
     // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
     // This prevents the culprit from being uniquely identifiable
     
@@ -1540,7 +1429,6 @@ async function initGame() {
     if (gameState.devMode && !gameState.betaMode) {
         // In dev mode (but not beta mode), use manual scenario selection
         crimeIndex = gameState.currentScenarioIndex;
-        console.log('Dev mode active, using scenario index:', crimeIndex);
     } else {
         // In normal mode or beta mode, use date-based selection
         const estTime = getESTTime();
@@ -1561,15 +1449,6 @@ async function initGame() {
         // This ensures each puzzle (2 per day) gets a unique scenario
         const puzzleNumber = (dayOfYear * 2) + periodMultiplier;
         crimeIndex = puzzleNumber % CRIME_SCENARIOS.length;
-        
-        console.log('Date-based selection:', {
-            estTime: estTime.toString(),
-            dayOfYear,
-            periodMultiplier,
-            puzzleNumber,
-            crimeIndex,
-            totalScenarios: CRIME_SCENARIOS.length
-        });
     }
     currentCrime = CRIME_SCENARIOS[crimeIndex];
     
@@ -1641,33 +1520,6 @@ async function initGame() {
             }
         }
     });
-    
-    // Test viability of suspect configuration
-    const testViability = () => {
-        // Create feedback pattern from initial suspect
-        const initialFeedback = {};
-        traitKeys.forEach(trait => {
-            if (gameState.initialSuspect[trait] !== undefined) {
-                initialFeedback[trait] = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-            }
-        });
-        
-        // Count viable suspects after first guess
-        const viableAfterFirst = allSuspects.filter(suspect => 
-            wouldProduceSimilarFeedback(suspect, gameState.culprit, initialFeedback, 0.75)
-        );
-        
-        // Ensure we meet difficulty requirements
-        const difficultySettings = DIFFICULTY_SETTINGS[gameState.difficulty];
-        return viableAfterFirst.length >= difficultySettings.minViableSuspects;
-    };
-    
-    // If current configuration doesn't meet viability requirements, adjust suspects
-    if (!testViability()) {
-        // Add more yellow traits to increase chances of viable suspects
-        const additionalYellowTraits = shuffledTraits.slice(0, difficultySettings.yellowTraits - yellowTraits.length);
-        yellowTraits.push(...additionalYellowTraits);
-    }
     
     // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
     // This prevents the culprit from being uniquely identifiable
@@ -2398,16 +2250,38 @@ window.toggleEliminationButton = toggleEliminationButton;
 // Generate initial suspect based on culprit and difficulty
 function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTraits = null) {
     const traitKeys = Object.keys(getTraitCategories(currentCrime));
-    const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
     
-    // NO GREEN TRAITS for any difficulty to prevent instant solutions
-    const greenCount = 0;
-    const yellowCount = difficultySettings.yellowTraits;
+    // Determine how many traits should match (green), be close (yellow), or be wrong (gray)
+    let greenCount, yellowCount;
     
-    // Distribute traits strategically
-    const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 2000) - 0.5);
-    const yellowTraits = shuffledTraits.slice(0, yellowCount);
-    const grayTraits = shuffledTraits.slice(yellowCount);
+    if (difficulty === 'easy') {
+        greenCount = 0;  // NO exact matches even in easy!
+        yellowCount = 3; // 3 close matches
+        // 7 wrong - need multiple guesses to narrow down
+    } else if (difficulty === 'medium') {
+        greenCount = 0;  // NO exact matches! 
+        yellowCount = 2; // Only 2 close matches
+        // 8 wrong - much harder, need to triangulate
+    } else {
+        greenCount = 0;  // NO exact matches!
+        yellowCount = 1; // Only 1 close match!
+        // 9 wrong - extremely difficult
+    }
+    
+    // Use predetermined green traits or randomly decide
+    let greenTraits, yellowTraits, grayTraits;
+    if (predeterminedGreenTraits) {
+        greenTraits = predeterminedGreenTraits;
+        const remainingTraits = traitKeys.filter(t => !greenTraits.includes(t));
+        const shuffledRemaining = [...remainingTraits].sort(() => seededRandom(seed + 1001) - 0.5);
+        yellowTraits = shuffledRemaining.slice(0, yellowCount);
+        grayTraits = shuffledRemaining.slice(yellowCount);
+    } else {
+        const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 1000) - 0.5);
+        greenTraits = shuffledTraits.slice(0, greenCount);
+        yellowTraits = shuffledTraits.slice(greenCount, greenCount + yellowCount);
+        grayTraits = shuffledTraits.slice(greenCount + yellowCount);
+    }
     
     // Create the initial suspect
     const initialSuspect = {
@@ -2421,12 +2295,85 @@ function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTra
     
     // Assign traits
     traitKeys.forEach(trait => {
-        if (yellowTraits.includes(trait)) {
-            // Close match - use adjacent value
-            initialSuspect[trait] = generateAdjacentValue(culprit[trait], trait, seed);
+        if (greenTraits.includes(trait)) {
+            // Exact match
+            initialSuspect[trait] = culprit[trait];
+        } else if (yellowTraits.includes(trait)) {
+            // Close match - but NEVER at extreme positions (0 or 4) to avoid giving away the answer
+            const culpritValue = culprit[trait];
+            const traitArray = currentCrime.traits[trait];
+            
+            if (traitArray && traitArray.length === 5) {
+                const culpritPosition = traitArray.indexOf(culpritValue);
+                
+                // Determine valid adjacent positions (avoiding extremes)
+                let possiblePositions = [];
+                
+                // If culprit is at position 0, initial suspect must be at position 1
+                if (culpritPosition === 0) {
+                    possiblePositions = [1];
+                }
+                // If culprit is at position 4, initial suspect must be at position 3
+                else if (culpritPosition === 4) {
+                    possiblePositions = [3];
+                }
+                // If culprit is at position 1, initial suspect can be at 0 or 2
+                // BUT we avoid 0 to prevent revealing too much
+                else if (culpritPosition === 1) {
+                    possiblePositions = [2]; // Only position 2, not 0
+                }
+                // If culprit is at position 3, initial suspect can be at 2 or 4
+                // BUT we avoid 4 to prevent revealing too much
+                else if (culpritPosition === 3) {
+                    possiblePositions = [2]; // Only position 2, not 4
+                }
+                // If culprit is at position 2 (middle), can be at 1 or 3
+                else if (culpritPosition === 2) {
+                    possiblePositions = [1, 3];
+                }
+                
+                // Pick a random valid position
+                if (possiblePositions.length > 0) {
+                    const chosenPosition = possiblePositions[Math.floor(seededRandom(seed + trait.charCodeAt(0)) * possiblePositions.length)];
+                    initialSuspect[trait] = traitArray[chosenPosition];
+                } else {
+                    // Fallback - should not happen
+                    initialSuspect[trait] = culpritValue;
+                }
+            } else {
+                // Fallback for non-standard trait arrays
+                initialSuspect[trait] = culpritValue;
+            }
         } else {
-            // Wrong match - use distant value
-            initialSuspect[trait] = generateDistantValue(culprit[trait], trait, seed);
+            // Gray - wrong value (not close) - must be 2+ positions away
+            const culpritValue = culprit[trait];
+            const traitArray = currentCrime.traits[trait];
+            
+            if (traitArray && traitArray.length === 5) {
+                const culpritPosition = traitArray.indexOf(culpritValue);
+                
+                // Find positions that are 2+ steps away
+                let farPositions = [];
+                for (let i = 0; i < 5; i++) {
+                    if (Math.abs(i - culpritPosition) >= 2) {
+                        farPositions.push(i);
+                    }
+                }
+                
+                // Pick a random far position
+                if (farPositions.length > 0) {
+                    const chosenPosition = farPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * farPositions.length)];
+                    initialSuspect[trait] = traitArray[chosenPosition];
+                } else {
+                    // Fallback - pick any different value
+                    const otherPositions = [0, 1, 2, 3, 4].filter(p => p !== culpritPosition);
+                    const chosenPosition = otherPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * otherPositions.length)];
+                    initialSuspect[trait] = traitArray[chosenPosition];
+                }
+            } else {
+                // Fallback for non-standard trait arrays
+                initialSuspect[trait] = culpritValue;
+            }
         }
     });
     

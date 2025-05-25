@@ -14,8 +14,8 @@ app.use((req, res, next) => {
 
 // Main route - redirect to GUILTY game
 app.get('/', (req, res) => {
-    console.log('Serving guilty-game-v2.html');
-    res.sendFile(path.join(__dirname, 'guilty-game-v2.html'));
+    console.log('Serving guilty-game-v3.html');
+    res.sendFile(path.join(__dirname, 'guilty-game-v3.html'));
 });
 
 // Add route for GUILTY v3 (cleaned up version)
@@ -35,6 +35,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`GUILTY game running on port ${PORT}`);
     console.log('Available routes:');
-    console.log('  / - GUILTY v2');
+    console.log('  / - GUILTY v3 (with dev mode fixes)');
     console.log('  /guilty-v3 - GUILTY v3 with beta testing');
 }); 
