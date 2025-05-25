@@ -860,6 +860,61 @@ function generateDistantValue(culpritValue, trait, seed) {
     return traitArray[chosenPos];
 }
 
+// Generate initial suspect with controlled feedback pattern
+function generateInitialSuspect(culprit, difficulty, seed, greenTraits) {
+    const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
+    const traitKeys = Object.keys(getTraitCategories(currentCrime));
+    const initialSuspect = {
+        name: "Initial Suspect",
+        job: "Unknown"
+    };
+    
+    // Shuffle traits for randomness
+    const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 2000) - 0.5);
+    
+    // Determine yellow traits count based on difficulty
+    const yellowCount = difficultySettings.yellowTraits;
+    let yellowTraitsAssigned = 0;
+    
+    shuffledTraits.forEach((trait, index) => {
+        const culpritValue = culprit[trait];
+        
+        if (!culpritValue) {
+            // Skip if culprit doesn't have this trait
+            return;
+        }
+        
+        // 70% chance to include this trait (30% missing data)
+        if (seededRandom(seed + index * 300) > 0.70) {
+            return; // Skip this trait
+        }
+        
+        // Determine if this should be a yellow trait
+        if (yellowTraitsAssigned < yellowCount && seededRandom(seed + index * 400) > 0.5) {
+            // Make it yellow (adjacent)
+            initialSuspect[trait] = generateAdjacentValue(culpritValue, trait, seed + index * 500);
+            yellowTraitsAssigned++;
+        } else {
+            // Make it gray (distant)
+            initialSuspect[trait] = generateDistantValue(culpritValue, trait, seed + index * 600);
+        }
+    });
+    
+    // Ensure we have enough yellow traits
+    if (yellowTraitsAssigned < yellowCount) {
+        const unassignedTraits = shuffledTraits.filter(trait => 
+            !initialSuspect[trait] && culprit[trait]
+        );
+        
+        for (let i = 0; i < Math.min(yellowCount - yellowTraitsAssigned, unassignedTraits.length); i++) {
+            const trait = unassignedTraits[i];
+            initialSuspect[trait] = generateAdjacentValue(culprit[trait], trait, seed + i * 700);
+        }
+    }
+    
+    return initialSuspect;
+}
+
 // Check if a suspect would produce similar feedback pattern
 function wouldProduceSimilarFeedback(suspect, culprit, targetFeedback, similarityThreshold = 0.75) {
     const traitKeys = Object.keys(targetFeedback);
@@ -927,17 +982,23 @@ let gameState = {
     betaMode: false  // Add beta mode flag
 };
 
-// Check if dev mode is stuck and clear it
-if (localStorage.getItem('guiltyDevMode') === 'true' && !window.location.search.includes('dev=true')) {
-    console.log('Clearing stuck dev mode');
-    localStorage.removeItem('guiltyDevMode');
-}
-
 // Initialize game on load
 document.addEventListener('DOMContentLoaded', () => {
-    setupDifficultyToggle();
-    setupDevMode();
-    initGame();
+    try {
+        console.log('Starting game initialization...');
+        setupDifficultyToggle();
+        setupDevMode();
+        initGame();
+        console.log('Game initialization complete');
+    } catch (error) {
+        console.error('Error during game initialization:', error);
+        console.error('Stack trace:', error.stack);
+        // Display error to user
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'background: #ff0000; color: white; padding: 20px; margin: 20px; border-radius: 10px;';
+        errorDiv.innerHTML = `<h3>Error Loading Game</h3><p>${error.message}</p><p>Please check the console for details.</p>`;
+        document.body.insertBefore(errorDiv, document.body.firstChild);
+    }
 });
 
 // Simple seeded random
@@ -1016,13 +1077,22 @@ window.changeDifficulty = function(newDifficulty) {
 
 // Setup developer mode
 function setupDevMode() {
-    // Check for dev mode in URL params or localStorage
+    // Check for dev mode in URL params
     const urlParams = new URLSearchParams(window.location.search);
-    const isDevMode = urlParams.get('dev') === 'true' || localStorage.getItem('guiltyDevMode') === 'true';
+    const devModeInUrl = urlParams.get('dev') === 'true';
+    const devModeInStorage = localStorage.getItem('guiltyDevMode') === 'true';
     
-    if (isDevMode) {
+    // Clear stuck dev mode if it's in storage but not in URL
+    if (devModeInStorage && !devModeInUrl) {
+        console.log('Clearing stuck dev mode from previous session');
+        localStorage.removeItem('guiltyDevMode');
+    }
+    
+    // Enable dev mode if requested via URL
+    if (devModeInUrl) {
         gameState.devMode = true;
         localStorage.setItem('guiltyDevMode', 'true');
+        console.log('Developer mode enabled');
         
         // Add dev controls
         const devControls = document.createElement('div');
@@ -1367,7 +1437,7 @@ function resetGameForNewScenario() {
     // If current configuration doesn't meet viability requirements, adjust suspects
     if (!testViability()) {
         // Add more yellow traits to increase chances of viable suspects
-        const additionalYellowTraits = shuffledTraits.slice(0, difficultySettings.yellowTraits - yellowTraits.length);
+        const additionalYellowTraits = shuffledTraits.slice(0, DIFFICULTY_SETTINGS[gameState.difficulty].yellowTraits - yellowTraits.length);
         yellowTraits.push(...additionalYellowTraits);
     }
     
@@ -1386,152 +1456,94 @@ function resetGameForNewScenario() {
                     const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
                     
                     if (initialFeedback === 'close') {
-                        // Initial suspect is adjacent to culprit
-                        // Make this suspect ALSO adjacent to culprit (not same as initial!)
-                        if (randomChoice > 0.2) { // 80% chance
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            const adjacentPositions = [];
-                            
-                            if (culpritPos > 0) adjacentPositions.push(culpritPos - 1);
-                            if (culpritPos < 4) adjacentPositions.push(culpritPos + 1);
-                            
-                            if (adjacentPositions.length > 0) {
-                                const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + index * 201 + trait.charCodeAt(0)) * adjacentPositions.length)];
+                        // FIXED: Properly distribute suspects to avoid trivial solving
+                        const traitArray = currentCrime.traits[trait];
+                        const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
+                        const initialPos = traitArray.indexOf(gameState.initialSuspect[trait]);
+                        
+                        // Get all positions that would show yellow when compared to culprit
+                        const yellowPositions = [];
+                        if (culpritPos > 0) yellowPositions.push(culpritPos - 1);
+                        if (culpritPos < traitArray.length - 1) yellowPositions.push(culpritPos + 1);
+                        
+                        // Mix suspects between:
+                        // 1. Same as initial (yellow when tested)
+                        // 2. Other yellow positions
+                        // 3. The culprit value (green when tested)
+                        // 4. Far values (gray when tested)
+                        
+                        const strategy = seededRandom(seed + index * 203 + trait.charCodeAt(1)) * 100;
+                        
+                        if (strategy < 25) {
+                            // 25%: Same as initial suspect (maintains yellow)
+                            suspect[trait] = gameState.initialSuspect[trait];
+                        } else if (strategy < 40 && yellowPositions.length > 1) {
+                            // 15%: Other yellow position (if available)
+                            const otherYellow = yellowPositions.filter(pos => pos !== initialPos);
+                            if (otherYellow.length > 0) {
+                                suspect[trait] = traitArray[otherYellow[Math.floor(seededRandom(seed + index * 204) * otherYellow.length)]];
+                            } else {
+                                suspect[trait] = gameState.initialSuspect[trait];
+                            }
+                        } else if (strategy < 55) {
+                            // 15%: Same as culprit (would show green)
+                            suspect[trait] = gameState.culprit[trait];
+                        } else {
+                            // 45%: Far value (would show gray)
+                            const grayPositions = [];
+                            for (let i = 0; i < traitArray.length; i++) {
+                                if (Math.abs(i - culpritPos) >= 2) {
+                                    grayPositions.push(i);
+                                }
+                            }
+                            if (grayPositions.length > 0) {
+                                const chosenPos = grayPositions[Math.floor(seededRandom(seed + index * 205) * grayPositions.length)];
                                 suspect[trait] = traitArray[chosenPos];
+                            } else {
+                                // Fallback if no gray positions
+                                suspect[trait] = gameState.initialSuspect[trait];
                             }
                         }
                     } else if (initialFeedback === 'wrong') {
-                        // Initial suspect is far from culprit
-                        // Make this suspect also far from culprit
-                        if (randomChoice > 0.3) { // 70% chance
+                        // For gray traits, distribute more randomly
+                        if (randomChoice > 0.3) {
+                            // 70% chance to change from initial suspect's value
                             const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            const farPositions = [];
-                            
-                            for (let i = 0; i < 5; i++) {
-                                if (Math.abs(i - culpritPos) >= 2) {
-                                    farPositions.push(i);
-                                }
-                            }
-                            
-                            if (farPositions.length > 0) {
-                                const chosenPos = farPositions[Math.floor(seededRandom(seed + index * 202 + trait.charCodeAt(0)) * farPositions.length)];
-                                suspect[trait] = traitArray[chosenPos];
+                            const availableValues = traitArray.filter(val => val !== gameState.initialSuspect[trait]);
+                            if (availableValues.length > 0) {
+                                suspect[trait] = availableValues[Math.floor(seededRandom(seed + index * 206) * availableValues.length)];
                             }
                         }
                     }
+                    // For 'correct' feedback, most suspects should have different values
+                } else if (suspect[trait] !== undefined) {
+                    // Trait exists on suspect but not initial - randomize it
+                    const traitArray = currentCrime.traits[trait];
+                    suspect[trait] = traitArray[Math.floor(seededRandom(seed + index * 207) * traitArray.length)];
                 }
             });
         }
     });
     
-    // Count how many suspects produce identical feedback patterns to initial suspect
-    const identicalFeedback = allSuspects.filter(suspect => {
-        let identical = true;
-        
+    // Ensure we have enough viable suspects for the difficulty
+    const finalViableCount = allSuspects.filter((suspect, idx) => {
+        if (idx === culpritIndex) return true;
+        const feedback = {};
         traitKeys.forEach(trait => {
-            if (gameState.initialSuspect[trait] !== undefined && suspect[trait] !== undefined) {
-                const suspectFeedback = getFeedbackForTrait(suspect[trait], gameState.culprit[trait], trait);
-                const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-                
-                if (suspectFeedback !== initialFeedback) {
-                    identical = false;
-                }
+            if (gameState.initialSuspect[trait] !== undefined) {
+                feedback[trait] = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
             }
         });
-        
-        return identical;
-    });
+        return wouldProduceSimilarFeedback(suspect, gameState.culprit, feedback, 0.7);
+    }).length;
     
-    // Ensure at least 12 suspects (75%) produce similar feedback patterns
-    const minIdentical = 12;
-    if (identicalFeedback.length < minIdentical) {
-        let added = 0;
-        allSuspects.forEach((suspect, index) => {
-            if (index !== culpritIndex && !identicalFeedback.includes(suspect) && added < (minIdentical - identicalFeedback.length)) {
-                // Force this suspect to produce identical feedback
-                traitKeys.forEach(trait => {
-                    if (gameState.initialSuspect[trait] !== undefined) {
-                        const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-                        
-                        if (initialFeedback === 'close') {
-                            // Make adjacent to culprit
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            
-                            if (culpritPos === 0) {
-                                suspect[trait] = traitArray[1];
-                            } else if (culpritPos === 4) {
-                                suspect[trait] = traitArray[3];
-                            } else {
-                                // Choose different adjacent position than initial suspect
-                                const initialPos = traitArray.indexOf(gameState.initialSuspect[trait]);
-                                if (initialPos < culpritPos) {
-                                    suspect[trait] = traitArray[culpritPos + 1];
-                                } else {
-                                    suspect[trait] = traitArray[culpritPos - 1];
-                                }
-                            }
-                        } else if (initialFeedback === 'wrong') {
-                            // Make far from culprit
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            
-                            if (culpritPos <= 2) {
-                                suspect[trait] = traitArray[4];
-                            } else {
-                                suspect[trait] = traitArray[0];
-                            }
-                        }
-                    }
-                });
-                added++;
-            }
-        });
-    }
+    console.log(`Puzzle viability: ${finalViableCount} suspects remain viable after initial suspect`);
     
-    // Select all 16 suspects (including culprit)
-    gameState.suspects = [...allSuspects];
-    
-    // Shuffle suspects
-    gameState.suspects.sort(() => seededRandom(seed + 100) - 0.5);
-    
-    if (gameState.devMode) {
-        document.getElementById('devCulpritInfo').textContent = `${gameState.culprit.name} (${gameState.culprit.job})`;
-        
-        // Load previous notes if any
-        const scenarioNotes = JSON.parse(localStorage.getItem('guiltyScenarioNotes') || '{}');
-        let noteKey = currentCrime.id;
-        
-        if (gameState.betaMode) {
-            const period = getPuzzlePeriod();
-            const estTime = getESTTime();
-            const betaTime = new Date(estTime.getTime() + (5 * 3600000));
-            const betaDateStr = betaTime.toISOString().split('T')[0];
-            noteKey = `beta_${betaDateStr}_${period}_${currentCrime.id}`;
-        }
-        
-        if (scenarioNotes[noteKey]) {
-            document.getElementById('devNotes').value = scenarioNotes[noteKey].notes;
-        } else {
-            document.getElementById('devNotes').value = '';
-        }
-    }
-    
-    // Display initial suspect
-    displayInitialSuspect();
-    
-    displaySuspects();
-    updateGuessCounter();
-    
-    // Start timer on first load
-    if (!gameState.startTime) {
-        startTimer();
-    }
+    // Keep only the 16 most diverse suspects
+    gameState.suspects = allSuspects;
 }
 
-// Initialize the game
+// Initialize the main game
 async function initGame() {
     const seed = getDailySeed();
     
@@ -1551,41 +1563,27 @@ async function initGame() {
             dateToUse = new Date(estTime.getTime() + (5 * 3600000)); // Add 5 hours for beta
         }
         
-        // Calculate day of year
-        const dayOfYear = Math.floor((dateToUse - new Date(dateToUse.getFullYear(), 0, 0)) / 86400000);
+        // Calculate day of year for scenario rotation
+        const startOfYear = new Date(dateToUse.getFullYear(), 0, 1);
+        const dayOfYear = Math.floor((dateToUse - startOfYear) / 86400000);
         
-        // Get period based on the time we're checking (AM = 0, PM = 1)
+        // Add period multiplier (AM = 0, PM = 1)
         const periodMultiplier = dateToUse.getHours() >= 12 ? 1 : 0;
         
-        // Calculate index using both day and period
-        // This ensures each puzzle (2 per day) gets a unique scenario
-        const puzzleNumber = (dayOfYear * 2) + periodMultiplier;
-        crimeIndex = puzzleNumber % CRIME_SCENARIOS.length;
+        // Each scenario gets 2 time slots (AM and PM)
+        const totalSlots = dayOfYear * 2 + periodMultiplier;
+        crimeIndex = totalSlots % CRIME_SCENARIOS.length;
         
-        console.log('Date-based selection:', {
-            estTime: estTime.toString(),
-            dayOfYear,
-            periodMultiplier,
-            puzzleNumber,
-            crimeIndex,
-            totalScenarios: CRIME_SCENARIOS.length
-        });
+        console.log(`Date-based selection: ${dateToUse.toISOString()}, slot ${totalSlots}, scenario ${crimeIndex}`);
     }
+    
     currentCrime = CRIME_SCENARIOS[crimeIndex];
     
     // Display crime info
     const period = getPuzzlePeriod();
     const estTime = getESTTime();
-    let displayTime = estTime;
-    
-    // Adjust display time if in beta mode
-    if (gameState.betaMode) {
-        displayTime = new Date(estTime.getTime() + (5 * 3600000));
-    }
-    
-    const dateStr = displayTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const betaPrefix = gameState.betaMode ? '🔮 BETA TEST - ' : '';
-    document.getElementById('crimeTitle').textContent = `${betaPrefix}${dateStr} ${period} Crime: ${currentCrime.title}`;
+    const dateStr = estTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}`;
     document.getElementById('crimeDescription').textContent = currentCrime.description;
     
     // Load stats
@@ -1594,239 +1592,137 @@ async function initGame() {
     // Check for first-time player
     checkFirstTimePlayer();
     
-    // Generate logical suspects
-    const allSuspects = generateSuspects(seed, currentCrime);
-    
-    // Pick culprit from all suspects (random)
-    const culpritIndex = Math.floor(seededRandom(seed) * allSuspects.length);
-    gameState.culprit = allSuspects[culpritIndex];
-    
-    // Ensure culprit has ALL traits (no missing information)
-    const allTraitKeys = Object.keys(getTraitCategories(currentCrime));
-    allTraitKeys.forEach(key => {
-        if (gameState.culprit[key] === undefined) {
-            // Assign a trait value for the culprit
-            const traitValues = currentCrime.traits[key];
-            gameState.culprit[key] = traitValues[Math.floor(seededRandom(seed + key.charCodeAt(0) * 100) * traitValues.length)];
-        }
-    });
-    
-    // Determine which traits will be green for the initial suspect
-    const traitKeys = Object.keys(getTraitCategories(currentCrime));
-    // NO GREEN TRAITS FOR ANY DIFFICULTY - makes it impossible to guess in 1-2 tries
-    const greenCount = 0;
-    const greenTraits = [];
-    
-    // Randomly select which traits will be green (if any)
-    const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 1000) - 0.5);
-    // const greenTraits = greenCount > 0 ? shuffledTraits.slice(0, greenCount) : [];  // REMOVED - duplicate declaration
-    
-    // Generate initial suspect based on culprit
-    gameState.initialSuspect = generateInitialSuspect(gameState.culprit, gameState.difficulty, seed, greenTraits);
-    
-    // After generating the initial suspect, we need to know which traits are yellow
-    // to ensure other suspects also match these patterns
-    const traitCategories = getTraitCategories(currentCrime);
-    const yellowTraits = [];
-    
-    // Identify which traits are yellow in the initial suspect
-    traitKeys.forEach(trait => {
-        if (gameState.initialSuspect[trait] !== undefined && gameState.culprit[trait] !== undefined) {
-            const feedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-            if (feedback === 'close') {
-                yellowTraits.push({
-                    trait: trait,
-                    value: gameState.initialSuspect[trait]
-                });
-            }
-        }
-    });
-    
-    // Test viability of suspect configuration
-    const testViability = () => {
-        // Create feedback pattern from initial suspect
-        const initialFeedback = {};
-        traitKeys.forEach(trait => {
-            if (gameState.initialSuspect[trait] !== undefined) {
-                initialFeedback[trait] = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-            }
-        });
-        
-        // Count viable suspects after first guess
-        const viableAfterFirst = allSuspects.filter(suspect => 
-            wouldProduceSimilarFeedback(suspect, gameState.culprit, initialFeedback, 0.75)
-        );
-        
-        // Ensure we meet difficulty requirements
-        const difficultySettings = DIFFICULTY_SETTINGS[gameState.difficulty];
-        return viableAfterFirst.length >= difficultySettings.minViableSuspects;
-    };
-    
-    // If current configuration doesn't meet viability requirements, adjust suspects
-    if (!testViability()) {
-        // Add more yellow traits to increase chances of viable suspects
-        const additionalYellowTraits = shuffledTraits.slice(0, difficultySettings.yellowTraits - yellowTraits.length);
-        yellowTraits.push(...additionalYellowTraits);
+    // If we've already generated suspects for this session, just display them
+    if (gameState.suspects.length > 0) {
+        displayInitialSuspect();
+        displaySuspects();
+        updateGuessCounter();
+        return;
     }
     
-    // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
-    // This prevents the culprit from being uniquely identifiable
+    // Otherwise, use resetGameForNewScenario to generate everything
+    resetGameForNewScenario();
     
-    // CRITICAL FIX: Suspects should be adjacent to CULPRIT, not match initial suspect's values
-    allSuspects.forEach((suspect, index) => {
-        if (index !== culpritIndex) {
-            // Each suspect needs traits that would produce similar feedback patterns
-            traitKeys.forEach(trait => {
-                const randomChoice = seededRandom(seed + index * 200 + trait.charCodeAt(0));
-                
-                // Check what feedback the initial suspect shows
-                if (gameState.initialSuspect[trait] !== undefined && gameState.culprit[trait] !== undefined) {
-                    const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-                    
-                    if (initialFeedback === 'close') {
-                        // Initial suspect is adjacent to culprit
-                        // Make this suspect ALSO adjacent to culprit (not same as initial!)
-                        if (randomChoice > 0.2) { // 80% chance
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            const adjacentPositions = [];
-                            
-                            if (culpritPos > 0) adjacentPositions.push(culpritPos - 1);
-                            if (culpritPos < 4) adjacentPositions.push(culpritPos + 1);
-                            
-                            if (adjacentPositions.length > 0) {
-                                const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + index * 201 + trait.charCodeAt(0)) * adjacentPositions.length)];
-                                suspect[trait] = traitArray[chosenPos];
-                            }
-                        }
-                    } else if (initialFeedback === 'wrong') {
-                        // Initial suspect is far from culprit
-                        // Make this suspect also far from culprit
-                        if (randomChoice > 0.3) { // 70% chance
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            const farPositions = [];
-                            
-                            for (let i = 0; i < 5; i++) {
-                                if (Math.abs(i - culpritPos) >= 2) {
-                                    farPositions.push(i);
-                                }
-                            }
-                            
-                            if (farPositions.length > 0) {
-                                const chosenPos = farPositions[Math.floor(seededRandom(seed + index * 202 + trait.charCodeAt(0)) * farPositions.length)];
-                                suspect[trait] = traitArray[chosenPos];
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    });
-    
-    // Count how many suspects produce identical feedback patterns to initial suspect
-    const identicalFeedback = allSuspects.filter(suspect => {
-        let identical = true;
-        
-        traitKeys.forEach(trait => {
-            if (gameState.initialSuspect[trait] !== undefined && suspect[trait] !== undefined) {
-                const suspectFeedback = getFeedbackForTrait(suspect[trait], gameState.culprit[trait], trait);
-                const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-                
-                if (suspectFeedback !== initialFeedback) {
-                    identical = false;
-                }
-            }
-        });
-        
-        return identical;
-    });
-    
-    // Ensure at least 12 suspects (75%) produce similar feedback patterns
-    const minIdentical = 12;
-    if (identicalFeedback.length < minIdentical) {
-        let added = 0;
-        allSuspects.forEach((suspect, index) => {
-            if (index !== culpritIndex && !identicalFeedback.includes(suspect) && added < (minIdentical - identicalFeedback.length)) {
-                // Force this suspect to produce identical feedback
-                traitKeys.forEach(trait => {
-                    if (gameState.initialSuspect[trait] !== undefined) {
-                        const initialFeedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-                        
-                        if (initialFeedback === 'close') {
-                            // Make adjacent to culprit
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            
-                            if (culpritPos === 0) {
-                                suspect[trait] = traitArray[1];
-                            } else if (culpritPos === 4) {
-                                suspect[trait] = traitArray[3];
-                            } else {
-                                // Choose different adjacent position than initial suspect
-                                const initialPos = traitArray.indexOf(gameState.initialSuspect[trait]);
-                                if (initialPos < culpritPos) {
-                                    suspect[trait] = traitArray[culpritPos + 1];
-                                } else {
-                                    suspect[trait] = traitArray[culpritPos - 1];
-                                }
-                            }
-                        } else if (initialFeedback === 'wrong') {
-                            // Make far from culprit
-                            const traitArray = currentCrime.traits[trait];
-                            const culpritPos = traitArray.indexOf(gameState.culprit[trait]);
-                            
-                            if (culpritPos <= 2) {
-                                suspect[trait] = traitArray[4];
-                            } else {
-                                suspect[trait] = traitArray[0];
-                            }
-                        }
-                    }
-                });
-                added++;
-            }
-        });
-    }
-    
-    // Select all 16 suspects (including culprit)
-    gameState.suspects = [...allSuspects];
-    
-    // Shuffle suspects
-    gameState.suspects.sort(() => seededRandom(seed + 100) - 0.5);
-    
-    if (gameState.devMode) {
-        document.getElementById('devCulpritInfo').textContent = `${gameState.culprit.name} (${gameState.culprit.job})`;
-        
-        // Load previous notes if any
-        const scenarioNotes = JSON.parse(localStorage.getItem('guiltyScenarioNotes') || '{}');
-        let noteKey = currentCrime.id;
-        
-        if (gameState.betaMode) {
-            const period = getPuzzlePeriod();
-            const estTime = getESTTime();
-            const betaTime = new Date(estTime.getTime() + (5 * 3600000));
-            const betaDateStr = betaTime.toISOString().split('T')[0];
-            noteKey = `beta_${betaDateStr}_${period}_${currentCrime.id}`;
-        }
-        
-        if (scenarioNotes[noteKey]) {
-            document.getElementById('devNotes').value = scenarioNotes[noteKey].notes;
-        } else {
-            document.getElementById('devNotes').value = '';
-        }
-    }
-    
-    // Display initial suspect
+    // Display everything
     displayInitialSuspect();
-    
     displaySuspects();
     updateGuessCounter();
+}
+
+// Display initial suspect with colored trait indicators
+function displayInitialSuspect() {
+    const existingDiv = document.getElementById('initialSuspect');
+    if (existingDiv) existingDiv.remove();
     
-    // Start timer on first load
-    if (!gameState.startTime) {
-        startTimer();
-    }
+    const initialDiv = document.createElement('div');
+    initialDiv.id = 'initialSuspect';
+    initialDiv.className = 'initial-suspect-section';
+    
+    const traitCategories = getTraitCategories(currentCrime);
+    const traitKeys = Object.keys(traitCategories);
+    
+    // Compare initial suspect to culprit to show colors
+    let traitHTML = '';
+    traitKeys.forEach(trait => {
+        if (gameState.initialSuspect[trait] !== undefined) {
+            const feedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+            const colorClass = feedback === 'correct' ? 'green' : feedback === 'close' ? 'yellow' : 'gray';
+            
+            traitHTML += `
+                <div class="initial-trait ${colorClass}">
+                    <div class="initial-trait-label">${traitCategories[trait].name}</div>
+                    <div class="initial-trait-value">${gameState.initialSuspect[trait]}</div>
+                </div>
+            `;
+        }
+    });
+    
+    initialDiv.innerHTML = `
+        <div class="initial-suspect-header">
+            <h3>Initial Suspect Profile</h3>
+            <p class="initial-suspect-note">This person is NOT guilty. Find who shares these trait patterns:</p>
+        </div>
+        <div class="initial-suspect-traits">
+            ${traitHTML}
+        </div>
+        <div class="color-legend">
+            <span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>
+            <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
+            <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
+        </div>
+        ${generateTraitGuideHTML()}
+    `;
+    
+    // Insert after crime box
+    document.querySelector('.crime-box').after(initialDiv);
+}
+
+// Generate trait guide HTML
+function generateTraitGuideHTML() {
+    const traitCategories = getTraitCategories(currentCrime);
+    
+    let html = `
+        <div class="trait-guide-section">
+            <div class="trait-guide-header">
+                <h4>Trait Value Reference</h4>
+                <p class="trait-guide-note">Adjacent values (↔) are considered "close" matches</p>
+            </div>
+            <div class="trait-guide-content">
+    `;
+    
+    // For each trait category
+    Object.entries(traitCategories).forEach(([key, category]) => {
+        html += `
+            <div class="trait-guide-item">
+                <div class="trait-guide-title">${category.name}</div>
+                <div class="trait-scale-container">
+                    <div class="trait-scale-line"></div>
+                    <div class="trait-scale-connector"></div>
+                    <div class="trait-values-scale">
+        `;
+        
+        // Get exactly 5 values in order from the trait array
+        const traitArray = currentCrime.traits[key];
+        if (!traitArray || traitArray.length !== 5) {
+            console.warn(`Trait ${key} does not have exactly 5 values:`, traitArray);
+        }
+        
+        // Display exactly 5 values as a scale with dots
+        traitArray.forEach((value, index) => {
+            const position = (index / 4) * 100; // Spread across 0-100%
+            const isFirst = index === 0;
+            const isLast = index === 4;
+            const hint = category.values[value] || '';
+            
+            html += `
+                <div class="trait-scale-item" style="left: ${position}%;">
+                    <div class="trait-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
+                    <div class="trait-scale-label" title="${hint}">${value}</div>
+                </div>
+            `;
+            
+            // Add proximity indicator between values (not on the last one)
+            if (index < 4) {
+                const nextPosition = ((index + 1) / 4) * 100;
+                const midPosition = (position + nextPosition) / 2;
+                html += `
+                    <div class="trait-proximity-arrow" style="left: ${midPosition}%;">
+                        ↔
+                    </div>
+                `;
+            }
+        });
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div></div>';
+    
+    return html;
 }
 
 // Display suspects with detailed info
@@ -1850,10 +1746,6 @@ function displaySuspects() {
         } else if (isEliminated) {
             card.classList.add('eliminated');
         }
-        
-        // Remove old click handlers
-        card.onclick = null;
-        card.oncontextmenu = null;
         
         // Add processing class if currently processing
         if (gameState.isProcessingGuess) {
@@ -1961,7 +1853,7 @@ async function makeGuess(suspectIndex) {
     }, 500);
 }
 
-// Display guess with improved feedback
+// Display guess with feedback
 function displayGuess(suspect) {
     const board = document.getElementById('gameBoard');
     const row = document.createElement('div');
@@ -1970,10 +1862,9 @@ function displayGuess(suspect) {
     const traitCategories = getTraitCategories(currentCrime);
     const traitKeys = Object.keys(traitCategories);
     
-    // Build feedback HTML dynamically - check ALL trait categories
+    // Build feedback HTML dynamically
     let feedbackHTML = '';
     traitKeys.forEach(key => {
-        // Create feedback for this trait (even if suspect doesn't have it)
         feedbackHTML += createTraitFeedback(key, suspect[key]);
     });
     
@@ -2066,7 +1957,7 @@ function endGame(won) {
         messageElement.innerHTML = `
             The culprit was <strong>${gameState.culprit.name}</strong> (${gameState.culprit.job})<br>
             <div class="culprit-reveal">
-                Key traits: ${gameState.culprit.access} access, ${gameState.culprit.timing} alibi, ${gameState.culprit.knowledge} security knowledge
+                Key traits: ${gameState.culprit.access} access, ${gameState.culprit.timing} alibi, ${gameState.culprit.knowledge} knowledge
             </div>
             <div style="margin-top: 10px; color: #888;">Time: ${timeString}</div>
         `;
@@ -2085,7 +1976,9 @@ function resetGame() {
     gameState.startTime = null;
     gameState.elapsedTime = 0;
     gameState.initialSuspect = null;
-    gameState.eliminatedSuspects = new Set();  // Clear eliminations
+    gameState.eliminatedSuspects = new Set();
+    gameState.suspects = [];
+    gameState.culprit = null;
     
     stopTimer();
     document.getElementById('timerDisplay').textContent = 'Time: 0:00';
@@ -2103,7 +1996,8 @@ function resetGame() {
 // Share results
 function shareResults() {
     const difficulty = DIFFICULTY_SETTINGS[gameState.difficulty].name;
-    let shareText = `GUILTY ${getDailySeed()} (${difficulty})\n\n`;
+    const period = getPuzzlePeriod();
+    let shareText = `GUILTY ${getDailySeed()} ${period} (${difficulty})\n\n`;
     
     if (gameState.won) {
         shareText += `Solved in ${gameState.currentGuess}/${DIFFICULTY_SETTINGS[gameState.difficulty].maxGuesses}!\n\n`;
@@ -2120,15 +2014,19 @@ function shareResults() {
                 if (feedback === 'correct') shareText += '🟩';
                 else if (feedback === 'close') shareText += '🟨';
                 else shareText += '⬜';
+            } else {
+                shareText += '⬜';
             }
         });
         shareText += '\n';
     });
     
-    shareText += '\nPlay at: ' + window.location.href;
+    shareText += '\nPlay at: ' + window.location.href.replace(/\?.*$/, ''); // Remove query params
     
     navigator.clipboard.writeText(shareText).then(() => {
         alert('Results copied to clipboard!');
+    }).catch(() => {
+        alert('Failed to copy to clipboard. Please try again.');
     });
 }
 
@@ -2147,7 +2045,7 @@ let playerStats = {
 };
 
 function loadStats() {
-    const saved = localStorage.getItem('guiltyStatsV2');
+    const saved = localStorage.getItem('guiltyStatsV3');
     if (saved) {
         playerStats = JSON.parse(saved);
     }
@@ -2155,35 +2053,34 @@ function loadStats() {
 }
 
 function saveStats() {
-    localStorage.setItem('guiltyStatsV2', JSON.stringify(playerStats));
+    localStorage.setItem('guiltyStatsV3', JSON.stringify(playerStats));
 }
 
 function updateStats(won) {
     const today = getDailySeed();
+    const period = getPuzzlePeriod();
+    const todayKey = `${today}_${period}`;
     
-    // Check if this is a new day
-    if (playerStats.lastPlayDate !== today) {
+    // Check if this is a new game
+    if (playerStats.lastPlayDate !== todayKey) {
         playerStats.gamesPlayed++;
         playerStats.difficultyStats[gameState.difficulty].played++;
-        
-        // Check if streak should continue
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdaySeed = yesterday.toISOString().split('T')[0];
         
         if (won) {
             playerStats.gamesWon++;
             playerStats.difficultyStats[gameState.difficulty].won++;
             
             // Update streak
-            if (playerStats.lastPlayDate === yesterdaySeed) {
-                // Played yesterday, continue streak
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdaySeed = yesterday.toISOString().split('T')[0].replace(/-/g, '');
+            
+            // Check both AM and PM of yesterday
+            if (playerStats.lastPlayDate && playerStats.lastPlayDate.startsWith(yesterdaySeed)) {
                 playerStats.currentStreak++;
             } else if (!playerStats.lastPlayDate) {
-                // First time playing
                 playerStats.currentStreak = 1;
             } else {
-                // Missed a day, restart streak
                 playerStats.currentStreak = 1;
             }
             
@@ -2191,11 +2088,10 @@ function updateStats(won) {
                 playerStats.maxStreak = playerStats.currentStreak;
             }
         } else {
-            // Lost the game, break the streak
             playerStats.currentStreak = 0;
         }
         
-        playerStats.lastPlayDate = today;
+        playerStats.lastPlayDate = todayKey;
         saveStats();
         updateStreakDisplay();
     }
@@ -2267,78 +2163,7 @@ function showReference() {
     const modal = document.getElementById('referenceModal');
     const display = document.getElementById('referenceDisplay');
     
-    const traitCategories = getTraitCategories(currentCrime);
-    
-    let html = `
-        <div class="reference-legend">
-            <div class="reference-legend-title">Understanding Trait Relationships</div>
-            <div class="reference-description">
-                Each trait has 5 possible values arranged on a scale. Values that are next to each other 
-                on the scale are considered "close" matches. The game will tell you if your guess is an 
-                exact match, close (adjacent on the scale), or not close.
-            </div>
-        </div>
-        <div class="reference-table">
-    `;
-    
-    // For each trait category
-    Object.entries(traitCategories).forEach(([key, category]) => {
-        html += `
-            <div class="reference-trait">
-                <div class="reference-trait-title">${category.name}</div>
-                <div class="reference-scale-container">
-                    <div class="reference-scale-line"></div>
-                    <div class="reference-scale-connector"></div>
-                    <div class="reference-values-scale">
-        `;
-        
-        // Get exactly 5 values in order from the trait array
-        const traitArray = currentCrime.traits[key];
-        if (!traitArray || traitArray.length !== 5) {
-            console.warn(`Trait ${key} does not have exactly 5 values:`, traitArray);
-        }
-        
-        // Map the trait array values to their data
-        const allValues = traitArray.map(value => ({
-            value,
-            hint: category.values[value] ? category.values[value].hint : ''
-        }));
-        
-        // Display exactly 5 values as a scale with dots
-        allValues.forEach((item, index) => {
-            const position = (index / 4) * 100; // Spread across 0-100%
-            const isFirst = index === 0;
-            const isLast = index === 4;
-            
-            html += `
-                <div class="reference-scale-item" style="left: ${position}%;">
-                    <div class="reference-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
-                    <div class="reference-scale-label" title="${item.hint}">${item.value}</div>
-                </div>
-            `;
-            
-            // Add proximity indicator between values (not on the last one)
-            if (index < 4) {
-                const nextPosition = ((index + 1) / 4) * 100;
-                const midPosition = (position + nextPosition) / 2;
-                html += `
-                    <div class="reference-proximity-arrow" style="left: ${midPosition}%;">
-                        ↔
-                    </div>
-                `;
-            }
-        });
-        
-        html += `
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    
-    display.innerHTML = html;
+    display.innerHTML = generateTraitGuideHTML();
     modal.style.display = 'flex';
 }
 
@@ -2360,7 +2185,6 @@ function hideTutorial() {
 function checkFirstTimePlayer() {
     const tutorialSeen = localStorage.getItem('guiltyTutorialSeen');
     if (!tutorialSeen) {
-        // Show tutorial for first-time players
         setTimeout(() => {
             showTutorial();
         }, 500);
@@ -2376,7 +2200,7 @@ function toggleElimination(suspectName) {
     }
 }
 
-// Toggle elimination with button (wrapper function for onclick)
+// Toggle elimination with button
 function toggleEliminationButton(suspectName) {
     toggleElimination(suspectName);
     displaySuspects();
@@ -2394,163 +2218,3 @@ window.resetGame = resetGame;
 window.getFeedbackForTrait = getFeedbackForTrait;
 window.makeGuess = makeGuess;
 window.toggleEliminationButton = toggleEliminationButton;
-
-// Generate initial suspect based on culprit and difficulty
-function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTraits = null) {
-    const traitKeys = Object.keys(getTraitCategories(currentCrime));
-    const difficultySettings = DIFFICULTY_SETTINGS[difficulty];
-    
-    // NO GREEN TRAITS for any difficulty to prevent instant solutions
-    const greenCount = 0;
-    const yellowCount = difficultySettings.yellowTraits;
-    
-    // Distribute traits strategically
-    const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 2000) - 0.5);
-    const yellowTraits = shuffledTraits.slice(0, yellowCount);
-    const grayTraits = shuffledTraits.slice(yellowCount);
-    
-    // Create the initial suspect
-    const initialSuspect = {
-        name: "Initial Suspect (Not Guilty)",
-        job: "Reference Profile",
-        suspicionScore: 0
-    };
-    
-    // Get trait categories for current crime
-    const traitCategories = getTraitCategories(currentCrime);
-    
-    // Assign traits
-    traitKeys.forEach(trait => {
-        if (yellowTraits.includes(trait)) {
-            // Close match - use adjacent value
-            initialSuspect[trait] = generateAdjacentValue(culprit[trait], trait, seed);
-        } else {
-            // Wrong match - use distant value
-            initialSuspect[trait] = generateDistantValue(culprit[trait], trait, seed);
-        }
-    });
-    
-    return initialSuspect;
-}
-
-// Generate trait guide HTML (reusable)
-function generateTraitGuideHTML() {
-    const traitCategories = getTraitCategories(currentCrime);
-    
-    let html = `
-        <div class="trait-guide-section">
-            <div class="trait-guide-header">
-                <h4>Trait Value Reference</h4>
-                <p class="trait-guide-note">Adjacent values (↔) are considered "close" matches</p>
-            </div>
-            <div class="trait-guide-content">
-    `;
-    
-    // For each trait category
-    Object.entries(traitCategories).forEach(([key, category]) => {
-        html += `
-            <div class="trait-guide-item">
-                <div class="trait-guide-title">${category.name}</div>
-                <div class="trait-scale-container">
-                    <div class="trait-scale-line"></div>
-                    <div class="trait-scale-connector"></div>
-                    <div class="trait-values-scale">
-        `;
-        
-        // Get exactly 5 values in order from the trait array
-        const traitArray = currentCrime.traits[key];
-        if (!traitArray || traitArray.length !== 5) {
-            console.warn(`Trait ${key} does not have exactly 5 values:`, traitArray);
-        }
-        
-        // Map the trait array values to their data
-        const allValues = traitArray.map(value => ({
-            value,
-            hint: category.values[value] ? category.values[value].hint : ''
-        }));
-        
-        // Display exactly 5 values as a scale with dots
-        allValues.forEach((item, index) => {
-            const position = (index / 4) * 100; // Spread across 0-100%
-            const isFirst = index === 0;
-            const isLast = index === 4;
-            
-            html += `
-                <div class="trait-scale-item" style="left: ${position}%;">
-                    <div class="trait-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
-                    <div class="trait-scale-label" title="${item.hint}">${item.value}</div>
-                </div>
-            `;
-            
-            // Add proximity indicator between values (not on the last one)
-            if (index < 4) {
-                const nextPosition = ((index + 1) / 4) * 100;
-                const midPosition = (position + nextPosition) / 2;
-                html += `
-                    <div class="trait-proximity-arrow" style="left: ${midPosition}%;">
-                        ↔
-                    </div>
-                `;
-            }
-        });
-        
-        html += `
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div></div>';
-    
-    return html;
-}
-
-// Display initial suspect with colored trait indicators
-function displayInitialSuspect() {
-    const existingDiv = document.getElementById('initialSuspect');
-    if (existingDiv) existingDiv.remove();
-    
-    const initialDiv = document.createElement('div');
-    initialDiv.id = 'initialSuspect';
-    initialDiv.className = 'initial-suspect-section';
-    
-    const traitCategories = getTraitCategories(currentCrime);
-    const traitKeys = Object.keys(traitCategories);
-    
-    // Compare initial suspect to culprit to show colors
-    let traitHTML = '';
-    traitKeys.forEach(trait => {
-        if (gameState.initialSuspect[trait] !== undefined) {
-            const feedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
-            const colorClass = feedback === 'correct' ? 'green' : feedback === 'close' ? 'yellow' : 'gray';
-            
-            traitHTML += `
-                <div class="initial-trait ${colorClass}">
-                    <div class="initial-trait-label">${traitCategories[trait].name}</div>
-                    <div class="initial-trait-value">${gameState.initialSuspect[trait]}</div>
-                </div>
-            `;
-        }
-    });
-    
-    initialDiv.innerHTML = `
-        <div class="initial-suspect-header">
-            <h3>Initial Suspect Profile</h3>
-            <p class="initial-suspect-note">This person is NOT guilty. Find who shares these trait patterns:</p>
-        </div>
-        <div class="initial-suspect-traits">
-            ${traitHTML}
-        </div>
-        <div class="color-legend">
-            <span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>
-            <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
-            <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
-        </div>
-        ${generateTraitGuideHTML()}
-    `;
-    
-    // Insert after crime box
-    document.querySelector('.crime-box').after(initialDiv);
-}
-  
