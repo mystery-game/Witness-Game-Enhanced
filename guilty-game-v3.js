@@ -2182,50 +2182,80 @@ function generateInitialSuspect(culprit, difficulty, seed, predeterminedGreenTra
             // Exact match
             initialSuspect[trait] = culprit[trait];
         } else if (yellowTraits.includes(trait)) {
-            // Close match - find a value within 1 suspicion level
+            // Close match - but NEVER at extreme positions (0 or 4) to avoid giving away the answer
             const culpritValue = culprit[trait];
-            const category = traitCategories[trait];
-            if (category && category.values[culpritValue]) {
-                const culpritSuspicion = category.values[culpritValue].suspicion;
-                const possibleValues = Object.entries(category.values)
-                    .filter(([value, data]) => {
-                        const diff = Math.abs(data.suspicion - culpritSuspicion);
-                        return diff === 1 && value !== culpritValue;
-                    })
-                    .map(([value]) => value);
+            const traitArray = currentCrime.traits[trait];
+            
+            if (traitArray && traitArray.length === 5) {
+                const culpritPosition = traitArray.indexOf(culpritValue);
                 
-                if (possibleValues.length > 0) {
-                    initialSuspect[trait] = possibleValues[Math.floor(seededRandom(seed + trait.charCodeAt(0)) * possibleValues.length)];
+                // Determine valid adjacent positions (avoiding extremes)
+                let possiblePositions = [];
+                
+                // If culprit is at position 0, initial suspect must be at position 1
+                if (culpritPosition === 0) {
+                    possiblePositions = [1];
+                }
+                // If culprit is at position 4, initial suspect must be at position 3
+                else if (culpritPosition === 4) {
+                    possiblePositions = [3];
+                }
+                // If culprit is at position 1, initial suspect can be at 0 or 2
+                // BUT we avoid 0 to prevent revealing too much
+                else if (culpritPosition === 1) {
+                    possiblePositions = [2]; // Only position 2, not 0
+                }
+                // If culprit is at position 3, initial suspect can be at 2 or 4
+                // BUT we avoid 4 to prevent revealing too much
+                else if (culpritPosition === 3) {
+                    possiblePositions = [2]; // Only position 2, not 4
+                }
+                // If culprit is at position 2 (middle), can be at 1 or 3
+                else if (culpritPosition === 2) {
+                    possiblePositions = [1, 3];
+                }
+                
+                // Pick a random valid position
+                if (possiblePositions.length > 0) {
+                    const chosenPosition = possiblePositions[Math.floor(seededRandom(seed + trait.charCodeAt(0)) * possiblePositions.length)];
+                    initialSuspect[trait] = traitArray[chosenPosition];
                 } else {
-                    // If no close values, pick a different value
-                    const allValues = Object.keys(category.values).filter(v => v !== culpritValue);
-                    initialSuspect[trait] = allValues[Math.floor(seededRandom(seed + trait.charCodeAt(0)) * allValues.length)];
+                    // Fallback - should not happen
+                    initialSuspect[trait] = culpritValue;
                 }
             } else {
-                initialSuspect[trait] = culprit[trait];
+                // Fallback for non-standard trait arrays
+                initialSuspect[trait] = culpritValue;
             }
         } else {
-            // Gray - wrong value (not close)
+            // Gray - wrong value (not close) - must be 2+ positions away
             const culpritValue = culprit[trait];
-            const category = traitCategories[trait];
-            if (category && category.values[culpritValue]) {
-                const culpritSuspicion = category.values[culpritValue].suspicion;
-                const possibleValues = Object.entries(category.values)
-                    .filter(([value, data]) => {
-                        const diff = Math.abs(data.suspicion - culpritSuspicion);
-                        return diff > 1 && value !== culpritValue;
-                    })
-                    .map(([value]) => value);
+            const traitArray = currentCrime.traits[trait];
+            
+            if (traitArray && traitArray.length === 5) {
+                const culpritPosition = traitArray.indexOf(culpritValue);
                 
-                if (possibleValues.length > 0) {
-                    initialSuspect[trait] = possibleValues[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * possibleValues.length)];
+                // Find positions that are 2+ steps away
+                let farPositions = [];
+                for (let i = 0; i < 5; i++) {
+                    if (Math.abs(i - culpritPosition) >= 2) {
+                        farPositions.push(i);
+                    }
+                }
+                
+                // Pick a random far position
+                if (farPositions.length > 0) {
+                    const chosenPosition = farPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * farPositions.length)];
+                    initialSuspect[trait] = traitArray[chosenPosition];
                 } else {
-                    // If no far values, pick any different value
-                    const allValues = Object.keys(category.values).filter(v => v !== culpritValue);
-                    initialSuspect[trait] = allValues[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * allValues.length)];
+                    // Fallback - pick any different value
+                    const otherPositions = [0, 1, 2, 3, 4].filter(p => p !== culpritPosition);
+                    const chosenPosition = otherPositions[Math.floor(seededRandom(seed + trait.charCodeAt(0) * 2) * otherPositions.length)];
+                    initialSuspect[trait] = traitArray[chosenPosition];
                 }
             } else {
-                initialSuspect[trait] = culprit[trait];
+                // Fallback for non-standard trait arrays
+                initialSuspect[trait] = culpritValue;
             }
         }
     });
