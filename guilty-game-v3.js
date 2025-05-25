@@ -1177,20 +1177,94 @@ function resetGameForNewScenario() {
     const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 1000) - 0.5);
     const greenTraits = shuffledTraits.slice(0, greenCount);
     
-    // Ensure multiple suspects share the culprit's green traits
-    allSuspects.forEach((suspect, index) => {
-        if (index !== culpritIndex) {
-            // 40% chance for other suspects to share green traits
-            if (seededRandom(seed + index * 100) > 0.6) {
-                greenTraits.forEach(trait => {
-                    suspect[trait] = gameState.culprit[trait];
+    // Generate initial suspect based on culprit
+    gameState.initialSuspect = generateInitialSuspect(gameState.culprit, gameState.difficulty, seed, greenTraits);
+    
+    // After generating the initial suspect, we need to know which traits are yellow
+    // to ensure other suspects also match these patterns
+    const traitCategories = getTraitCategories(currentCrime);
+    const yellowTraits = [];
+    
+    // Identify which traits are yellow in the initial suspect
+    traitKeys.forEach(trait => {
+        if (gameState.initialSuspect[trait] !== undefined && gameState.culprit[trait] !== undefined) {
+            const feedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+            if (feedback === 'close') {
+                yellowTraits.push({
+                    trait: trait,
+                    value: gameState.initialSuspect[trait]
                 });
             }
         }
     });
     
-    // Generate initial suspect based on culprit
-    gameState.initialSuspect = generateInitialSuspect(gameState.culprit, gameState.difficulty, seed, greenTraits);
+    // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
+    // This prevents the culprit from being uniquely identifiable
+    allSuspects.forEach((suspect, index) => {
+        if (index !== culpritIndex) {
+            // 30-40% chance for other suspects to share the same pattern
+            const shareChance = seededRandom(seed + index * 100);
+            
+            if (shareChance > 0.7) {
+                // Share ALL green traits (exact matches)
+                greenTraits.forEach(trait => {
+                    suspect[trait] = gameState.culprit[trait];
+                });
+                
+                // Also share yellow trait values
+                yellowTraits.forEach(yellowTrait => {
+                    suspect[yellowTrait.trait] = yellowTrait.value;
+                });
+            } else if (shareChance > 0.4) {
+                // Share SOME of the pattern (to add complexity)
+                // Randomly share some green traits
+                greenTraits.forEach(trait => {
+                    if (seededRandom(seed + index * 200 + trait.charCodeAt(0)) > 0.5) {
+                        suspect[trait] = gameState.culprit[trait];
+                    }
+                });
+                
+                // Randomly share some yellow traits
+                yellowTraits.forEach((yellowTrait, idx) => {
+                    if (seededRandom(seed + index * 300 + idx) > 0.5) {
+                        suspect[yellowTrait.trait] = yellowTrait.value;
+                    }
+                });
+            }
+        }
+    });
+    
+    // Ensure at least 2-3 suspects (besides culprit) match the full pattern
+    const matchingPattern = allSuspects.filter((suspect, index) => {
+        if (index === culpritIndex) return true; // culprit always matches
+        
+        // Check if suspect matches all green traits
+        const matchesGreen = greenTraits.every(trait => suspect[trait] === gameState.culprit[trait]);
+        
+        // Check if suspect matches all yellow traits
+        const matchesYellow = yellowTraits.every(yellowTrait => 
+            suspect[yellowTrait.trait] === yellowTrait.value
+        );
+        
+        return matchesGreen && matchesYellow;
+    });
+    
+    // If too few suspects match the pattern, force some to match
+    if (matchingPattern.length < 3) {
+        let added = 0;
+        allSuspects.forEach((suspect, index) => {
+            if (index !== culpritIndex && !matchingPattern.includes(suspect) && added < (3 - matchingPattern.length)) {
+                // Make this suspect match the pattern
+                greenTraits.forEach(trait => {
+                    suspect[trait] = gameState.culprit[trait];
+                });
+                yellowTraits.forEach(yellowTrait => {
+                    suspect[yellowTrait.trait] = yellowTrait.value;
+                });
+                added++;
+            }
+        });
+    }
     
     // Select all 10 suspects (including culprit)
     gameState.suspects = [...allSuspects];
@@ -1299,20 +1373,94 @@ async function initGame() {
     const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 1000) - 0.5);
     const greenTraits = shuffledTraits.slice(0, greenCount);
     
-    // Ensure multiple suspects share the culprit's green traits
-    allSuspects.forEach((suspect, index) => {
-        if (index !== culpritIndex) {
-            // 40% chance for other suspects to share green traits
-            if (seededRandom(seed + index * 100) > 0.6) {
-                greenTraits.forEach(trait => {
-                    suspect[trait] = gameState.culprit[trait];
+    // Generate initial suspect based on culprit
+    gameState.initialSuspect = generateInitialSuspect(gameState.culprit, gameState.difficulty, seed, greenTraits);
+    
+    // After generating the initial suspect, we need to know which traits are yellow
+    // to ensure other suspects also match these patterns
+    const traitCategories = getTraitCategories(currentCrime);
+    const yellowTraits = [];
+    
+    // Identify which traits are yellow in the initial suspect
+    traitKeys.forEach(trait => {
+        if (gameState.initialSuspect[trait] !== undefined && gameState.culprit[trait] !== undefined) {
+            const feedback = getFeedbackForTrait(gameState.initialSuspect[trait], gameState.culprit[trait], trait);
+            if (feedback === 'close') {
+                yellowTraits.push({
+                    trait: trait,
+                    value: gameState.initialSuspect[trait]
                 });
             }
         }
     });
     
-    // Generate initial suspect based on culprit
-    gameState.initialSuspect = generateInitialSuspect(gameState.culprit, gameState.difficulty, seed, greenTraits);
+    // Ensure multiple suspects share BOTH the culprit's green traits AND the initial suspect's yellow values
+    // This prevents the culprit from being uniquely identifiable
+    allSuspects.forEach((suspect, index) => {
+        if (index !== culpritIndex) {
+            // 30-40% chance for other suspects to share the same pattern
+            const shareChance = seededRandom(seed + index * 100);
+            
+            if (shareChance > 0.7) {
+                // Share ALL green traits (exact matches)
+                greenTraits.forEach(trait => {
+                    suspect[trait] = gameState.culprit[trait];
+                });
+                
+                // Also share yellow trait values
+                yellowTraits.forEach(yellowTrait => {
+                    suspect[yellowTrait.trait] = yellowTrait.value;
+                });
+            } else if (shareChance > 0.4) {
+                // Share SOME of the pattern (to add complexity)
+                // Randomly share some green traits
+                greenTraits.forEach(trait => {
+                    if (seededRandom(seed + index * 200 + trait.charCodeAt(0)) > 0.5) {
+                        suspect[trait] = gameState.culprit[trait];
+                    }
+                });
+                
+                // Randomly share some yellow traits
+                yellowTraits.forEach((yellowTrait, idx) => {
+                    if (seededRandom(seed + index * 300 + idx) > 0.5) {
+                        suspect[yellowTrait.trait] = yellowTrait.value;
+                    }
+                });
+            }
+        }
+    });
+    
+    // Ensure at least 2-3 suspects (besides culprit) match the full pattern
+    const matchingPattern = allSuspects.filter((suspect, index) => {
+        if (index === culpritIndex) return true; // culprit always matches
+        
+        // Check if suspect matches all green traits
+        const matchesGreen = greenTraits.every(trait => suspect[trait] === gameState.culprit[trait]);
+        
+        // Check if suspect matches all yellow traits
+        const matchesYellow = yellowTraits.every(yellowTrait => 
+            suspect[yellowTrait.trait] === yellowTrait.value
+        );
+        
+        return matchesGreen && matchesYellow;
+    });
+    
+    // If too few suspects match the pattern, force some to match
+    if (matchingPattern.length < 3) {
+        let added = 0;
+        allSuspects.forEach((suspect, index) => {
+            if (index !== culpritIndex && !matchingPattern.includes(suspect) && added < (3 - matchingPattern.length)) {
+                // Make this suspect match the pattern
+                greenTraits.forEach(trait => {
+                    suspect[trait] = gameState.culprit[trait];
+                });
+                yellowTraits.forEach(yellowTrait => {
+                    suspect[yellowTrait.trait] = yellowTrait.value;
+                });
+                added++;
+            }
+        });
+    }
     
     // Select all 10 suspects (including culprit)
     gameState.suspects = [...allSuspects];
