@@ -115,6 +115,36 @@ const CRIME_SCENARIOS = [
             { title: "Marketing Director", access: "Office", knowledge: "Basic" }
         ],
         easyHint: "Someone with kitchen access and baking knowledge is suspicious..."
+    },
+    {
+        id: 'restaurant_poisoning',
+        title: "The Five-Star Poisoning",
+        description: "Celebrity chef Marcus Beaumont was poisoned during the dinner service at Le Jardin restaurant. The poison was in his private wine glass, accessible only to staff and select guests between 7-8 PM.",
+        setting: 'restaurant',
+        traits: {
+            access: ['Kitchen', 'Service', 'VIP', 'Limited', 'None'],
+            timing: ['Working', 'Break', 'Dining', 'Documented', 'Absent'],
+            knowledge: ['Expert', 'Professional', 'Amateur', 'Basic', 'None'],
+            motive: ['Jealousy', 'Revenge', 'Inheritance', 'Competition', 'None'],
+            behavior: ['Agitated', 'Guilty', 'Shocked', 'Helpful', 'Calm'],
+            physical: ['Matches', 'Similar', 'Partial', 'Different', 'Excluded'],
+            tools: ['Has All', 'Has Some', 'Could Get', 'Limited', 'No Access'],
+            alibi: ['None', 'Weak', 'Partial', 'Strong', 'Verified'],
+            relationships: ['Hostile', 'Strained', 'Neutral', 'Friendly', 'Excellent'],
+            opportunity: ['Perfect', 'Good', 'Possible', 'Limited', 'None']
+        },
+        suspectJobs: [
+            { title: "Sous Chef", access: "Kitchen", knowledge: "Expert" },
+            { title: "Line Cook", access: "Kitchen", knowledge: "Professional" },
+            { title: "Sommelier", access: "Service", knowledge: "Professional" },
+            { title: "Restaurant Owner", access: "Kitchen", knowledge: "Amateur" },
+            { title: "Food Critic", access: "VIP", knowledge: "Amateur" },
+            { title: "Ex-Business Partner", access: "Limited", knowledge: "Basic" },
+            { title: "Apprentice Chef", access: "Kitchen", knowledge: "Professional" },
+            { title: "Waiter", access: "Service", knowledge: "Basic" },
+            { title: "Celebrity Guest", access: "VIP", knowledge: "None" },
+            { title: "Rival Chef", access: "None", knowledge: "Expert" }
+        ]
     }
 ];
 
@@ -1312,11 +1342,29 @@ async function initGame() {
     
     // Determine which crime scenario to use
     let crimeIndex;
-    if (gameState.devMode) {
+    if (gameState.devMode && !gameState.betaMode) {
+        // In dev mode (but not beta mode), use manual scenario selection
         crimeIndex = gameState.currentScenarioIndex;
     } else {
-        const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-        crimeIndex = dayOfYear % CRIME_SCENARIOS.length;
+        // In normal mode or beta mode, use date-based selection
+        const estTime = getESTTime();
+        let dateToUse = estTime;
+        
+        // In beta mode, look 5 hours ahead
+        if (gameState.betaMode) {
+            dateToUse = new Date(estTime.getTime() + (5 * 3600000)); // Add 5 hours for beta
+        }
+        
+        // Calculate day of year
+        const dayOfYear = Math.floor((dateToUse - new Date(dateToUse.getFullYear(), 0, 0)) / 86400000);
+        
+        // Get period based on the time we're checking (AM = 0, PM = 1)
+        const periodMultiplier = dateToUse.getHours() >= 12 ? 1 : 0;
+        
+        // Calculate index using both day and period
+        // This ensures each puzzle (2 per day) gets a unique scenario
+        const puzzleNumber = (dayOfYear * 2) + periodMultiplier;
+        crimeIndex = puzzleNumber % CRIME_SCENARIOS.length;
     }
     currentCrime = CRIME_SCENARIOS[crimeIndex];
     
