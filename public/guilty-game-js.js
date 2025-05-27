@@ -107,6 +107,18 @@
         };
     }
 
+    function generateSuspects() {
+        // Example: create a dummy suspects array
+        gameState.suspects = [
+            { role: 'Suspect', alibi: 'Home', motive: 'Greed' },
+            { role: 'Witness', alibi: 'Work', motive: 'Revenge' },
+            { role: 'Detective', alibi: 'Unknown', motive: 'Jealousy' }
+        ];
+        // Set a default culprit and initial suspect for demo purposes
+        gameState.culprit = gameState.suspects[0];
+        gameState.initialSuspect = gameState.suspects[1];
+    }
+
     // Initialize the game when the DOM is loaded
     document.addEventListener('DOMContentLoaded', initGame);
 })();
