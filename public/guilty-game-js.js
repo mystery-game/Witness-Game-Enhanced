@@ -1117,6 +1117,7 @@ const GameManager = (function() {
 })();
 
 window.GameManager = GameManager;
+console.log('GameManager exported:', window.GameManager);
 
 // document.addEventListener('DOMContentLoaded', function() {
 //     if (typeof GameManager.initGame === 'function') {
