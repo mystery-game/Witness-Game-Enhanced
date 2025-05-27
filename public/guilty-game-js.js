@@ -1116,6 +1116,8 @@ const GameManager = (function() {
     }
 })();
 
+window.GameManager = GameManager;
+
 // document.addEventListener('DOMContentLoaded', function() {
 //     if (typeof GameManager.initGame === 'function') {
 //         GameManager.initGame();
