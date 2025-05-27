@@ -96,6 +96,17 @@
         document.getElementById('suspectsSection').appendChild(container);
     }
 
+    function loadTheme() {
+        // Example default theme (should be replaced with your actual theme logic)
+        gameState.currentTheme = {
+            traits: {
+                role: ['Detective', 'Suspect', 'Witness'],
+                alibi: ['Home', 'Work', 'Unknown'],
+                motive: ['Revenge', 'Greed', 'Jealousy']
+            }
+        };
+    }
+
     // Initialize the game when the DOM is loaded
     document.addEventListener('DOMContentLoaded', initGame);
 })();
