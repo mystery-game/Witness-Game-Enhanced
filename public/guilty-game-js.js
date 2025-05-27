@@ -119,6 +119,10 @@
         gameState.initialSuspect = gameState.suspects[1];
     }
 
+    function startNextPuzzleTimer() {
+        // Placeholder: does nothing for now
+    }
+
     // Initialize the game when the DOM is loaded
     document.addEventListener('DOMContentLoaded', initGame);
 })();
