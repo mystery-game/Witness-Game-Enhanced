@@ -1099,11 +1099,15 @@
     <!-- Use only the external script -->
     <script src="public/guilty-game-js.js"></script>
     <script>
+    console.log('window.GameManager at script start:', window.GameManager);
     document.getElementById('start-game').addEventListener('click', function() {
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('game-screen').style.display = 'block';
-        if (typeof GameManager.initGame === 'function') {
-            GameManager.initGame();
+        if (typeof window.GameManager === 'object' && typeof window.GameManager.initGame === 'function') {
+            window.GameManager.initGame();
+        } else {
+            alert('GameManager is not loaded!');
+            console.error('GameManager:', window.GameManager);
         }
     });
     </script>
