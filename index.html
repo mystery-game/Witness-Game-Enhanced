@@ -119,6 +119,7 @@
             font-weight: 800;
             background: linear-gradient(135deg, var(--theme-gradient-start), var(--theme-gradient-end));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
             letter-spacing: -0.02em;
@@ -850,12 +851,14 @@
         .game-over.won #gameOverTitle {
             background: linear-gradient(135deg, #22c55e, #16a34a);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .game-over.lost #gameOverTitle {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -1093,6 +1096,7 @@
         <div id="aiResults" class="ai-results"></div>
     </div>
 
-    <script src="guilty-game-js.js"></script>
+    <!-- Use only the external script -->
+    <script src="public/guilty-game-js.js"></script>
 </body>
 </html>

@@ -1,16 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "guilty-game",
-  "version": "1.0.0",
-  "description": "A daily detective mystery game",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2"
-  }
-=======
   "name": "accepts",
   "description": "Higher-level content negotiation",
   "version": "1.3.8",
@@ -56,5 +44,4 @@
     "accept",
     "accepts"
   ]
->>>>>>> 2f46c56355087bd0c2a7404a4ab773cd1b7ba079
 }
