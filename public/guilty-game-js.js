@@ -58,11 +58,16 @@
         // Generate suspects and display initial suspect
         generateSuspects();
         displayInitialSuspect();
+        displaySuspects();
         startTimer();
     }
 
     // Display the initial suspect
     function displayInitialSuspect() {
+        const suspectsSection = document.getElementById('suspectsSection');
+        const oldSection = suspectsSection.querySelector('.initial-suspect-section');
+        if (oldSection) oldSection.remove();
+        
         const theme = gameState.currentTheme;
         const container = document.createElement('div');
         container.className = 'initial-suspect-section';
@@ -93,7 +98,7 @@
         html += '</div>';
         
         container.innerHTML = html;
-        document.getElementById('suspectsSection').appendChild(container);
+        suspectsSection.appendChild(container);
     }
 
     function loadTheme() {
@@ -121,6 +126,31 @@
 
     function startNextPuzzleTimer() {
         // Placeholder: does nothing for now
+    }
+
+    function displaySuspects() {
+        const grid = document.getElementById('suspectsGrid');
+        grid.innerHTML = '';
+        gameState.suspects.forEach((suspect, index) => {
+            const card = document.createElement('div');
+            card.className = 'suspect-card';
+            card.innerHTML = `
+                <div><strong>Role:</strong> ${suspect.role}</div>
+                <div><strong>Alibi:</strong> ${suspect.alibi}</div>
+                <div><strong>Motive:</strong> ${suspect.motive}</div>
+                <button onclick="accuseSuspect(${index})">Accuse</button>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function accuseSuspect(index) {
+        const suspect = gameState.suspects[index];
+        if (suspect === gameState.culprit) {
+            alert('Correct! You found the culprit!');
+        } else {
+            alert('Wrong suspect. Try again!');
+        }
     }
 
     // Initialize the game when the DOM is loaded
