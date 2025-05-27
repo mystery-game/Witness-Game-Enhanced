@@ -1116,8 +1116,8 @@ const GameManager = (function() {
     }
 })();
 
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof GameManager.initGame === 'function') {
-        GameManager.initGame();
-    }
-});
+// document.addEventListener('DOMContentLoaded', function() {
+//     if (typeof GameManager.initGame === 'function') {
+//         GameManager.initGame();
+//     }
+// });

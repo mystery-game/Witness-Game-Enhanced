@@ -1098,5 +1098,14 @@
 
     <!-- Use only the external script -->
     <script src="public/guilty-game-js.js"></script>
+    <script>
+    document.getElementById('start-game').addEventListener('click', function() {
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        if (typeof GameManager.initGame === 'function') {
+            GameManager.initGame();
+        }
+    });
+    </script>
 </body>
 </html>
