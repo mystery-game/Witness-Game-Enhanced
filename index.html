@@ -1097,8 +1097,8 @@
     </div>
 
     <!-- Use only the external script -->
-    <script src="public/guilty-game-js.js"></script>
-    <script>
+    <script src="public/guilty-game-js.js" defer></script>
+    <script defer>
     console.log('window.GameManager at script start:', window.GameManager);
     document.getElementById('start-game').addEventListener('click', function() {
         document.getElementById('main-menu').style.display = 'none';
