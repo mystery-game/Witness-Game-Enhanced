@@ -358,13 +358,18 @@ const GameManager = (function() {
             name: 'Underwater Base',
             cssVars: {
                 '--bg-gradient': 'linear-gradient(135deg, #0f2027 0%, #2c5364 100%)',
+                '--scenario-bg-img': 'url(https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80)',
+                '--card-border-radius': '30px',
                 '--primary': '#00bcd4',
                 '--secondary': '#009688',
                 '--accent': '#00e5ff',
                 '--text': '#e0f7fa',
                 '--card-bg': 'rgba(0, 188, 212, 0.15)',
                 '--button-gradient': 'linear-gradient(145deg, #00e5ff, #009688)',
-                '--font-family': 'Trebuchet MS, sans-serif'
+                '--font-family': 'Trebuchet MS, sans-serif',
+                '--scenario-icon': '"\\1F30A"', // 🌊 Unicode
+                '--card-border': '#00bcd4',
+                '--header-bg': 'rgba(0, 188, 212, 0.2)'
             },
             icon: '🌊'
         },
@@ -468,26 +473,28 @@ const GameManager = (function() {
     function applyTheme(crimeId) {
         const theme = CRIME_THEMES[crimeId];
         if (!theme) return;
-        
         const root = document.documentElement;
-        
-        // Set CSS variables with transition
         root.style.transition = 'all 0.3s ease-in-out';
-        
         Object.entries(theme.cssVars).forEach(([key, value]) => {
             root.style.setProperty(key, value);
         });
-        
-        // Add theme class
         document.body.className = `theme-${crimeId}`;
-        
         // Update header icon
         const header = document.querySelector('h1');
         if (header) {
             header.innerHTML = `${theme.icon} GUILTY ${theme.icon}`;
         }
-        
-        // Apply theme-specific styles
+        // Add scenario icon to suspect cards (example for underwater)
+        if (crimeId === 'underwater_mystery') {
+            document.querySelectorAll('.suspect-card').forEach(card => {
+                if (!card.querySelector('.scenario-icon')) {
+                    const iconDiv = document.createElement('div');
+                    iconDiv.className = 'scenario-icon';
+                    iconDiv.textContent = theme.icon;
+                    card.prepend(iconDiv);
+                }
+            });
+        }
         requestAnimationFrame(() => {
             document.querySelectorAll('.needs-theme').forEach(el => {
                 el.classList.add('themed');
@@ -1044,162 +1051,180 @@ const GameManager = (function() {
     return {
         // Initialize game
         init: function() {
-            const seed = getDailySeed();
-            
-            // Determine crime scenario
-            let crimeIndex;
-            if (publicState.devMode && !publicState.betaMode) {
-                crimeIndex = publicState.currentScenarioIndex;
-            } else {
-                const estTime = getESTTime();
-                let dateToUse = estTime;
+            try {
+                console.log('GameManager.init: starting');
+                const seed = getDailySeed();
                 
-                if (publicState.betaMode) {
-                    dateToUse = new Date(estTime.getTime() + (5 * 3600000));
+                // Determine crime scenario
+                let crimeIndex;
+                if (publicState.devMode && !publicState.betaMode) {
+                    crimeIndex = publicState.currentScenarioIndex;
+                } else {
+                    const estTime = getESTTime();
+                    let dateToUse = estTime;
+                    
+                    if (publicState.betaMode) {
+                        dateToUse = new Date(estTime.getTime() + (5 * 3600000));
+                    }
+                    
+                    const startOfYear = new Date(dateToUse.getFullYear(), 0, 1);
+                    const dayOfYear = Math.floor((dateToUse - startOfYear) / 86400000);
+                    const periodMultiplier = dateToUse.getHours() >= 12 ? 1 : 0;
+                    const totalSlots = dayOfYear * 2 + periodMultiplier;
+                    crimeIndex = totalSlots % CRIME_SCENARIOS.length;
                 }
                 
-                const startOfYear = new Date(dateToUse.getFullYear(), 0, 1);
-                const dayOfYear = Math.floor((dateToUse - startOfYear) / 86400000);
-                const periodMultiplier = dateToUse.getHours() >= 12 ? 1 : 0;
-                const totalSlots = dayOfYear * 2 + periodMultiplier;
-                crimeIndex = totalSlots % CRIME_SCENARIOS.length;
+                currentCrime = CRIME_SCENARIOS[crimeIndex];
+                
+                // Apply theme before rendering
+                requestAnimationFrame(() => {
+                    applyTheme(currentCrime.id);
+                });
+                
+                // Display crime info
+                const period = getPuzzlePeriod();
+                const estTime = getESTTime();
+                const dateStr = estTime.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}`;
+                document.getElementById('crimeDescription').textContent = currentCrime.description;
+                
+                // Load stats
+                // loadStats(); // COMMENTED OUT - not defined
+                // checkFirstTimePlayer(); // COMMENTED OUT - not defined
+                
+                // Generate puzzle if needed
+                if (privateState.suspects.length === 0) {
+                    this.generateNewPuzzle();
+                }
+                
+                // Display everything
+                this.displayInitialSuspect();
+                this.displaySuspects();
+                this.updateGuessCounter();
+                this.updateConfidenceDisplay();
+                console.log('GameManager.init: finished');
+            } catch (e) {
+                console.error('Error in GameManager.init:', e);
             }
-            
-            currentCrime = CRIME_SCENARIOS[crimeIndex];
-            
-            // Apply theme before rendering
-            requestAnimationFrame(() => {
-                applyTheme(currentCrime.id);
-            });
-            
-            // Display crime info
-            const period = getPuzzlePeriod();
-            const estTime = getESTTime();
-            const dateStr = estTime.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-            });
-            
-            document.getElementById('crimeTitle').textContent = `${dateStr} ${period} Crime: ${currentCrime.title}`;
-            document.getElementById('crimeDescription').textContent = currentCrime.description;
-            
-            // Load stats
-            loadStats();
-            
-            // Check for first-time player
-            checkFirstTimePlayer();
-            
-            // Generate puzzle if needed
-            if (privateState.suspects.length === 0) {
-                this.generateNewPuzzle();
-            }
-            
-            // Display everything
-            this.displayInitialSuspect();
-            this.displaySuspects();
-            this.updateGuessCounter();
-            this.updateConfidenceDisplay();
         },
         
         // Generate new puzzle
         generateNewPuzzle: function() {
-            const seed = getDailySeed();
-            
-            // Clear feedback cache
-            feedbackCache.clear();
-            
-            // Generate suspects
-            const allSuspects = generateSuspects(seed, currentCrime);
-            
-            // Pick culprit
-            const culpritIndex = Math.floor(seededRandom(seed) * allSuspects.length);
-            privateState.culprit = allSuspects[culpritIndex];
-            
-            // Ensure culprit has ALL traits
-            const traitKeys = Object.keys(getTraitCategories(currentCrime));
-            traitKeys.forEach(key => {
-                if (privateState.culprit[key] === undefined) {
-                    const traitValues = currentCrime.traits[key];
-                    privateState.culprit[key] = traitValues[Math.floor(seededRandom(seed + key.charCodeAt(0) * 100) * traitValues.length)];
+            try {
+                console.log('GameManager.generateNewPuzzle: starting');
+                const seed = getDailySeed();
+                
+                // Clear feedback cache
+                feedbackCache.clear();
+                
+                // Generate suspects
+                const allSuspects = generateSuspects(seed, currentCrime);
+                console.log('Suspects generated:', allSuspects);
+                
+                // Pick culprit
+                const culpritIndex = Math.floor(seededRandom(seed) * allSuspects.length);
+                privateState.culprit = allSuspects[culpritIndex];
+                
+                // Ensure culprit has ALL traits
+                const traitKeys = Object.keys(getTraitCategories(currentCrime));
+                traitKeys.forEach(key => {
+                    if (privateState.culprit[key] === undefined) {
+                        const traitValues = currentCrime.traits[key];
+                        privateState.culprit[key] = traitValues[Math.floor(seededRandom(seed + key.charCodeAt(0) * 100) * traitValues.length)];
+                    }
+                });
+                
+                // Generate initial suspect
+                privateState.initialSuspect = generateInitialSuspect(privateState.culprit, publicState.difficulty, seed);
+                
+                // Distribute traits among suspects for balance
+                privateState.suspects = distributeSuspectTraits(allSuspects, privateState.culprit, privateState.initialSuspect, seed);
+                console.log('Culprit:', privateState.culprit);
+                console.log('Initial suspect:', privateState.initialSuspect);
+                console.log('Suspects after distribution:', privateState.suspects);
+                
+                // Start timer on first interaction
+                if (!publicState.startTime) {
+                    startTimer();
                 }
-            });
-            
-            // Generate initial suspect
-            privateState.initialSuspect = generateInitialSuspect(privateState.culprit, publicState.difficulty, seed);
-            
-            // Distribute traits among suspects for balance
-            privateState.suspects = distributeSuspectTraits(allSuspects, privateState.culprit, privateState.initialSuspect, seed);
-            
-            // Start timer on first interaction
-            if (!publicState.startTime) {
-                startTimer();
+                console.log('GameManager.generateNewPuzzle: finished');
+            } catch (e) {
+                console.error('Error in GameManager.generateNewPuzzle:', e);
             }
         },
         
         // Display initial suspect
         displayInitialSuspect: function() {
-            const existingDiv = document.getElementById('initialSuspect');
-            if (existingDiv) existingDiv.remove();
-            
-            const initialDiv = document.createElement('div');
-            initialDiv.id = 'initialSuspect';
-            initialDiv.className = 'initial-suspect-section needs-theme';
-            
-            const traitCategories = getTraitCategories(currentCrime);
-            const traitKeys = Object.keys(traitCategories);
-            
-            let traitHTML = '';
-            traitKeys.forEach(trait => {
-                if (privateState.initialSuspect[trait] !== undefined) {
-                    const feedback = getFeedbackForTrait(
-                        privateState.initialSuspect[trait], 
-                        privateState.culprit[trait], 
-                        trait
-                    );
-                    const colorClass = feedback === 'correct' ? 'green' : feedback === 'close' ? 'yellow' : 'gray';
-                    
-                    traitHTML += `
-                        <div class="initial-trait ${colorClass}">
-                            <div class="initial-trait-label">${traitCategories[trait].name}</div>
-                            <div class="initial-trait-value">${privateState.initialSuspect[trait]}</div>
-                        </div>
-                    `;
-                }
-            });
-            
-            initialDiv.innerHTML = `
-                <div class="initial-suspect-header">
-                    <h3>Initial Suspect Profile</h3>
-                    <p class="initial-suspect-note">This person is NOT guilty. Find who shares these trait patterns:</p>
-                </div>
-                <div class="initial-suspect-traits">
-                    ${traitHTML}
-                </div>
-                <div class="color-legend">
-                    <span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>
-                    <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
-                    <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
-                </div>
-                ${this.generateTraitGuideHTML()}
-            `;
-            
-            document.querySelector('.crime-box').after(initialDiv);
+            try {
+                console.log('GameManager.displayInitialSuspect: starting');
+                const existingDiv = document.getElementById('initialSuspect');
+                if (existingDiv) existingDiv.remove();
+                
+                const initialDiv = document.createElement('div');
+                initialDiv.id = 'initialSuspect';
+                initialDiv.className = 'initial-suspect-section needs-theme';
+                
+                const traitCategories = getTraitCategories(currentCrime);
+                const traitKeys = Object.keys(traitCategories);
+                
+                let traitHTML = '';
+                traitKeys.forEach(trait => {
+                    if (privateState.initialSuspect[trait] !== undefined) {
+                        const feedback = getFeedbackForTrait(
+                            privateState.initialSuspect[trait], 
+                            privateState.culprit[trait], 
+                            trait
+                        );
+                        const colorClass = feedback === 'correct' ? 'green' : feedback === 'close' ? 'yellow' : 'gray';
+                        
+                        traitHTML += `
+                            <div class="initial-trait ${colorClass}">
+                                <div class="initial-trait-label">${traitCategories[trait].name}</div>
+                                <div class="initial-trait-value">${privateState.initialSuspect[trait]}</div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                initialDiv.innerHTML = `
+                    <div class="initial-suspect-header">
+                        <h3>Initial Suspect Profile</h3>
+                        <p class="initial-suspect-note">This person is NOT guilty. Find who shares these trait patterns:</p>
+                    </div>
+                    <div class="initial-suspect-traits">
+                        ${traitHTML}
+                    </div>
+                    <div class="color-legend">
+                        <span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>
+                        <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
+                        <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
+                    </div>
+                    ${this.generateTraitGuideHTML()}
+                `;
+                
+                document.querySelector('.crime-box').after(initialDiv);
+                console.log('GameManager.displayInitialSuspect: finished');
+            } catch (e) {
+                console.error('Error in GameManager.displayInitialSuspect:', e);
+            }
         },
         
         // Generate trait guide HTML
         generateTraitGuideHTML: function() {
             const traitCategories = getTraitCategories(currentCrime);
-            
             let html = `
-                <div class="trait-guide-section">
+                <div class="trait-guide-section needs-theme">
                     <div class="trait-guide-header">
                         <h4>Trait Value Reference</h4>
-                        <p class="trait-guide-note">Adjacent values (↔) are considered "close" matches</p>
+                        <p class="trait-guide-note">Adjacent values (↔) are considered \"close\" matches</p>
                     </div>
                     <div class="trait-guide-content">
             `;
-            
             Object.entries(traitCategories).forEach(([key, category]) => {
                 html += `
                     <div class="trait-guide-item">
@@ -1208,115 +1233,115 @@ const GameManager = (function() {
                             <div class="trait-scale-line"></div>
                             <div class="trait-values-scale">
                 `;
-                
                 const traitArray = currentCrime.traits[key];
                 traitArray.forEach((value, index) => {
-                    const position = (index / 4) * 100;
+                    const position = (index / (traitArray.length - 1)) * 100;
                     const isFirst = index === 0;
-                    const isLast = index === 4;
+                    const isLast = index === traitArray.length - 1;
                     const hint = category.values[value] || '';
-                    
                     html += `
                         <div class="trait-scale-item" style="left: ${position}%;">
                             <div class="trait-scale-dot ${isFirst ? 'first' : ''} ${isLast ? 'last' : ''}"></div>
                             <div class="trait-scale-label" title="${hint}">${value}</div>
                         </div>
                     `;
-                    
-                    if (index < 4) {
-                        const nextPosition = ((index + 1) / 4) * 100;
+                    if (index < traitArray.length - 1) {
+                        const nextPosition = ((index + 1) / (traitArray.length - 1)) * 100;
                         const midPosition = (position + nextPosition) / 2;
                         html += `
-                            <div class="trait-proximity-arrow" style="left: ${midPosition}%;">↔</div>
+                            <div class="trait-proximity-arrow" style="left: ${midPosition}%">↔</div>
                         `;
                     }
                 });
-                
                 html += '</div></div></div>';
             });
-            
             html += '</div></div>';
-            
             return html;
         },
         
         // Display suspects with batched DOM updates
         displaySuspects: function() {
-            const grid = document.getElementById('suspectsGrid');
-            const traitCategories = getTraitCategories(currentCrime);
-            const traitKeys = Object.keys(traitCategories);
-            
-            // Create document fragment for performance
-            const fragment = document.createDocumentFragment();
-            
-            privateState.suspects.forEach((suspect, index) => {
-                const card = document.createElement('div');
-                card.className = 'suspect-card-v2 needs-theme';
+            try {
+                console.log('GameManager.displaySuspects: starting');
+                const grid = document.getElementById('suspectsGrid');
+                const traitCategories = getTraitCategories(currentCrime);
+                const traitKeys = Object.keys(traitCategories);
                 
-                const isGuessed = publicState.guesses.some(g => g.name === suspect.name);
-                const isEliminated = publicState.eliminatedSuspects.has(suspect.name);
+                // Create document fragment for performance
+                const fragment = document.createDocumentFragment();
                 
-                if (isGuessed) card.classList.add('disabled');
-                if (isEliminated) card.classList.add('eliminated');
-                if (publicState.isProcessingGuess) card.classList.add('processing');
-                
-                let traitsHTML = '';
-                traitKeys.forEach(key => {
-                    const traitValue = suspect[key];
-                    const displayValue = traitValue !== undefined ? traitValue : '?';
-                    const valueClass = traitValue === undefined ? 'unknown-value' : '';
+                privateState.suspects.forEach((suspect, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'suspect-card needs-theme';
                     
-                    traitsHTML += `
-                        <div class="trait-item">
-                            <span class="trait-label">${traitCategories[key].name}:</span>
-                            <span class="trait-value ${valueClass}">${displayValue}</span>
+                    const isGuessed = publicState.guesses.some(g => g.name === suspect.name);
+                    const isEliminated = publicState.eliminatedSuspects.has(suspect.name);
+                    
+                    if (isGuessed) card.classList.add('disabled');
+                    if (isEliminated) card.classList.add('eliminated');
+                    if (publicState.isProcessingGuess) card.classList.add('processing');
+                    
+                    let traitsHTML = '';
+                    traitKeys.forEach(key => {
+                        const traitValue = suspect[key];
+                        const displayValue = traitValue !== undefined ? traitValue : '?';
+                        const valueClass = traitValue === undefined ? 'unknown-value' : '';
+                        
+                        traitsHTML += `
+                            <div class="trait-item">
+                                <span class="trait-label">${traitCategories[key].name}:</span>
+                                <span class="trait-value ${valueClass}">${displayValue}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    const eliminationIndicator = isEliminated ? '<div class="elimination-mark">✕</div>' : '';
+                    const accuseDisabled = isGuessed || publicState.isProcessingGuess || publicState.gameOver ? 'disabled' : '';
+                    const exonerateDisabled = isGuessed || publicState.gameOver ? 'disabled' : '';
+                    const exonerateText = isEliminated ? 'Restore' : 'Exonerate';
+                    
+                    card.innerHTML = `
+                        ${eliminationIndicator}
+                        <div class="suspect-header">
+                            <div class="suspect-name">${suspect.name}</div>
+                            <div class="suspect-job">${suspect.job}</div>
+                        </div>
+                        <div class="suspect-traits">
+                            ${traitsHTML}
+                        </div>
+                        <div class="suspect-actions">
+                            <button class="suspect-button accuse-btn btn btn-danger" ${accuseDisabled} data-index="${index}">
+                                Accuse
+                            </button>
+                            <button class="suspect-button exonerate-btn btn btn-secondary" ${exonerateDisabled} data-name="${suspect.name}">
+                                ${exonerateText}
+                            </button>
                         </div>
                     `;
+                    
+                    fragment.appendChild(card);
                 });
                 
-                const eliminationIndicator = isEliminated ? '<div class="elimination-mark">✕</div>' : '';
-                const accuseDisabled = isGuessed || publicState.isProcessingGuess || publicState.gameOver ? 'disabled' : '';
-                const exonerateDisabled = isGuessed || publicState.gameOver ? 'disabled' : '';
-                const exonerateText = isEliminated ? 'Restore' : 'Exonerate';
+                // Clear and append all at once
+                grid.innerHTML = '';
+                grid.appendChild(fragment);
                 
-                card.innerHTML = `
-                    ${eliminationIndicator}
-                    <div class="suspect-header">
-                        <div class="suspect-name">${suspect.name}</div>
-                        <div class="suspect-job">${suspect.job}</div>
-                    </div>
-                    <div class="suspect-traits">
-                        ${traitsHTML}
-                    </div>
-                    <div class="suspect-actions">
-                        <button class="suspect-button accuse-button" ${accuseDisabled} data-index="${index}">
-                            Accuse
-                        </button>
-                        <button class="suspect-button exonerate-button" ${exonerateDisabled} data-name="${suspect.name}">
-                            ${exonerateText}
-                        </button>
-                    </div>
-                `;
-                
-                fragment.appendChild(card);
-            });
-            
-            // Clear and append all at once
-            grid.innerHTML = '';
-            grid.appendChild(fragment);
-            
-            // Add event listeners using event delegation
-            grid.addEventListener('click', this.handleSuspectClick.bind(this));
+                // Add event listeners using event delegation
+                grid.addEventListener('click', this.handleSuspectClick.bind(this));
+                console.log('GameManager.displaySuspects: finished');
+            } catch (e) {
+                console.error('Error in GameManager.displaySuspects:', e);
+            }
         },
         
         // Handle suspect card clicks
         handleSuspectClick: function(event) {
             const target = event.target;
             
-            if (target.classList.contains('accuse-button') && !target.disabled) {
+            if (target.classList.contains('accuse-btn') && !target.disabled) {
                 const index = parseInt(target.dataset.index);
                 this.makeGuess(index);
-            } else if (target.classList.contains('exonerate-button') && !target.disabled) {
+            } else if (target.classList.contains('exonerate-btn') && !target.disabled) {
                 const name = target.dataset.name;
                 this.toggleElimination(name);
             }
@@ -1723,7 +1748,7 @@ const GameManager = (function() {
                 const scenarioIndex = i % scenarioCount;
                 publicState.currentScenarioIndex = scenarioIndex;
                 publicState.devMode = true;
-                this.resetGame();
+                this.init(); // was this.resetGame();
                 // Simulate random guesses until win or out of guesses
                 let guesses = 0;
                 let won = false;
@@ -1773,3 +1798,54 @@ const GameManager = (function() {
 if (typeof window !== 'undefined') {
     window.runAITests = GameManager.runAITests;
 }
+
+// Initialize the game when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Get DOM elements
+    const startButton = document.getElementById('start-game');
+    const mainMenu = document.getElementById('main-menu');
+    const gameScreen = document.getElementById('game-screen');
+    const difficultySelect = document.getElementById('difficulty-select');
+    const statsButton = document.getElementById('stats-btn');
+    const newGameButton = document.getElementById('new-game');
+    const backToMenuButton = document.getElementById('back-to-menu');
+    const hintButton = document.getElementById('hint-btn');
+    const accuseButton = document.getElementById('accuse-btn');
+
+    // Start game button click handler
+    startButton.addEventListener('click', function() {
+        GameManager.setDifficulty(difficultySelect.value);
+        mainMenu.style.display = 'none';
+        gameScreen.style.display = 'block';
+        GameManager.init();
+    });
+
+    // New game button click handler
+    newGameButton.addEventListener('click', function() {
+        GameManager.init();
+    });
+
+    // Back to menu button click handler
+    backToMenuButton.addEventListener('click', function() {
+        gameScreen.style.display = 'none';
+        mainMenu.style.display = 'block';
+    });
+
+    // Hint button click handler
+    hintButton.addEventListener('click', function() {
+        // TODO: Implement hint system
+        alert('Hint system coming soon!');
+    });
+
+    // Accuse button click handler
+    accuseButton.addEventListener('click', function() {
+        // TODO: Implement accusation system
+        alert('Accusation system coming soon!');
+    });
+
+    // Stats button click handler
+    statsButton.addEventListener('click', function() {
+        // TODO: Implement statistics view
+        alert('Statistics view coming soon!');
+    });
+});

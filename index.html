@@ -42,7 +42,7 @@
             text-align: center;
             margin-bottom: 30px;
             padding: 20px;
-            background: var(--card-bg);
+            background: var(--header-bg, var(--card-bg));
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
@@ -240,12 +240,11 @@
         }
 
         .suspect-card {
+            border: 2px solid var(--card-border, var(--border-color));
             background: var(--card-bg);
             border-radius: 15px;
-            padding: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
+            transition: border 0.3s, background 0.3s;
         }
 
         .suspect-card:hover {
@@ -553,6 +552,317 @@
         .statistics-screen {
             display: none;
         }
+
+        /* Initial Suspect and Trait Guide Styles */
+        .initial-suspect-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .initial-suspect-header h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .initial-suspect-note {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .initial-suspect-traits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .initial-trait {
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--background-color);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .initial-trait.green {
+            background: rgba(39, 174, 96, 0.1);
+            border-color: var(--success-color);
+        }
+
+        .initial-trait.yellow {
+            background: rgba(243, 156, 18, 0.1);
+            border-color: var(--warning-color);
+        }
+
+        .initial-trait.gray {
+            background: rgba(149, 165, 166, 0.1);
+            border-color: var(--border-color);
+        }
+
+        .initial-trait-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+            font-size: 0.9em;
+        }
+
+        .initial-trait-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .color-legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: var(--background-color);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .color-box.green {
+            background: var(--success-color);
+        }
+
+        .color-box.yellow {
+            background: var(--warning-color);
+        }
+
+        .color-box.gray {
+            background: var(--border-color);
+        }
+
+        .trait-guide-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .trait-guide-header h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .trait-guide-note {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .trait-guide-content {
+            display: grid;
+            gap: 20px;
+        }
+
+        .trait-guide-item {
+            padding: 15px;
+            background: var(--background-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .trait-guide-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .trait-scale-container {
+            position: relative;
+            height: 60px;
+            margin: 10px 0;
+        }
+
+        .trait-scale-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-color);
+            transform: translateY(-50%);
+        }
+
+        .trait-values-scale {
+            position: relative;
+            height: 100%;
+        }
+
+        .trait-scale-item {
+            position: absolute;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .trait-scale-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--secondary-color);
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .trait-scale-dot.first {
+            background: var(--success-color);
+        }
+
+        .trait-scale-dot.last {
+            background: var(--danger-color);
+        }
+
+        .trait-scale-label {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text-color);
+            background: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .trait-proximity-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        /* Game Board Styles */
+        .game-board {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-height: 100px;
+        }
+
+        .crime-box {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .guess-counter {
+            display: inline-block;
+            padding: 10px 15px;
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+
+        .confidence-display {
+            margin: 10px 0;
+            padding: 15px;
+            background: var(--background-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .confidence-meter {
+            width: 100%;
+            height: 20px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger-color) 0%, var(--warning-color) 50%, var(--success-color) 100%);
+            transition: width 0.3s ease;
+        }
+
+        .confidence-text {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .suspect-card.eliminated {
+            opacity: 0.4;
+            filter: grayscale(100%) blur(1px);
+            box-shadow: none;
+            position: relative;
+            z-index: 0;
+            transform: scale(0.97);
+            transition: opacity 0.3s, filter 0.3s, box-shadow 0.3s, transform 0.3s;
+        }
+        .suspect-card.eliminated::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                135deg,
+                rgba(200,200,200,0.3) 0px,
+                rgba(200,200,200,0.3) 8px,
+                transparent 8px,
+                transparent 16px
+            );
+            border-radius: 15px;
+            pointer-events: none;
+        }
+        .suspect-card.eliminated .suspect-name {
+            text-decoration: line-through;
+            color: #888 !important;
+            opacity: 0.7;
+        }
+        .suspect-card.eliminated .suspect-job {
+            color: #aaa !important;
+            opacity: 0.7;
+        }
+        .suspect-card.eliminated .trait-item,
+        .suspect-card.eliminated .trait-label,
+        .suspect-card.eliminated .trait-value {
+            color: #aaa !important;
+            opacity: 0.7;
+        }
+        .suspect-card:not(.eliminated) {
+            opacity: 1;
+            filter: none;
+            z-index: 1;
+        }
+        .suspect-card .accuse-btn:disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -609,11 +919,21 @@
             </div>
 
             <div id="scenario-description" class="scenario-section">
-                <!-- Scenario content will be inserted here -->
+                <h2 id="crimeTitle"></h2>
+                <p id="crimeDescription"></p>
             </div>
 
-            <div id="suspects-container" class="suspects-container">
-                <!-- Suspect cards will be inserted here -->
+            <div id="crime-box" class="crime-box"></div>
+            <div id="gameBoard" class="game-board"></div>
+
+            <div id="suspectsSection">
+                <div id="suspectsGrid" class="suspects-container"></div>
+            </div>
+
+            <div id="gameOver" class="game-over" style="display: none;">
+                <h2 id="gameOverTitle"></h2>
+                <div id="gameOverMessage"></div>
+                <button onclick="GameManager.shareResults()" class="btn btn-primary">Share Results</button>
             </div>
         </div>
 
