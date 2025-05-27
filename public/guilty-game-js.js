@@ -98,3 +98,4 @@
 
     // Initialize the game when the DOM is loaded
     document.addEventListener('DOMContentLoaded', initGame);
+})();
