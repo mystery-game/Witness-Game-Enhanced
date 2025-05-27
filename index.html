@@ -564,7 +564,7 @@
         }
 
         /* Suspects grid */
-        #suspectsGrid {
+        #suspect-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 25px;
@@ -929,7 +929,7 @@
                 padding: 30px 20px;
             }
             
-            #suspectsGrid {
+            #suspect-grid {
                 grid-template-columns: 1fr;
             }
             
@@ -1075,9 +1075,9 @@
             <div id="gameBoard" class="game-board"></div>
             
             <div id="suspectsSection">
-                <div id="suspectsGrid"></div>
+                <div id="suspect-grid"></div>
             </div>
-
+            <div id="feedback-container"></div>
             <div id="gameOver" class="game-over" style="display: none;">
                 <h2 id="gameOverTitle"></h2>
                 <div id="gameOverMessage"></div>
