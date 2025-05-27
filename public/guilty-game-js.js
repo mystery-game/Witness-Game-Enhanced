@@ -38,15 +38,13 @@
 
     // Initialize the game
     function initGame() {
+        loadTheme();
         // Set up event listeners
         document.getElementById('start-game').addEventListener('click', startGame);
         document.getElementById('difficulty-select').addEventListener('change', (e) => {
             gameState.difficulty = e.target.value;
             gameState.maxGuesses = e.target.value === 'easy' ? 8 : e.target.value === 'medium' ? 6 : 4;
         });
-
-        // Load theme and start timer
-        loadTheme();
         startNextPuzzleTimer();
     }
 
@@ -102,22 +100,31 @@
     }
 
     function loadTheme() {
-        // Example default theme (should be replaced with your actual theme logic)
+        // Set a default theme object
         gameState.currentTheme = {
+            name: "Classic Mystery",
+            description: "A mysterious crime has occurred. Can you solve it?",
+            icon: "🕵️‍♂️",
             traits: {
                 role: ['Detective', 'Suspect', 'Witness'],
                 alibi: ['Home', 'Work', 'Unknown'],
                 motive: ['Revenge', 'Greed', 'Jealousy']
             }
         };
+        // Update the DOM
+        document.getElementById('dailyTheme').textContent = gameState.currentTheme.icon + ' ' + gameState.currentTheme.name;
+        document.getElementById('themeDescription').textContent = gameState.currentTheme.description;
     }
 
     function generateSuspects() {
-        // Example: create a dummy suspects array
+        // Example: create a more complete suspects array
         gameState.suspects = [
             { role: 'Suspect', alibi: 'Home', motive: 'Greed' },
             { role: 'Witness', alibi: 'Work', motive: 'Revenge' },
-            { role: 'Detective', alibi: 'Unknown', motive: 'Jealousy' }
+            { role: 'Detective', alibi: 'Unknown', motive: 'Jealousy' },
+            { role: 'Suspect', alibi: 'Work', motive: 'Revenge' },
+            { role: 'Witness', alibi: 'Home', motive: 'Jealousy' },
+            { role: 'Detective', alibi: 'Work', motive: 'Greed' }
         ];
         // Set a default culprit and initial suspect for demo purposes
         gameState.culprit = gameState.suspects[0];
