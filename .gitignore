@@ -13,6 +13,7 @@ desktop.ini
 # Dependencies
 node_modules/
 bower_components/
+jspm_packages/
 
 # Build Output
 dist/
@@ -20,48 +21,220 @@ build/
 out/
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Environment Variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Testing
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for instrumented libs
+lib-cov/
+
+# Coverage directory
 coverage/
+*.lcov
 .nyc_output/
 
-# Temporary Files
+# Grunt intermediate storage
+.grunt/
+
+# Bower dependency directory
+bower_components/
+
+# Compiled binary addons
+build/Release/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn files
+.yarn-integrity
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# IDE - IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# IDE - Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# IDE - Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+*.un~
+Session.vim
+.netrwhist
+*~
+tags
+
+# OS - macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# OS - Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# OS - Linux
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Temporary files
+tmp/
+temp/
 *.tmp
 *.temp
-.cache/
+*.bak
+*.backup
+*.swp
+*.swo
 
-# Python (if adding AI server later)
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-ENV/
+# Build files
+dist/
+build/
+out/
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+
+# Lock files (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# Testing
+.jest/
+cypress/videos/
+cypress/screenshots/
 
 # Database
 *.sqlite
+*.sqlite3
 *.db
 
-# Backup Files
-*.bak
-*.backup
-*_backup.*
-*.old
+# Uploads directory (if implementing in future)
+uploads/
+public/uploads/
 
-# Personal Notes
-notes.txt
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Backup files
+backup/
+backups/
+*.backup
+*.back
+
+# Merge conflict files
+*.orig
+*_BACKUP_*
+*_BASE_*
+*_LOCAL_*
+*_REMOTE_*
+
+# Custom
+.notes/
+.todo
 TODO.md
-personal/
+NOTES.md
+scratch/
+
+# Keep these files
+!.gitignore
+!.env.example
+!package-lock.json
+
+# TODO: Paste the provided .gitignore content here
