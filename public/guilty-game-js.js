@@ -386,33 +386,23 @@
             this.suspects = suspects;
             this.culprit = culprit;
             
-            // Generate balanced pattern
-            const pattern = generateBalancedPattern(suspects, culprit, this.difficulty);
+            // CRITICAL: Use at most ONE visible constraint!
+            const pattern = generateSingleConstraintPattern(suspects, culprit, this.difficulty);
+            
             this.initialSuspect = pattern.suspect;
             this.initialFeedback = pattern.feedback;
             this.theoreticalMinGuesses = pattern.theoreticalMinGuesses;
             
-            // Debug log in dev mode
-            if (window.GameManager && window.GameManager.devMode) {
-                console.log('Initial pattern:', {
-                    feedback: pattern.feedback,
-                    viableCount: pattern.viableCount,
-                    minGuesses: pattern.theoreticalMinGuesses
-                });
-                
-                // Count feedback types
-                const counts = { green: 0, yellow: 0, gray: 0, unknown: 0 };
-                Object.values(pattern.feedback).forEach(fb => counts[fb]++);
-                console.log('Feedback distribution:', counts);
-            }
+            // Log pattern info
+            console.log('Pattern generated:', {
+                feedback: pattern.feedback,
+                viableCount: pattern.viableCount,
+                constraints: Object.values(pattern.feedback).filter(f => f !== 'unknown').length
+            });
             
-            // Display initial suspect
+            // Display everything
             displayInitialSuspect(this.initialSuspect, this.initialFeedback);
-            
-            // Display minimum guess message
             this.displayMinGuessMessage();
-            
-            // Initial viable count
             updateViableCount(this);
         }
         
@@ -734,4 +724,148 @@
     window.TRAIT_VALUES = TRAIT_VALUES;
     window.updateViableCount = updateViableCount;
     window.isViableSuspect = isViableSuspect;
+
+    // New pattern generator - MAXIMUM ONE CONSTRAINT
+    function generateSingleConstraintPattern(suspects, culprit, difficulty) {
+        // Try to find a good single-constraint pattern
+        for (let attempt = 0; attempt < 50; attempt++) {
+            const innocent = suspects[Math.floor(Math.random() * suspects.length)];
+            if (innocent === culprit) continue;
+            
+            // Calculate all feedback
+            const allFeedback = {};
+            for (const trait of Object.keys(TRAIT_VALUES)) {
+                allFeedback[trait] = compareTraits(innocent[trait], culprit[trait], trait);
+            }
+            
+            // Find available constraints
+            const grays = [];
+            const yellows = [];
+            
+            Object.entries(allFeedback).forEach(([trait, fb]) => {
+                if (fb === 'gray') grays.push(trait);
+                else if (fb === 'yellow') yellows.push(trait);
+            });
+            
+            // Try each single constraint
+            const constraintOptions = [];
+            
+            // Try each gray
+            for (const trait of grays) {
+                const pattern = createPatternWithSingleConstraint(innocent, trait, 'gray');
+                const viable = countViable(suspects, innocent, pattern);
+                if (viable >= 10) {
+                    constraintOptions.push({ pattern, viable, type: 'gray' });
+                }
+            }
+            
+            // Try each yellow (only for easy mode)
+            if (difficulty === 'easy' && yellows.length > 0) {
+                for (const trait of yellows) {
+                    const pattern = createPatternWithSingleConstraint(innocent, trait, 'yellow');
+                    const viable = countViable(suspects, innocent, pattern);
+                    if (viable >= 8) {
+                        constraintOptions.push({ pattern, viable, type: 'yellow' });
+                    }
+                }
+            }
+            
+            // Pick the best option (closest to 12 viable)
+            if (constraintOptions.length > 0) {
+                constraintOptions.sort((a, b) => 
+                    Math.abs(12 - a.viable) - Math.abs(12 - b.viable)
+                );
+                
+                const chosen = constraintOptions[0];
+                return {
+                    suspect: innocent,
+                    feedback: chosen.pattern,
+                    viableCount: chosen.viable,
+                    theoreticalMinGuesses: Math.max(3, Math.ceil(Math.log2(chosen.viable)))
+                };
+            }
+        }
+        
+        // Ultimate fallback: ALL UNKNOWNS
+        return createAllUnknownsPattern(suspects, culprit);
+    }
+
+    function createPatternWithSingleConstraint(suspect, visibleTrait, constraintType) {
+        const pattern = {};
+        
+        // Set all traits to unknown
+        Object.keys(TRAIT_VALUES).forEach(trait => {
+            pattern[trait] = 'unknown';
+        });
+        
+        // Reveal only the single constraint
+        pattern[visibleTrait] = constraintType;
+        
+        return pattern;
+    }
+
+    function countViable(suspects, initialSuspect, feedback) {
+        return suspects.filter(s => 
+            isViableSuspect(s, initialSuspect, feedback)
+        ).length;
+    }
+
+    function createAllUnknownsPattern(suspects, culprit) {
+        const innocent = suspects.find(s => s !== culprit);
+        const pattern = {};
+        
+        // Everything unknown
+        Object.keys(TRAIT_VALUES).forEach(trait => {
+            pattern[trait] = 'unknown';
+        });
+        
+        return {
+            suspect: innocent,
+            feedback: pattern,
+            viableCount: 16, // All suspects viable
+            theoreticalMinGuesses: 4
+        };
+    }
+
+    // Console helper to verify patterns
+    window.verifyCurrentPattern = function() {
+        const gs = window.GameManager.gameState;
+        if (!gs) {
+            console.log("No active game");
+            return;
+        }
+        
+        console.log("\n=== PATTERN VERIFICATION ===");
+        
+        // Count constraints
+        let constraints = 0;
+        let details = [];
+        
+        Object.entries(gs.initialFeedback).forEach(([trait, fb]) => {
+            if (fb !== 'unknown') {
+                constraints++;
+                details.push(`${trait}: ${fb}`);
+            }
+        });
+        
+        console.log(`Visible constraints: ${constraints}`);
+        console.log("Details:", details);
+        
+        // Count viable
+        const viable = gs.suspects.filter(s => 
+            isViableSuspect(s, gs.initialSuspect, gs.initialFeedback)
+        );
+        
+        console.log(`Viable suspects: ${viable.length}`);
+        
+        if (constraints > 1) {
+            console.warn("⚠️ WARNING: Multiple constraints shown! This may over-constrain.");
+        }
+        
+        if (viable.length < 8) {
+            console.error("❌ ERROR: Too few viable suspects!");
+        } else {
+            console.log("✅ Pattern is properly balanced");
+        }
+    };
 })();
