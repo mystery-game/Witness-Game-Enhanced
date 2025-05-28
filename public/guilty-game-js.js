@@ -1284,16 +1284,63 @@ const GameManager = (function() {
             const suspectsSection = document.getElementById('suspectsSection');
             guideDiv = document.createElement('div');
             guideDiv.id = 'traitGuideBox';
-            guideDiv.className = 'trait-guide-section';
+            guideDiv.className = 'trait-reference-clean';
             suspectsSection.appendChild(guideDiv);
         }
+
         const traitCategories = getTraitCategories(currentCrime);
-        let guideHTML = '<h3>Trait Guide</h3>';
-        Object.keys(traitCategories).forEach(trait => {
-            guideHTML += `<div style="margin-bottom: 10px;"><strong>${traitCategories[trait].name}:</strong> `;
-            guideHTML += Object.entries(traitCategories[trait].values).map(([val, desc]) => `<span style="margin-left: 8px;"><em>${val}</em>: ${desc}</span>`).join('<br>');
-            guideHTML += '</div>';
+        let guideHTML = `
+            <h4>🎯 How Traits Work</h4>
+            <div class="trait-explanation">
+                <div class="explanation-item">
+                    <span class="color-indicator green"></span>
+                    <span>Exact match</span>
+                </div>
+                <div class="explanation-item">
+                    <span class="color-indicator yellow"></span>
+                    <span>One step away (adjacent)</span>
+                </div>
+                <div class="explanation-item">
+                    <span class="color-indicator gray"></span>
+                    <span>Two or more steps away</span>
+                </div>
+            </div>
+            
+            <div class="trait-table">
+                <div class="trait-header">Trait Spectrums (ordered left → right)</div>
+        `;
+
+        // Add each trait spectrum
+        Object.entries(traitCategories).forEach(([trait, category]) => {
+            const values = currentCrime.traits[trait];
+            guideHTML += `
+                <div class="trait-spectrum">
+                    <div class="trait-label">${category.name}:</div>
+                    <div class="trait-options">
+            `;
+
+            // Add each value with its position
+            values.forEach((value, index) => {
+                guideHTML += `
+                    <span class="trait-option" data-position="${index + 1}">${value}</span>
+                    ${index < values.length - 1 ? '<span class="trait-connector">↔</span>' : ''}
+                `;
+            });
+
+            guideHTML += `
+                    </div>
+                </div>
+            `;
         });
+
+        guideHTML += `
+            </div>
+            
+            <div class="trait-example">
+                <strong>Example:</strong> If the culprit has "Staff" access and you guess "Manager", you'll see yellow (one step away).
+            </div>
+        `;
+
         guideDiv.innerHTML = guideHTML;
     }
 
