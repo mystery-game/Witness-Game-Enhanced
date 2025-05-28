@@ -1754,6 +1754,32 @@ const GameManager = (function() {
             
             return result;
         }
+
+        updateViableCount() {
+            const viable = this.suspects.filter(suspect => {
+                // Check ALL constraints
+                for (const trait in this.initialFeedback) {
+                    const feedback = this.initialFeedback[trait];
+                    if (!feedback || feedback === 'unknown') continue;
+                    
+                    const hypothetical = compareTraitsFixed(
+                        this.initialSuspect[trait],
+                        suspect[trait],
+                        trait
+                    );
+                    
+                    if (hypothetical !== feedback) return false;
+                }
+                return true;
+            });
+            // Update displays
+            const viableDisplay = document.getElementById('viableDisplay');
+            if (viableDisplay) viableDisplay.textContent = viable.length;
+            if (typeof this.updateConfidenceMeter === 'function') {
+                this.updateConfidenceMeter(viable.length);
+            }
+            return viable;
+        }
     }
 
     // Add game over styles
