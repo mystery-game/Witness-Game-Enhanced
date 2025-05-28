@@ -64,17 +64,17 @@ const GameManager = (function() {
             }
         },
         hard: {
-            maxGuesses: 4,
+            maxGuesses: 5,
             name: 'Hard',
-            minViableSuspects: 14,
-            minSecondGuessViable: 9,
+            minViableSuspects: 7,
+            minSecondGuessViable: 4,
             yellowTraits: 1,
-            missingTraitChance: 0.35,
+            missingTraitChance: 0.45,
             distributionStrategy: {
-                matchInitialYellow: 35,
-                otherYellow: 15,
-                matchCulprit: 30,
-                farValue: 20
+                matchInitialYellow: 10,
+                otherYellow: 10,
+                matchCulprit: 20,
+                farValue: 60
             }
         }
     };
@@ -423,6 +423,15 @@ const GameManager = (function() {
     // Current crime scenario
     let currentCrime = null;
     
+    // Trait value definitions with indices
+    const TRAIT_VALUES = {
+        access: ['None', 'Visitor', 'Employee', 'Manager', 'Owner'],
+        timing: ['Never There', 'After Crime', 'During Crime', 'Before Crime', 'Always There'],
+        knowledge: ['Clueless', 'Basic', 'Intermediate', 'Expert', 'Mastermind'],
+        motive: ['None', 'Weak', 'Moderate', 'Strong', 'Overwhelming'],
+        behavior: ['Very Calm', 'Calm', 'Normal', 'Nervous', 'Very Nervous']
+    };
+    
     // Utility functions
     function seededRandom(seed) {
         const x = Math.sin(seed) * 10000;
@@ -568,37 +577,72 @@ const GameManager = (function() {
     // Enhanced feedback system with caching
     const feedbackCache = new Map();
     
+    // Fixed function to compare traits with edge case handling
+    function compareTraits(suspectValue, culpritValue, traitType) {
+        if (!suspectValue || !culpritValue) {
+            return 'unknown';
+        }
+        const values = TRAIT_VALUES[traitType] || (currentCrime && currentCrime.traits && currentCrime.traits[traitType]);
+        if (!values) return 'unknown';
+        const suspectIndex = values.indexOf(suspectValue);
+        const culpritIndex = values.indexOf(culpritValue);
+        if (suspectIndex === -1 || culpritIndex === -1) {
+            return 'unknown';
+        }
+        // Exact match
+        if (suspectIndex === culpritIndex) {
+            return 'green';
+        }
+        // Adjacent value check
+        const diff = Math.abs(suspectIndex - culpritIndex);
+        if (diff === 1) {
+            // Check if this is an edge case
+            if ((culpritIndex === 0 && suspectIndex === 1) || 
+                (culpritIndex === values.length - 1 && suspectIndex === values.length - 2)) {
+                // Edge case: only one possible adjacent value
+                // This provides as much information as a green!
+                return 'yellow-edge';
+            }
+            return 'yellow';
+        }
+        // Not adjacent (provides elimination info)
+        return 'gray';
+    }
+
+    // Calculate information gain from a guess
+    function calculateInformationGain(feedback, remainingViableSuspects) {
+        let informationBits = 0;
+        Object.entries(feedback).forEach(([trait, result]) => {
+            if (result === 'unknown') {
+                return; // No information
+            }
+            if (result === 'green') {
+                // Exact match - very high information
+                informationBits += Math.log2(TRAIT_VALUES[trait].length);
+            } else if (result === 'yellow-edge') {
+                // Edge yellow - almost as good as green
+                informationBits += Math.log2(TRAIT_VALUES[trait].length) - 0.1;
+            } else if (result === 'yellow') {
+                // Regular yellow - moderate information
+                informationBits += Math.log2(TRAIT_VALUES[trait].length) - 1;
+            } else if (result === 'gray') {
+                // Elimination information - still valuable!
+                // Gray tells us what the culprit is NOT
+                const traitValues = TRAIT_VALUES[trait];
+                const eliminatedPossibilities = traitValues.length - 2; // Not this value, not adjacent
+                informationBits += Math.log2(1 + eliminatedPossibilities / traitValues.length);
+            }
+        });
+        return informationBits;
+    }
+
+    // Refactored getFeedbackForTrait to use compareTraits
     function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
         const cacheKey = `${guessValue}-${culpritValue}-${traitCategory}`;
-        
         if (feedbackCache.has(cacheKey)) {
             return feedbackCache.get(cacheKey);
         }
-        
-        let result;
-        
-        if (guessValue === undefined) {
-            result = 'unknown';
-        } else if (culpritValue === undefined) {
-            result = 'wrong';
-        } else if (guessValue === culpritValue) {
-            result = 'correct';
-        } else {
-            const traitArray = currentCrime.traits[traitCategory];
-            if (!traitArray) {
-                result = 'wrong';
-            } else {
-                const guessPosition = traitArray.indexOf(guessValue);
-                const culpritPosition = traitArray.indexOf(culpritValue);
-                
-                if (Math.abs(guessPosition - culpritPosition) <= 1) {
-                    result = 'close';
-                } else {
-                    result = 'wrong';
-                }
-            }
-        }
-        
+        const result = compareTraits(guessValue, culpritValue, traitCategory);
         feedbackCache.set(cacheKey, result);
         return result;
     }
@@ -763,18 +807,18 @@ const GameManager = (function() {
             const accuseBtn = document.createElement('button');
             accuseBtn.className = 'suspect-button accuse-btn';
             accuseBtn.textContent = 'Accuse';
-            accuseBtn.onclick = () => selectSuspect(index);
+            accuseBtn.addEventListener('click', () => selectSuspect(index));
             const exonerateBtn = document.createElement('button');
             exonerateBtn.className = 'suspect-button exonerate-btn';
             exonerateBtn.textContent = publicState.eliminatedSuspects.has(suspect.name) ? 'Restore' : 'Exonerate';
-            exonerateBtn.onclick = () => {
+            exonerateBtn.addEventListener('click', () => {
                 if (publicState.eliminatedSuspects.has(suspect.name)) {
                     publicState.eliminatedSuspects.delete(suspect.name);
                 } else {
                     publicState.eliminatedSuspects.add(suspect.name);
                 }
                 displaySuspects(suspects);
-            };
+            });
             btnDiv.appendChild(accuseBtn);
             btnDiv.appendChild(exonerateBtn);
             card.appendChild(btnDiv);
