@@ -1114,6 +1114,12 @@ const GameManager = (function() {
         
         return suspects;
     }
+
+    // At the end of the IIFE, before the closing })();
+    return {
+        initGame: initGame
+        // Add other public methods here if needed
+    };
 })();
 
 window.GameManager = GameManager;
