@@ -476,11 +476,16 @@
             this.suspects = suspects;
             this.culprit = culprit;
             
-            // Generate initial pattern
-            const pattern = generateInitialSuspectPattern(suspects, culprit, this.difficulty);
+            // Use rule-based pattern generation
+            const pattern = generateRuleBasedPattern(suspects, culprit, this.difficulty);
             this.initialSuspect = pattern.suspect;
             this.initialFeedback = pattern.feedback;
             this.theoreticalMinGuesses = pattern.theoreticalMinGuesses;
+            
+            // Run diagnostic in dev mode
+            if (window.GameManager && window.GameManager.devMode) {
+                diagnoseFeedbackPattern(this.initialSuspect, this.initialFeedback, this.suspects);
+            }
             
             // Display initial suspect
             displayInitialSuspect(this.initialSuspect, this.initialFeedback);
@@ -1058,6 +1063,237 @@
             </div>
         `;
     }
+
+    // Diagnostic tool to understand why patterns are over-constraining
+    function diagnoseFeedbackPattern(initialSuspect, feedback, suspects) {
+        console.log("=== FEEDBACK PATTERN DIAGNOSIS ===");
+        // Analyze each visible constraint
+        const constraints = {};
+        for (const trait in feedback) {
+            if (feedback[trait] !== 'unknown') {
+                const value = initialSuspect[trait];
+                if (feedback[trait] === 'yellow') {
+                    const allowed = getYellowAllowedValues(value, trait);
+                    constraints[trait] = {
+                        type: 'yellow',
+                        value: value,
+                        culpritMustBe: allowed,
+                        possibilityReduction: allowed.length / TRAIT_VALUES[trait].length
+                    };
+                } else if (feedback[trait] === 'gray') {
+                    const excluded = getGrayExcludedValues(value, trait);
+                    const remaining = TRAIT_VALUES[trait].filter(v => !excluded.includes(v));
+                    constraints[trait] = {
+                        type: 'gray',
+                        value: value,
+                        culpritCannotBe: excluded,
+                        culpritCouldBe: remaining,
+                        possibilityReduction: remaining.length / TRAIT_VALUES[trait].length
+                    };
+                } else if (feedback[trait] === 'green') {
+                    constraints[trait] = {
+                        type: 'green',
+                        value: value,
+                        culpritMustBe: [value],
+                        possibilityReduction: 1 / TRAIT_VALUES[trait].length
+                    };
+                }
+            }
+        }
+        // Calculate combined constraint impact
+        let theoreticalRemaining = suspects.length;
+        let combinedReduction = 1;
+        console.log("\nIndividual Constraints:");
+        for (const trait in constraints) {
+            const c = constraints[trait];
+            console.log(`${trait} (${c.type}): ${c.value}`);
+            if (c.type === 'yellow') {
+                console.log(`  → Culprit must be: ${c.culpritMustBe.join(' or ')}`);
+                console.log(`  → Reduces to ${(c.possibilityReduction * 100).toFixed(0)}% of possibilities`);
+            } else if (c.type === 'gray') {
+                console.log(`  → Culprit cannot be: ${c.culpritCannotBe.join(', ')}`);
+                console.log(`  → Reduces to ${(c.possibilityReduction * 100).toFixed(0)}% of possibilities`);
+            }
+            combinedReduction *= c.possibilityReduction;
+        }
+        console.log(`\nCombined reduction: ${(combinedReduction * 100).toFixed(1)}%`);
+        console.log(`Theoretical remaining: ${Math.round(suspects.length * combinedReduction)} suspects`);
+        // Count actual viable suspects
+        const actualViable = suspects.filter(s => 
+            isViableSuspect(s, initialSuspect, feedback)
+        );
+        console.log(`Actual viable: ${actualViable.length} suspects`);
+        // Show the viable suspects
+        if (actualViable.length <= 10) {
+            console.log("\nViable suspects:");
+            actualViable.forEach(s => {
+                console.log(`- ${s.name}: ${Object.keys(constraints).map(t => `${t}=${s[t]}`).join(', ')}`);
+            });
+        }
+        // Identify over-constraining patterns
+        if (actualViable.length < 8) {
+            console.log("\n⚠️ WARNING: Pattern is over-constrained!");
+            // Check for deadly combinations
+            const yellowTraits = Object.entries(constraints)
+                .filter(([_, c]) => c.type === 'yellow')
+                .map(([t, _]) => t);
+            if (yellowTraits.length >= 2) {
+                console.log("❌ Multiple yellows detected - this severely limits possibilities!");
+                // Calculate yellow combination impact
+                let yellowCombinations = 1;
+                yellowTraits.forEach(trait => {
+                    yellowCombinations *= constraints[trait].culpritMustBe.length;
+                });
+                console.log(`Yellow traits alone limit to just ${yellowCombinations} combinations!`);
+            }
+        }
+        return actualViable;
+    }
+
+    // Fixed pattern generation rules
+    const PATTERN_RULES = {
+        easy: {
+            rules: [
+                { grays: 3, yellows: 0, greens: 0 },  // 3 grays only
+                { grays: 2, yellows: 1, greens: 0 },  // 2 grays + 1 yellow
+                { grays: 2, yellows: 0, greens: 0 },  // 2 grays only (rest unknown)
+            ]
+        },
+        medium: {
+            rules: [
+                { grays: 2, yellows: 0, greens: 0 },  // 2 grays only
+                { grays: 1, yellows: 1, greens: 0 },  // 1 gray + 1 yellow
+                { grays: 1, yellows: 0, greens: 0 },  // 1 gray only (rest unknown)
+            ]
+        },
+        hard: {
+            rules: [
+                { grays: 2, yellows: 0, greens: 0 },  // 2 grays only
+                { grays: 1, yellows: 0, greens: 0 },  // 1 gray only
+                { grays: 0, yellows: 1, greens: 0 },  // 1 yellow only
+            ]
+        }
+    };
+
+    // Generate pattern using strict rules
+    function generateRuleBasedPattern(suspects, culprit, difficulty) {
+        const rules = PATTERN_RULES[difficulty].rules;
+        for (const rule of rules) {
+            // Try to find a pattern matching this rule
+            const pattern = findPatternMatchingRule(suspects, culprit, rule);
+            if (pattern && pattern.viableCount >= 8) {
+                return pattern;
+            }
+        }
+        // Fallback to mostly unknowns
+        return generateMostlyUnknownPattern(suspects, culprit);
+    }
+
+    function findPatternMatchingRule(suspects, culprit, rule) {
+        // Try multiple innocent suspects
+        const innocents = suspects.filter(s => s !== culprit);
+        for (const suspect of innocents) {
+            // Calculate all feedback
+            const fullFeedback = {};
+            const feedbackCounts = { green: 0, yellow: 0, gray: 0 };
+            for (const trait of Object.keys(TRAIT_VALUES)) {
+                const fb = compareTraits(suspect[trait], culprit[trait], trait);
+                fullFeedback[trait] = fb;
+                if (fb !== 'unknown') feedbackCounts[fb]++;
+            }
+            // Check if this suspect can produce the desired pattern
+            if (feedbackCounts.gray < rule.grays) continue;
+            if (feedbackCounts.yellow < rule.yellows) continue;
+            if (feedbackCounts.green < rule.greens) continue;
+            // Select traits to show based on rule
+            const visibleFeedback = selectTraitsForRule(fullFeedback, rule);
+            // Count viable suspects
+            const viableCount = suspects.filter(s => 
+                isViableSuspect(s, suspect, visibleFeedback)
+            ).length;
+            if (viableCount >= 8 && viableCount <= 16) {
+                return {
+                    suspect,
+                    feedback: visibleFeedback,
+                    viableCount,
+                    theoreticalMinGuesses: Math.max(3, Math.ceil(Math.log2(viableCount)))
+                };
+            }
+        }
+        return null;
+    }
+
+    function selectTraitsForRule(fullFeedback, rule) {
+        const result = {};
+        const traits = Object.keys(fullFeedback);
+        // First, set all to unknown
+        traits.forEach(t => result[t] = 'unknown');
+        // Then reveal traits according to rule
+        let shown = { green: 0, yellow: 0, gray: 0 };
+        // Prioritize showing traits in this order: gray, yellow, green
+        const order = ['gray', 'yellow', 'green'];
+        for (const fbType of order) {
+            if (shown[fbType] >= rule[fbType + 's']) continue;
+            for (const trait of traits) {
+                if (fullFeedback[trait] === fbType && shown[fbType] < rule[fbType + 's']) {
+                    result[trait] = fbType;
+                    shown[fbType]++;
+                }
+            }
+        }
+        return result;
+    }
+
+    function generateMostlyUnknownPattern(suspects, culprit) {
+        const suspect = suspects.find(s => s !== culprit);
+        const feedback = {};
+        // Show only 1 gray trait
+        let graysShown = 0;
+        for (const trait of Object.keys(TRAIT_VALUES)) {
+            const fb = compareTraits(suspect[trait], culprit[trait], trait);
+            if (fb === 'gray' && graysShown === 0) {
+                feedback[trait] = 'gray';
+                graysShown++;
+            } else {
+                feedback[trait] = 'unknown';
+            }
+        }
+        return {
+            suspect,
+            feedback,
+            viableCount: 15, // Will be very high
+            theoreticalMinGuesses: 4
+        };
+    }
+
+    // Quick test function for console
+    window.testPatternGeneration = function() {
+        console.log("Testing pattern generation...");
+        // Generate test data
+        const testSuspects = [];
+        for (let i = 0; i < 16; i++) {
+            testSuspects.push({
+                id: `suspect${i}`,
+                name: `Suspect ${i}`,
+                access: TRAIT_VALUES.access[i % 5],
+                timing: TRAIT_VALUES.timing[Math.floor(i/3) % 5],
+                knowledge: TRAIT_VALUES.knowledge[i % 5],
+                motive: TRAIT_VALUES.motive[Math.floor(i/2) % 5],
+                behavior: TRAIT_VALUES.behavior[i % 5]
+            });
+        }
+        const culprit = testSuspects[7];
+        // Test each difficulty
+        ['easy', 'medium', 'hard'].forEach(difficulty => {
+            console.log(`\n=== ${difficulty.toUpperCase()} MODE ===`);
+            const pattern = generateRuleBasedPattern(testSuspects, culprit, difficulty);
+            console.log("Pattern feedback:", pattern.feedback);
+            console.log("Viable suspects:", pattern.viableCount);
+            console.log("Min guesses:", pattern.theoreticalMinGuesses);
+            // Run diagnosis
+            diagnoseFeedbackPattern(pattern.suspect, pattern.feedback, testSuspects);
+        });
+    };
 
     // Export to window for use in HTML
     window.GuiltyGameState = GuiltyGameState;
