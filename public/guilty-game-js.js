@@ -582,50 +582,100 @@ const GameManager = (function() {
     // Enhanced feedback system with caching
     const feedbackCache = new Map();
     
-    // Fixed function to compare traits with edge case handling
-    function compareTraitsFixed(suspectValue, culpritValue, traitType) {
-        if (!suspectValue || !culpritValue) {
-            return 'unknown';
-        }
-        
+    // Fixed trait comparison with proper gray exclusions
+    function compareTraitsWithGrayLogic(suspectValue, culpritValue, traitType) {
         const values = TRAIT_VALUES[traitType];
         const suspectIndex = values.indexOf(suspectValue);
         const culpritIndex = values.indexOf(culpritValue);
         
-        if (suspectIndex === -1 || culpritIndex === -1) {
-            return 'unknown';
-        }
+        if (suspectIndex === -1 || culpritIndex === -1) return 'unknown';
         
         const diff = Math.abs(suspectIndex - culpritIndex);
         
-        if (diff === 0) {
-            return 'green';
-        } else if (diff === 1) {
-            return 'yellow';
-        } else {
-            return 'gray';
-        }
+        if (diff === 0) return 'green';
+        if (diff === 1) return 'yellow';
+        return 'gray'; // 2 or more steps away
     }
 
-    // Check if a suspect could produce the observed pattern
-    function isViableSuspectFixed(candidateSuspect, initialSuspect, culprit, initialFeedback) {
-        // For each trait, check if this candidate could produce the same feedback
-        for (const trait of Object.keys(TRAIT_VALUES)) {
-            const observedFeedback = initialFeedback[trait];
+    // Get excluded values for gray feedback
+    function getGrayExclusions(observedValue, traitType) {
+        const values = TRAIT_VALUES[traitType];
+        const index = values.indexOf(observedValue);
+        const excluded = [];
+        
+        // Gray means culprit is 2+ steps away, so exclude:
+        // 1. The exact value
+        excluded.push(observedValue);
+        
+        // 2. Adjacent values (1 step away)
+        if (index > 0) excluded.push(values[index - 1]);
+        if (index < values.length - 1) excluded.push(values[index + 1]);
+        
+        return excluded;
+    }
+
+    // Get allowed values for yellow feedback  
+    function getYellowAllowed(observedValue, traitType) {
+        const values = TRAIT_VALUES[traitType];
+        const index = values.indexOf(observedValue);
+        const allowed = [];
+        
+        // Yellow means exactly 1 step away
+        if (index > 0) allowed.push(values[index - 1]);
+        if (index < values.length - 1) allowed.push(values[index + 1]);
+        
+        return allowed;
+    }
+
+    // Main viable suspect check with ALL constraints
+    function isViableSuspectComplete(suspect, initialSuspect, initialFeedback) {
+        // Build constraint sets
+        const constraints = {
+            green: {},    // Must match exactly
+            yellow: {},   // Must be in allowed set
+            gray: {}      // Must NOT be in excluded set
+        };
+        
+        // Process each feedback
+        for (const trait in initialFeedback) {
+            const feedback = initialFeedback[trait];
+            if (!feedback || feedback === 'unknown') continue;
             
-            if (observedFeedback === 'unknown') {
-                continue; // Skip unknown traits
+            const observedValue = initialSuspect[trait];
+            
+            switch (feedback) {
+                case 'green':
+                    constraints.green[trait] = observedValue;
+                    break;
+                    
+                case 'yellow':
+                    constraints.yellow[trait] = getYellowAllowed(observedValue, trait);
+                    break;
+                    
+                case 'gray':
+                    constraints.gray[trait] = getGrayExclusions(observedValue, trait);
+                    break;
             }
-            
-            // What feedback would we get if candidateSuspect was the culprit?
-            const hypotheticalFeedback = compareTraitsFixed(
-                initialSuspect[trait], 
-                candidateSuspect[trait], 
-                trait
-            );
-            
-            // Must match the observed feedback
-            if (hypotheticalFeedback !== observedFeedback) {
+        }
+        
+        // Check all constraints
+        // 1. Green constraints (exact match)
+        for (const trait in constraints.green) {
+            if (suspect[trait] !== constraints.green[trait]) {
+                return false;
+            }
+        }
+        
+        // 2. Yellow constraints (must be in allowed set)
+        for (const trait in constraints.yellow) {
+            if (!constraints.yellow[trait].includes(suspect[trait])) {
+                return false;
+            }
+        }
+        
+        // 3. Gray constraints (must NOT be in excluded set)
+        for (const trait in constraints.gray) {
+            if (constraints.gray[trait].includes(suspect[trait])) {
                 return false;
             }
         }
@@ -633,81 +683,92 @@ const GameManager = (function() {
         return true;
     }
 
-    // Get possible culprit values based on yellow feedback
-    function getPossibleValuesFromYellow(suspectValue, traitType) {
-        const values = TRAIT_VALUES[traitType];
-        const suspectIndex = values.indexOf(suspectValue);
+    // Debug function to show constraint analysis
+    function analyzeConstraints(initialSuspect, initialFeedback) {
+        console.log("=== CONSTRAINT ANALYSIS ===");
         
-        if (suspectIndex === -1) return [];
+        const analysis = {
+            yellows: [],
+            grays: [],
+            totalPossibleCombinations: 1
+        };
         
-        const possibleIndices = [];
-        
-        // Yellow means culprit is 1 step away
-        if (suspectIndex > 0) {
-            possibleIndices.push(suspectIndex - 1);
-        }
-        if (suspectIndex < values.length - 1) {
-            possibleIndices.push(suspectIndex + 1);
-        }
-        
-        return possibleIndices.map(i => values[i]);
-    }
-
-    // Debug function to show why suspects are viable/not viable
-    function debugViableSuspects(suspects, initialSuspect, initialFeedback, culprit) {
-        console.log("=== VIABLE SUSPECT DEBUG ===");
-        console.log("Initial Suspect:", initialSuspect.name);
-        console.log("Initial Feedback:", initialFeedback);
-        console.log("Actual Culprit:", culprit.name);
-        
-        // For each yellow, show possible values
-        for (const trait of Object.keys(initialFeedback)) {
-            if (initialFeedback[trait] === 'yellow') {
-                const possibleValues = getPossibleValuesFromYellow(initialSuspect[trait], trait);
-                console.log(`${trait} (yellow): suspect has "${initialSuspect[trait]}", culprit must be one of:`, possibleValues);
+        for (const trait in initialFeedback) {
+            const feedback = initialFeedback[trait];
+            const value = initialSuspect[trait];
+            
+            if (feedback === 'yellow') {
+                const allowed = getYellowAllowed(value, trait);
+                analysis.yellows.push({
+                    trait,
+                    suspectHas: value,
+                    culpritMustBe: allowed
+                });
+                analysis.totalPossibleCombinations *= allowed.length;
+                
+            } else if (feedback === 'gray') {
+                const excluded = getGrayExclusions(value, trait);
+                const allValues = TRAIT_VALUES[trait];
+                const remaining = allValues.filter(v => !excluded.includes(v));
+                
+                analysis.grays.push({
+                    trait,
+                    suspectHas: value,
+                    culpritCannotBe: excluded,
+                    culpritCouldBe: remaining
+                });
+                
+                // Update combination count
+                analysis.totalPossibleCombinations *= remaining.length / allValues.length;
             }
         }
         
-        console.log("\nChecking each suspect:");
+        console.log("Yellow constraints:", analysis.yellows);
+        console.log("Gray constraints:", analysis.grays);
+        console.log("Maximum possible combinations:", Math.floor(analysis.totalPossibleCombinations));
         
-        let viableCount = 0;
-        suspects.forEach(suspect => {
-            const isViable = isViableSuspectFixed(suspect, initialSuspect, culprit, initialFeedback);
-            
-            if (isViable) {
-                viableCount++;
-                console.log(`✓ ${suspect.name} - VIABLE`);
-                
-                // Show why they're viable
-                for (const trait of Object.keys(initialFeedback)) {
-                    if (initialFeedback[trait] === 'yellow') {
-                        console.log(`  ${trait}: ${suspect[trait]} (${compareTraitsFixed(initialSuspect[trait], suspect[trait], trait)})`);
-                    }
-                }
-            } else {
-                // Show why they're not viable
-                let reason = "";
-                for (const trait of Object.keys(initialFeedback)) {
-                    const expected = initialFeedback[trait];
-                    const actual = compareTraitsFixed(initialSuspect[trait], suspect[trait], trait);
-                    if (expected !== actual && expected !== 'unknown') {
-                        reason = `${trait}: expected ${expected}, got ${actual}`;
-                        break;
-                    }
-                }
-                console.log(`✗ ${suspect.name} - NOT VIABLE (${reason})`);
+        return analysis;
+    }
+
+    // Fixed confidence calculation
+    function calculateConfidence(totalSuspects, viableSuspects) {
+        const eliminated = totalSuspects - viableSuspects;
+        const confidence = Math.round((eliminated / totalSuspects) * 100);
+        return confidence;
+    }
+
+    // Complete game update function
+    function updateGameState() {
+        // Get all suspects
+        const allSuspects = this.suspects;
+        const viableSuspects = [];
+        
+        // Check each suspect
+        allSuspects.forEach(suspect => {
+            if (isViableSuspectComplete(suspect, this.initialSuspect, this.initialFeedback)) {
+                viableSuspects.push(suspect);
             }
         });
         
-        console.log(`\nTotal viable suspects: ${viableCount}`);
-        return viableCount;
-    }
-
-    // Corrected viable suspect counter for the game
-    function countViableSuspects(suspects, initialSuspect, initialFeedback) {
-        return suspects.filter(suspect => 
-            isViableSuspectFixed(suspect, initialSuspect, suspect, initialFeedback)
-        ).length;
+        // Update UI
+        const viableCount = viableSuspects.length;
+        const confidence = calculateConfidence(allSuspects.length, viableCount);
+        
+        const viableDisplay = document.getElementById('viableDisplay');
+        if (viableDisplay) viableDisplay.textContent = viableCount;
+        const confidenceFill = document.querySelector('.confidence-fill');
+        if (confidenceFill) confidenceFill.style.width = `${confidence}%`;
+        const confidenceText = document.querySelector('.confidence-text');
+        if (confidenceText) confidenceText.textContent = 
+            `Confidence: ${confidence}% (${viableCount} suspects remain viable)`;
+        
+        // Debug info
+        if (this.devMode) {
+            console.log(`Viable suspects (${viableCount}):`, viableSuspects.map(s => s.name));
+            analyzeConstraints(this.initialSuspect, this.initialFeedback);
+        }
+        
+        return viableSuspects;
     }
 
     // Initialize the game
