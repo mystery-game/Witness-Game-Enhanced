@@ -737,6 +737,70 @@
             border: 1px solid #1e293b;
         }
 
+        /* Minimal Trait Reference CSS */
+        .trait-reference-minimal {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .trait-reference-minimal h4 {
+            color: #f8fafc;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .reference-subtitle {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .trait-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .trait-line {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 0;
+        }
+
+        .trait-name {
+            color: #a5b4fc;
+            font-weight: 600;
+            font-size: 0.9em;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .trait-flow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+            color: #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .trait-flow span {
+            background: rgba(71, 85, 105, 0.5);
+            padding: 3px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .trait-flow i {
+            color: #64748b;
+            font-style: normal;
+            font-size: 0.8em;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             h1 { font-size: 2.5em; }
@@ -746,6 +810,20 @@
             .guess-row-v2 { flex-direction: column; }
             .guess-feedback { flex-direction: column; }
             .trait-feedback { width: 100%; }
+            .trait-line {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .trait-name {
+                text-align: left;
+                margin-bottom: 4px;
+            }
+            
+            .trait-flow i {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -808,6 +886,83 @@
             <div id="gameBoard" class="game-board"></div>
             
             <div id="suspectsSection">
+                <!-- Minimal Trait Reference -->
+                <div class="trait-reference-minimal">
+                    <h4>Trait Reference</h4>
+                    <p class="reference-subtitle">Yellow = one step away • Gray = two or more steps away</p>
+                    <div class="trait-grid">
+                        <div class="trait-line">
+                            <span class="trait-name">Access</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Visitor</span>
+                                <i>→</i>
+                                <span>Contractor</span>
+                                <i>→</i>
+                                <span>Staff</span>
+                                <i>→</i>
+                                <span>VIP</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Timing</span>
+                            <div class="trait-flow">
+                                <span>Asleep</span>
+                                <i>→</i>
+                                <span>Working</span>
+                                <i>→</i>
+                                <span>Home</span>
+                                <i>→</i>
+                                <span>Out</span>
+                                <i>→</i>
+                                <span>Verified</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Knowledge</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Basic</span>
+                                <i>→</i>
+                                <span>Limited</span>
+                                <i>→</i>
+                                <span>Familiar</span>
+                                <i>→</i>
+                                <span>Expert</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Motive</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Curious</span>
+                                <i>→</i>
+                                <span>Vengeful</span>
+                                <i>→</i>
+                                <span>Greedy</span>
+                                <i>→</i>
+                                <span>Desperate</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Behavior</span>
+                            <div class="trait-flow">
+                                <span>Helpful</span>
+                                <i>→</i>
+                                <span>Normal</span>
+                                <i>→</i>
+                                <span>Changed</span>
+                                <i>→</i>
+                                <span>Nervous</span>
+                                <i>→</i>
+                                <span>Suspicious</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="suspectsGrid"></div>
             </div>
 
