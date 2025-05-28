@@ -1017,6 +1017,7 @@
         </div>
 
         <div id="main-menu" class="main-menu">
+            <button id="devModeBtnMenu" class="btn" style="margin-bottom: 10px;">Toggle Developer Mode</button>
             <button id="rulesBtnMenu" class="btn" style="margin-bottom: 20px;">Rules</button>
             <h2>Welcome, Detective</h2>
             <div class="puzzle-info">
@@ -1044,6 +1045,7 @@
         </div>
 
         <div id="game-screen" class="game-screen">
+            <button id="devModeBtnGame" class="btn" style="margin-bottom: 10px;">Toggle Developer Mode</button>
             <button id="rulesBtnGame" class="btn" style="margin-bottom: 20px;">Rules</button>
             <div class="crime-box">
                 <h2 id="crimeTitle">Loading...</h2>
@@ -1123,12 +1125,16 @@
         }
         setInterval(updateCountdown, 1000);
         updateCountdown();
-        // Add Rules button handlers
+        // Add Rules and Dev Mode button handlers
         setTimeout(function() {
             var btnMenu = document.getElementById('rulesBtnMenu');
             var btnGame = document.getElementById('rulesBtnGame');
+            var devBtnMenu = document.getElementById('devModeBtnMenu');
+            var devBtnGame = document.getElementById('devModeBtnGame');
             if (btnMenu) btnMenu.onclick = function() { window.GameManager.showRules(); };
             if (btnGame) btnGame.onclick = function() { window.GameManager.showRules(); };
+            if (devBtnMenu) devBtnMenu.onclick = function() { window.GameManager.toggleDevMode(); };
+            if (devBtnGame) devBtnGame.onclick = function() { window.GameManager.toggleDevMode(); };
         }, 100);
     });
     console.log('window.GameManager at script start:', window.GameManager);

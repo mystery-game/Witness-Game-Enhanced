@@ -637,6 +637,8 @@ const GameManager = (function() {
             GameManager.displayInitialSuspect();
         }
         updateMainMenuTheme();
+        startTimer();
+        renderTraitGuide();
     }
 
     // Start the game
@@ -1211,13 +1213,57 @@ const GameManager = (function() {
         }
     }
 
+    let timerInterval = null;
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        let start = Date.now();
+        function update() {
+            let elapsed = Math.floor((Date.now() - start) / 1000);
+            let min = Math.floor(elapsed / 60);
+            let sec = elapsed % 60;
+            let display = min + ':' + (sec < 10 ? '0' : '') + sec;
+            const timerEl = document.getElementById('timerDisplay');
+            if (timerEl) timerEl.textContent = display;
+        }
+        update();
+        timerInterval = setInterval(update, 1000);
+    }
+    function stopTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+    }
+    function renderTraitGuide() {
+        let guideDiv = document.getElementById('traitGuideBox');
+        if (!guideDiv) {
+            const suspectsSection = document.getElementById('suspectsSection');
+            guideDiv = document.createElement('div');
+            guideDiv.id = 'traitGuideBox';
+            guideDiv.className = 'trait-guide-section';
+            suspectsSection.appendChild(guideDiv);
+        }
+        const traitCategories = getTraitCategories(currentCrime);
+        let guideHTML = '<h3>Trait Guide</h3>';
+        Object.keys(traitCategories).forEach(trait => {
+            guideHTML += `<div style="margin-bottom: 10px;"><strong>${traitCategories[trait].name}:</strong> `;
+            guideHTML += Object.entries(traitCategories[trait].values).map(([val, desc]) => `<span style="margin-left: 8px;"><em>${val}</em>: ${desc}</span>`).join('<br>');
+            guideHTML += '</div>';
+        });
+        guideDiv.innerHTML = guideHTML;
+    }
+
+    function toggleDevMode() {
+        publicState.devMode = !publicState.devMode;
+        const devTools = document.getElementById('devTools');
+        if (devTools) devTools.style.display = publicState.devMode ? 'block' : 'none';
+    }
+
     // At the end of the IIFE, before the closing })();
     return {
         initGame: initGame,
         displayInitialSuspect: displayInitialSuspect,
         updateMainMenuTheme: updateMainMenuTheme,
         getNextPuzzleTime: getNextPuzzleTime,
-        showRules: showRules
+        showRules: showRules,
+        toggleDevMode: toggleDevMode
     };
 })();
 
