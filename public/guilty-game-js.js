@@ -64,10 +64,10 @@ const GameManager = (function() {
             }
         },
         hard: {
-            maxGuesses: 5,
+            maxGuesses: 4,
             name: 'Hard',
-            minViableSuspects: 7,
-            minSecondGuessViable: 4,
+            minViableSuspects: 14,
+            minSecondGuessViable: 9,
             yellowTraits: 1,
             missingTraitChance: 0.45,
             distributionStrategy: {
@@ -432,6 +432,11 @@ const GameManager = (function() {
         behavior: ['Very Calm', 'Calm', 'Normal', 'Nervous', 'Very Nervous']
     };
     
+    // Constants for game balance
+    const MIN_VIABLE_SUSPECTS = 8; // Ensures 3+ guesses needed (log2(8) = 3)
+    const MAX_INITIAL_VIABLE = 12; // Not too many to keep it reasonable
+    const LUCK_THRESHOLD = 2; // Guesses 1-2 are considered lucky
+    
     // Utility functions
     function seededRandom(seed) {
         const x = Math.sin(seed) * 10000;
@@ -659,22 +664,21 @@ const GameManager = (function() {
         const culpritIndex = Math.floor(seededRandom(getDailySeed() * 2) * suspects.length);
         const culprit = suspects[culpritIndex];
         
-        // Generate initial suspect
-        const initialSuspect = generateInitialSuspect(culprit, publicState.difficulty, getDailySeed());
+        // Initialize game state with new class
+        const gameState = new GuiltyGameState(publicState.difficulty);
+        gameState.initializeGame(suspects, culprit);
         
-        // Distribute traits for puzzle balance
-        const balancedSuspects = distributeSuspectTraits(suspects, culprit, initialSuspect, getDailySeed());
-        
-        // Update game state
-        publicState.suspects = balancedSuspects;
-        publicState.culprit = culprit;
-        publicState.initialSuspect = initialSuspect;
+        // Update public state with game state values
+        publicState.suspects = gameState.suspects;
+        publicState.culprit = gameState.culprit;
+        publicState.initialSuspect = gameState.initialSuspect;
+        publicState.theoreticalMinGuesses = gameState.theoreticalMinGuesses;
         
         // Apply theme
         applyTheme(crime.id);
         
         // Display initial state
-        displaySuspects(balancedSuspects);
+        displaySuspects(gameState.suspects);
         updateFeedbackDisplay();
         
         // Set crime title and description in the DOM
@@ -826,17 +830,12 @@ const GameManager = (function() {
         });
     }
 
+    // Update selectSuspect function to use new game state
     function selectSuspect(index) {
         if (publicState.gameOver) return;
         
         const suspect = publicState.suspects[index];
-        const feedback = getFeedback(suspect);
-        
-        // Add to guesses
-        publicState.guesses.push({
-            suspect: suspect,
-            feedback: feedback
-        });
+        const feedback = gameState.makeGuess(suspect);
         
         // Update display
         updateFeedbackDisplay();
@@ -907,23 +906,10 @@ const GameManager = (function() {
         });
     }
     
+    // Update endGame function to use new game state
     function endGame(won) {
         publicState.gameOver = true;
-        
-        const message = won ? 
-            `Congratulations! You found the culprit in ${publicState.guesses.length} guesses!` :
-            `Game Over! The culprit was ${publicState.culprit.name}.`;
-        
-        const endGameEl = document.createElement('div');
-        endGameEl.className = 'end-game';
-        endGameEl.innerHTML = `
-            <h2>${message}</h2>
-            <p>Puzzle Balance: ${publicState.viableSuspectsCount} viable suspects</p>
-            <p>Confidence Level: ${publicState.confidenceLevel}%</p>
-            <button onclick="location.reload()">Play Again</button>
-        `;
-        
-        document.body.appendChild(endGameEl);
+        gameState.endGame(won);
     }
 
     // Enhanced suspect generation with better distribution
@@ -1349,6 +1335,359 @@ const GameManager = (function() {
         const devTools = document.getElementById('devTools');
         if (devTools) devTools.style.display = publicState.devMode ? 'block' : 'none';
     }
+
+    // Enhanced initial suspect selection
+    function selectInitialSuspectNoEarlyWins(suspects, culprit, difficulty) {
+        const settings = DIFFICULTY_SETTINGS[difficulty];
+        const candidateSuspects = suspects.filter(s => s !== culprit);
+        
+        // Find patterns that create 8-12 viable suspects
+        const validPatterns = [];
+        
+        for (const suspect of candidateSuspects) {
+            const feedback = {};
+            let greenCount = 0;
+            let yellowCount = 0;
+            
+            // Calculate feedback pattern
+            for (const trait of Object.keys(TRAIT_VALUES)) {
+                const result = compareTraits(suspect[trait], culprit[trait], trait);
+                feedback[trait] = result;
+                
+                if (result === 'green') greenCount++;
+                if (result === 'yellow' || result === 'yellow-edge') yellowCount++;
+            }
+            
+            // Skip patterns with too many greens (too easy)
+            if (greenCount > 1) continue;
+            
+            // Skip patterns with wrong yellow count
+            if (yellowCount !== settings.yellowTraits) continue;
+            
+            // Count viable suspects
+            const viableSuspects = suspects.filter(s => 
+                wouldProduceSimilarFeedback(s, culprit, feedback, 0.7)
+            );
+            
+            // Only accept patterns with 8-12 viable suspects
+            if (viableSuspects.length >= MIN_VIABLE_SUSPECTS && 
+                viableSuspects.length <= MAX_INITIAL_VIABLE) {
+                validPatterns.push({
+                    suspect,
+                    feedback,
+                    viableCount: viableSuspects.length,
+                    theoreticalMinGuesses: Math.ceil(Math.log2(viableSuspects.length))
+                });
+            }
+        }
+        
+        // If no valid patterns, relax constraints slightly
+        if (validPatterns.length === 0) {
+            // Try again with 6-14 viable suspects
+            return selectInitialSuspectWithRange(suspects, culprit, difficulty, 6, 14);
+        }
+        
+        // Select pattern closest to 10 viable suspects
+        validPatterns.sort((a, b) => 
+            Math.abs(10 - a.viableCount) - Math.abs(10 - b.viableCount)
+        );
+        
+        return validPatterns[0];
+    }
+
+    // Helper function for relaxed constraints
+    function selectInitialSuspectWithRange(suspects, culprit, difficulty, minViable, maxViable) {
+        const settings = DIFFICULTY_SETTINGS[difficulty];
+        const candidateSuspects = suspects.filter(s => s !== culprit);
+        const validPatterns = [];
+        
+        for (const suspect of candidateSuspects) {
+            const feedback = {};
+            let greenCount = 0;
+            let yellowCount = 0;
+            
+            for (const trait of Object.keys(TRAIT_VALUES)) {
+                const result = compareTraits(suspect[trait], culprit[trait], trait);
+                feedback[trait] = result;
+                
+                if (result === 'green') greenCount++;
+                if (result === 'yellow' || result === 'yellow-edge') yellowCount++;
+            }
+            
+            if (greenCount > 1) continue;
+            if (yellowCount !== settings.yellowTraits) continue;
+            
+            const viableSuspects = suspects.filter(s => 
+                wouldProduceSimilarFeedback(s, culprit, feedback, 0.7)
+            );
+            
+            if (viableSuspects.length >= minViable && viableSuspects.length <= maxViable) {
+                validPatterns.push({
+                    suspect,
+                    feedback,
+                    viableCount: viableSuspects.length,
+                    theoreticalMinGuesses: Math.ceil(Math.log2(viableSuspects.length))
+                });
+            }
+        }
+        
+        if (validPatterns.length === 0) {
+            // Last resort: use any pattern with reasonable viable count
+            return selectInitialSuspectWithRange(suspects, culprit, difficulty, 4, 16);
+        }
+        
+        validPatterns.sort((a, b) => 
+            Math.abs(10 - a.viableCount) - Math.abs(10 - b.viableCount)
+        );
+        
+        return validPatterns[0];
+    }
+
+    // Game state with luck detection
+    class GuiltyGameState {
+        constructor(difficulty) {
+            this.difficulty = difficulty;
+            this.guesses = [];
+            this.startTime = Date.now();
+            this.theoreticalMinGuesses = 3; // Will be calculated
+            this.wasLucky = false;
+            this.viableSuspectsHistory = [];
+        }
+        
+        initializeGame(suspects, culprit) {
+            this.suspects = suspects;
+            this.culprit = culprit;
+            
+            // Select initial suspect ensuring no early wins
+            const pattern = selectInitialSuspectNoEarlyWins(suspects, culprit, this.difficulty);
+            this.initialSuspect = pattern.suspect;
+            this.initialFeedback = pattern.feedback;
+            this.theoreticalMinGuesses = pattern.theoreticalMinGuesses;
+            
+            // Track initial viable suspects
+            this.viableSuspectsHistory.push(pattern.viableCount);
+            
+            // Display message about minimum guesses
+            this.displayMinGuessMessage();
+        }
+        
+        displayMinGuessMessage() {
+            const minGuesses = Math.max(3, this.theoreticalMinGuesses);
+            const message = `It is possible to solve this through logical deduction alone in ${minGuesses} guesses`;
+            
+            // Add to UI
+            const messageEl = document.createElement('div');
+            messageEl.className = 'min-guess-message';
+            messageEl.textContent = message;
+            messageEl.style.cssText = `
+                background: rgba(99, 102, 241, 0.1);
+                border: 1px solid #6366f1;
+                color: #a5b4fc;
+                padding: 12px 20px;
+                border-radius: 8px;
+                text-align: center;
+                margin: 20px 0;
+                font-weight: 500;
+            `;
+            
+            // Insert after game stats
+            const gameStats = document.querySelector('.game-stats');
+            if (gameStats) {
+                gameStats.after(messageEl);
+            }
+        }
+        
+        makeGuess(suspect) {
+            const guessNumber = this.guesses.length + 1;
+            const feedback = this.calculateFeedback(suspect);
+            
+            this.guesses.push({
+                suspect,
+                feedback,
+                guessNumber
+            });
+            
+            // Check if this was the culprit
+            if (suspect === this.culprit) {
+                // Determine if they got lucky
+                if (guessNumber <= LUCK_THRESHOLD) {
+                    this.wasLucky = true;
+                } else {
+                    // Check if it was theoretically possible to get it this fast
+                    const viableBeforeGuess = this.calculateViableSuspects();
+                    const theoreticalMin = Math.ceil(Math.log2(viableBeforeGuess.length));
+                    
+                    if (guessNumber < theoreticalMin + 2) {
+                        this.wasLucky = true;
+                    }
+                }
+                
+                return this.endGame(true);
+            }
+            
+            // Update viable suspects
+            const newViable = this.calculateViableSuspects();
+            this.viableSuspectsHistory.push(newViable.length);
+            
+            return feedback;
+        }
+        
+        calculateViableSuspects() {
+            return this.suspects.filter(s => 
+                wouldProduceSimilarFeedback(s, this.culprit, this.initialFeedback, 0.7)
+            );
+        }
+        
+        endGame(won) {
+            const endTime = Date.now();
+            const timeTaken = Math.floor((endTime - this.startTime) / 1000);
+            const guessCount = this.guesses.length;
+            
+            let title, message;
+            
+            if (won) {
+                if (this.wasLucky) {
+                    title = "🍀 Lucky Win!";
+                    message = `You found the culprit in ${guessCount} ${guessCount === 1 ? 'guess' : 'guesses'}! ` +
+                             `That required some luck - the minimum through pure deduction was ${this.theoreticalMinGuesses} guesses.`;
+                } else {
+                    title = "🎯 Case Solved!";
+                    message = `Excellent deduction! You found the culprit in ${guessCount} guesses.`;
+                }
+            } else {
+                title = "❌ Case Unsolved";
+                message = `The culprit was ${this.culprit.name}. Better luck next time!`;
+            }
+            
+            // Show game over screen
+            this.showGameOver(won, title, message, guessCount, timeTaken);
+        }
+        
+        showGameOver(won, title, message, guessCount, timeTaken) {
+            const gameOverEl = document.getElementById('gameOver');
+            const titleEl = document.getElementById('gameOverTitle');
+            const messageEl = document.getElementById('gameOverMessage');
+            
+            if (!gameOverEl || !titleEl || !messageEl) return;
+            
+            gameOverEl.className = won ? 'game-over won' : 'game-over lost';
+            titleEl.textContent = title;
+            
+            // Build detailed message
+            const minutes = Math.floor(timeTaken / 60);
+            const seconds = timeTaken % 60;
+            const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+            
+            let detailsHtml = `
+                <p>${message}</p>
+                <div class="game-stats-final">
+                    <div class="stat-final">
+                        <span class="stat-label">Guesses:</span>
+                        <span class="stat-value">${guessCount}/${DIFFICULTY_SETTINGS[this.difficulty].maxGuesses}</span>
+                    </div>
+                    <div class="stat-final">
+                        <span class="stat-label">Time:</span>
+                        <span class="stat-value">${timeStr}</span>
+                    </div>
+                    ${this.wasLucky ? `
+                    <div class="stat-final lucky">
+                        <span class="stat-label">Lucky Factor:</span>
+                        <span class="stat-value">🍀 High</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            if (!won) {
+                detailsHtml += `
+                    <div class="culprit-reveal">
+                        <strong>The culprit was:</strong> ${this.culprit.name} (${this.culprit.job})
+                    </div>
+                `;
+            }
+            
+            messageEl.innerHTML = detailsHtml;
+            gameOverEl.style.display = 'block';
+        }
+        
+        getShareableResults() {
+            const difficulty = this.difficulty.charAt(0).toUpperCase();
+            const guessCount = this.guesses.length;
+            const won = this.guesses[guessCount - 1]?.suspect === this.culprit;
+            
+            let result = `GUILTY ${this.getPuzzleNumber()} ${guessCount}/${DIFFICULTY_SETTINGS[this.difficulty].maxGuesses}`;
+            if (this.wasLucky) result += ' 🍀';
+            result += '\n\n';
+            
+            // Add guess pattern
+            for (let i = 0; i < guessCount; i++) {
+                if (i === guessCount - 1 && won) {
+                    result += '🟩';
+                } else {
+                    result += '⬜';
+                }
+            }
+            
+            return result;
+        }
+    }
+
+    // Add game over styles
+    const gameOverStyles = `
+    <style>
+    .game-stats-final {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin: 20px 0;
+        flex-wrap: wrap;
+    }
+
+    .stat-final {
+        background: var(--bg-medium);
+        padding: 12px 20px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .stat-final.lucky {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(245, 158, 11, 0.2));
+        border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .stat-final .stat-label {
+        font-size: 0.85em;
+        color: var(--text-muted);
+    }
+
+    .stat-final .stat-value {
+        font-size: 1.2em;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .min-guess-message {
+        animation: slideDown 0.5s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    </style>
+    `;
+
+    // Add styles to document
+    document.head.insertAdjacentHTML('beforeend', gameOverStyles);
 
     // At the end of the IIFE, before the closing })();
     return {

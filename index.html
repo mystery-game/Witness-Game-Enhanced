@@ -758,7 +758,7 @@
             <div id="suspectsSection">
                 <div id="suspectsGrid"></div>
             </div>
-            
+
             <div id="gameOver" class="game-over" style="display: none;">
                 <h2 id="gameOverTitle"></h2>
                 <div id="gameOverMessage"></div>
@@ -786,20 +786,20 @@
         const GameManager = (function() {
             // Private state
             let privateState = {
-                culprit: null,
-                suspects: [],
-                initialSuspect: null,
+        culprit: null,
+        suspects: [],
+        initialSuspect: null,
                 gameSecret: 'guilty-' + Math.random().toString(36).substring(7)
             };
             
             // Public state
             let publicState = {
                 difficulty: 'medium',
-                guesses: [],
-                currentGuess: 0,
-                gameOver: false,
-                won: false,
-                eliminatedSuspects: new Set(),
+        guesses: [],
+        currentGuess: 0,
+        gameOver: false,
+        won: false,
+        eliminatedSuspects: new Set(),
                 viableSuspectsCount: 16,
                 confidenceLevel: 0,
                 startTime: null,
@@ -833,7 +833,7 @@
                 id: 'museum_heist',
                 title: "The Museum Diamond Heist",
                 description: "The priceless 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. Security footage shows the thief knew the guard rotation perfectly. The crime occurred between 2-3 AM.",
-                traits: {
+            traits: {
                     access: ['Staff', 'Visitor', 'VIP', 'Contractor', 'None'],
                     timing: ['Working', 'Home', 'Out', 'Verified', 'Asleep'],
                     knowledge: ['Expert', 'Familiar', 'Basic', 'Limited', 'None'],
@@ -1056,7 +1056,7 @@
                         if (adjacentPositions.length > 0) {
                             const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + 2000 + trait.charCodeAt(0)) * adjacentPositions.length)];
                             privateState.initialSuspect[trait] = traitArray[chosenPos];
-                        } else {
+        } else {
                             privateState.initialSuspect[trait] = culpritValue; // Fallback
                         }
                     } else {
@@ -1333,7 +1333,7 @@
                 if (publicState.guesses.length === 0) return;
                 
                 const latestGuess = publicState.guesses[publicState.guesses.length - 1];
-                let viableCount = 0;
+            let viableCount = 0;
                 
                 privateState.suspects.forEach(suspect => {
                     if (publicState.guesses.some(g => g.name === suspect.name)) {
@@ -1649,7 +1649,7 @@
                             
                             if (bestGuess !== null) {
                                 this.makeGuess(bestGuess);
-                            } else {
+                    } else {
                                 break;
                             }
                         }
