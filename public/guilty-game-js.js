@@ -630,6 +630,13 @@ const GameManager = (function() {
         // Display initial state
         displaySuspects(balancedSuspects);
         updateFeedbackDisplay();
+        
+        // Set crime title and description in the DOM
+        document.getElementById('crimeTitle').textContent = crime.title;
+        document.getElementById('crimeDescription').textContent = crime.description;
+        if (typeof GameManager.displayInitialSuspect === 'function') {
+            GameManager.displayInitialSuspect();
+        }
     }
 
     // Start the game
