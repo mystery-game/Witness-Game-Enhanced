@@ -583,73 +583,131 @@ const GameManager = (function() {
     const feedbackCache = new Map();
     
     // Fixed function to compare traits with edge case handling
-    function compareTraits(suspectValue, culpritValue, traitType) {
+    function compareTraitsFixed(suspectValue, culpritValue, traitType) {
         if (!suspectValue || !culpritValue) {
             return 'unknown';
         }
-        const values = TRAIT_VALUES[traitType] || (currentCrime && currentCrime.traits && currentCrime.traits[traitType]);
-        if (!values) return 'unknown';
+        
+        const values = TRAIT_VALUES[traitType];
         const suspectIndex = values.indexOf(suspectValue);
         const culpritIndex = values.indexOf(culpritValue);
+        
         if (suspectIndex === -1 || culpritIndex === -1) {
             return 'unknown';
         }
-        // Exact match
-        if (suspectIndex === culpritIndex) {
-            return 'green';
-        }
-        // Adjacent value check
+        
         const diff = Math.abs(suspectIndex - culpritIndex);
-        if (diff === 1) {
-            // Check if this is an edge case
-            if ((culpritIndex === 0 && suspectIndex === 1) || 
-                (culpritIndex === values.length - 1 && suspectIndex === values.length - 2)) {
-                // Edge case: only one possible adjacent value
-                // This provides as much information as a green!
-                return 'yellow-edge';
-            }
+        
+        if (diff === 0) {
+            return 'green';
+        } else if (diff === 1) {
             return 'yellow';
+        } else {
+            return 'gray';
         }
-        // Not adjacent (provides elimination info)
-        return 'gray';
     }
 
-    // Calculate information gain from a guess
-    function calculateInformationGain(feedback, remainingViableSuspects) {
-        let informationBits = 0;
-        Object.entries(feedback).forEach(([trait, result]) => {
-            if (result === 'unknown') {
-                return; // No information
+    // Check if a suspect could produce the observed pattern
+    function isViableSuspectFixed(candidateSuspect, initialSuspect, culprit, initialFeedback) {
+        // For each trait, check if this candidate could produce the same feedback
+        for (const trait of Object.keys(TRAIT_VALUES)) {
+            const observedFeedback = initialFeedback[trait];
+            
+            if (observedFeedback === 'unknown') {
+                continue; // Skip unknown traits
             }
-            if (result === 'green') {
-                // Exact match - very high information
-                informationBits += Math.log2(TRAIT_VALUES[trait].length);
-            } else if (result === 'yellow-edge') {
-                // Edge yellow - almost as good as green
-                informationBits += Math.log2(TRAIT_VALUES[trait].length) - 0.1;
-            } else if (result === 'yellow') {
-                // Regular yellow - moderate information
-                informationBits += Math.log2(TRAIT_VALUES[trait].length) - 1;
-            } else if (result === 'gray') {
-                // Elimination information - still valuable!
-                // Gray tells us what the culprit is NOT
-                const traitValues = TRAIT_VALUES[trait];
-                const eliminatedPossibilities = traitValues.length - 2; // Not this value, not adjacent
-                informationBits += Math.log2(1 + eliminatedPossibilities / traitValues.length);
+            
+            // What feedback would we get if candidateSuspect was the culprit?
+            const hypotheticalFeedback = compareTraitsFixed(
+                initialSuspect[trait], 
+                candidateSuspect[trait], 
+                trait
+            );
+            
+            // Must match the observed feedback
+            if (hypotheticalFeedback !== observedFeedback) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    // Get possible culprit values based on yellow feedback
+    function getPossibleValuesFromYellow(suspectValue, traitType) {
+        const values = TRAIT_VALUES[traitType];
+        const suspectIndex = values.indexOf(suspectValue);
+        
+        if (suspectIndex === -1) return [];
+        
+        const possibleIndices = [];
+        
+        // Yellow means culprit is 1 step away
+        if (suspectIndex > 0) {
+            possibleIndices.push(suspectIndex - 1);
+        }
+        if (suspectIndex < values.length - 1) {
+            possibleIndices.push(suspectIndex + 1);
+        }
+        
+        return possibleIndices.map(i => values[i]);
+    }
+
+    // Debug function to show why suspects are viable/not viable
+    function debugViableSuspects(suspects, initialSuspect, initialFeedback, culprit) {
+        console.log("=== VIABLE SUSPECT DEBUG ===");
+        console.log("Initial Suspect:", initialSuspect.name);
+        console.log("Initial Feedback:", initialFeedback);
+        console.log("Actual Culprit:", culprit.name);
+        
+        // For each yellow, show possible values
+        for (const trait of Object.keys(initialFeedback)) {
+            if (initialFeedback[trait] === 'yellow') {
+                const possibleValues = getPossibleValuesFromYellow(initialSuspect[trait], trait);
+                console.log(`${trait} (yellow): suspect has "${initialSuspect[trait]}", culprit must be one of:`, possibleValues);
+            }
+        }
+        
+        console.log("\nChecking each suspect:");
+        
+        let viableCount = 0;
+        suspects.forEach(suspect => {
+            const isViable = isViableSuspectFixed(suspect, initialSuspect, culprit, initialFeedback);
+            
+            if (isViable) {
+                viableCount++;
+                console.log(`✓ ${suspect.name} - VIABLE`);
+                
+                // Show why they're viable
+                for (const trait of Object.keys(initialFeedback)) {
+                    if (initialFeedback[trait] === 'yellow') {
+                        console.log(`  ${trait}: ${suspect[trait]} (${compareTraitsFixed(initialSuspect[trait], suspect[trait], trait)})`);
+                    }
+                }
+            } else {
+                // Show why they're not viable
+                let reason = "";
+                for (const trait of Object.keys(initialFeedback)) {
+                    const expected = initialFeedback[trait];
+                    const actual = compareTraitsFixed(initialSuspect[trait], suspect[trait], trait);
+                    if (expected !== actual && expected !== 'unknown') {
+                        reason = `${trait}: expected ${expected}, got ${actual}`;
+                        break;
+                    }
+                }
+                console.log(`✗ ${suspect.name} - NOT VIABLE (${reason})`);
             }
         });
-        return informationBits;
+        
+        console.log(`\nTotal viable suspects: ${viableCount}`);
+        return viableCount;
     }
 
-    // Refactored getFeedbackForTrait to use compareTraits
-    function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
-        const cacheKey = `${guessValue}-${culpritValue}-${traitCategory}`;
-        if (feedbackCache.has(cacheKey)) {
-            return feedbackCache.get(cacheKey);
-        }
-        const result = compareTraits(guessValue, culpritValue, traitCategory);
-        feedbackCache.set(cacheKey, result);
-        return result;
+    // Corrected viable suspect counter for the game
+    function countViableSuspects(suspects, initialSuspect, initialFeedback) {
+        return suspects.filter(suspect => 
+            isViableSuspectFixed(suspect, initialSuspect, suspect, initialFeedback)
+        ).length;
     }
 
     // Initialize the game
@@ -1351,7 +1409,7 @@ const GameManager = (function() {
             
             // Calculate feedback pattern
             for (const trait of Object.keys(TRAIT_VALUES)) {
-                const result = compareTraits(suspect[trait], culprit[trait], trait);
+                const result = compareTraitsFixed(suspect[trait], culprit[trait], trait);
                 feedback[trait] = result;
                 
                 if (result === 'green') greenCount++;
@@ -1407,7 +1465,7 @@ const GameManager = (function() {
             let yellowCount = 0;
             
             for (const trait of Object.keys(TRAIT_VALUES)) {
-                const result = compareTraits(suspect[trait], culprit[trait], trait);
+                const result = compareTraitsFixed(suspect[trait], culprit[trait], trait);
                 feedback[trait] = result;
                 
                 if (result === 'green') greenCount++;
@@ -1452,6 +1510,7 @@ const GameManager = (function() {
             this.theoreticalMinGuesses = 3; // Will be calculated
             this.wasLucky = false;
             this.viableSuspectsHistory = [];
+            this.devMode = false;
         }
         
         initializeGame(suspects, culprit) {
@@ -1469,6 +1528,11 @@ const GameManager = (function() {
             
             // Display message about minimum guesses
             this.displayMinGuessMessage();
+            
+            // Debug output if in dev mode
+            if (this.devMode) {
+                this.debugCurrentState();
+            }
         }
         
         displayMinGuessMessage() {
@@ -1533,9 +1597,69 @@ const GameManager = (function() {
         }
         
         calculateViableSuspects() {
-            return this.suspects.filter(s => 
-                wouldProduceSimilarFeedback(s, this.culprit, this.initialFeedback, 0.7)
-            );
+            const viableSuspects = [];
+            
+            for (const suspect of this.suspects) {
+                let isViable = true;
+                
+                // Check against initial feedback
+                for (const trait of Object.keys(this.initialFeedback)) {
+                    if (this.initialFeedback[trait] === 'unknown') continue;
+                    
+                    // What feedback would we see if this suspect was the culprit?
+                    const hypotheticalFeedback = compareTraitsFixed(
+                        this.initialSuspect[trait],
+                        suspect[trait],
+                        trait
+                    );
+                    
+                    if (hypotheticalFeedback !== this.initialFeedback[trait]) {
+                        isViable = false;
+                        break;
+                    }
+                }
+                
+                // Check against guess history
+                if (isViable) {
+                    for (const guess of this.guesses) {
+                        for (const trait of Object.keys(guess.feedback)) {
+                            const expectedFeedback = compareTraitsFixed(
+                                guess.suspect[trait],
+                                suspect[trait],
+                                trait
+                            );
+                            
+                            if (expectedFeedback !== guess.feedback[trait]) {
+                                isViable = false;
+                                break;
+                            }
+                        }
+                        if (!isViable) break;
+                    }
+                }
+                
+                if (isViable) {
+                    viableSuspects.push(suspect);
+                }
+            }
+            
+            return viableSuspects;
+        }
+        
+        debugCurrentState() {
+            console.log("Current game state:");
+            console.log("Initial suspect:", this.initialSuspect);
+            console.log("Initial feedback:", this.initialFeedback);
+            console.log("Guesses made:", this.guesses.length);
+            
+            const viable = this.calculateViableSuspects();
+            console.log("Viable suspects:", viable.length);
+            viable.forEach(s => console.log(" -", s.name));
+            
+            // If in dev mode, show the culprit
+            if (this.devMode) {
+                console.log("Actual culprit:", this.culprit.name);
+            }
         }
         
         endGame(won) {
