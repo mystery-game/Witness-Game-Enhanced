@@ -1017,6 +1017,7 @@
         </div>
 
         <div id="main-menu" class="main-menu">
+            <button id="rulesBtnMenu" class="btn" style="margin-bottom: 20px;">Rules</button>
             <h2>Welcome, Detective</h2>
             <div class="puzzle-info">
                 <div class="puzzle-number" id="puzzleNumber">Loading...</div>
@@ -1043,6 +1044,7 @@
         </div>
 
         <div id="game-screen" class="game-screen">
+            <button id="rulesBtnGame" class="btn" style="margin-bottom: 20px;">Rules</button>
             <div class="crime-box">
                 <h2 id="crimeTitle">Loading...</h2>
                 <p id="crimeDescription">Loading crime details...</p>
@@ -1121,6 +1123,13 @@
         }
         setInterval(updateCountdown, 1000);
         updateCountdown();
+        // Add Rules button handlers
+        setTimeout(function() {
+            var btnMenu = document.getElementById('rulesBtnMenu');
+            var btnGame = document.getElementById('rulesBtnGame');
+            if (btnMenu) btnMenu.onclick = function() { window.GameManager.showRules(); };
+            if (btnGame) btnGame.onclick = function() { window.GameManager.showRules(); };
+        }, 100);
     });
     console.log('window.GameManager at script start:', window.GameManager);
     document.getElementById('start-game').addEventListener('click', function() {

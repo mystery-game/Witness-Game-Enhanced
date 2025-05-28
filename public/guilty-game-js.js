@@ -654,40 +654,43 @@ const GameManager = (function() {
     // Display the initial suspect
     function displayInitialSuspect() {
         const suspectsSection = document.getElementById('suspectsSection');
-        const oldSection = suspectsSection.querySelector('.initial-suspect-section');
+        if (!suspectsSection) return;
+        // Remove old initial suspect section if present
+        const oldSection = document.getElementById('initialSuspect');
         if (oldSection) oldSection.remove();
-        
-        const theme = gameState.currentTheme;
-        const container = document.createElement('div');
-        container.className = 'initial-suspect-section';
-        
-        let html = '<h3>Initial Suspect Profile</h3>';
-        html += '<p>This person is NOT guilty. Find who shares these patterns:</p>';
-        html += '<div class="initial-suspect-traits">';
-        
-        Object.keys(theme.traits).forEach(trait => {
-            const initialValue = gameState.initialSuspect[trait];
-            const suspectValue = gameState.culprit[trait];
-            
-            if (initialValue !== undefined && suspectValue !== undefined) {
-                const colorClass = initialValue === suspectValue ? 'green' : 
-                                 initialValue === undefined ? 'gray' : 'yellow';
-                html += `<div class="initial-trait ${colorClass}">
-                            <span class="trait-label">${trait}:</span>
-                            <span class="trait-value">${initialValue}</span>
-                        </div>`;
+        const initialDiv = document.createElement('div');
+        initialDiv.id = 'initialSuspect';
+        initialDiv.className = 'initial-suspect-section';
+        const traitCategories = getTraitCategories(currentCrime);
+        const traitKeys = Object.keys(traitCategories);
+        let traitHTML = '';
+        traitKeys.forEach(trait => {
+            if (publicState.initialSuspect[trait] !== undefined) {
+                const feedback = getFeedbackForTrait(
+                    publicState.initialSuspect[trait],
+                    publicState.culprit[trait],
+                    trait
+                );
+                const colorClass = feedback === 'correct' ? 'green' : feedback === 'close' ? 'yellow' : 'gray';
+                traitHTML += `
+                    <div class="initial-trait ${colorClass}">
+                        <div class="initial-trait-label">${traitCategories[trait].name}</div>
+                        <div class="initial-trait-value">${publicState.initialSuspect[trait]}</div>
+                    </div>
+                `;
             }
         });
-        
-        html += '</div>';
-        html += '<div class="color-legend">';
-        html += '<span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>';
-        html += '<span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>';
-        html += '<span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>';
-        html += '</div>';
-        
-        container.innerHTML = html;
-        suspectsSection.appendChild(container);
+        initialDiv.innerHTML = `
+            <h3>Initial Suspect Profile</h3>
+            <p>This person is NOT guilty. Find who shares these patterns:</p>
+            <div class="initial-suspect-traits">${traitHTML}</div>
+            <div class="color-legend">
+                <span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>
+                <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
+                <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
+            </div>
+        `;
+        suspectsSection.prepend(initialDiv);
     }
 
     function loadTheme() {
@@ -729,21 +732,16 @@ const GameManager = (function() {
     function displaySuspects(suspects) {
         const grid = document.getElementById('suspect-grid');
         grid.innerHTML = '';
-        
         suspects.forEach((suspect, index) => {
             const card = document.createElement('div');
             card.className = 'suspect-card';
             card.dataset.index = index;
-            
             const nameEl = document.createElement('h3');
             nameEl.textContent = suspect.name;
-            
             const jobEl = document.createElement('p');
             jobEl.textContent = suspect.job;
-            
             card.appendChild(nameEl);
             card.appendChild(jobEl);
-            
             // Add trait elements
             Object.entries(suspect).forEach(([key, value]) => {
                 if (!['name', 'job'].includes(key)) {
@@ -754,8 +752,27 @@ const GameManager = (function() {
                     card.appendChild(traitEl);
                 }
             });
-            
-            card.addEventListener('click', () => selectSuspect(index));
+            // Add Accuse and Exonerate buttons
+            const btnDiv = document.createElement('div');
+            btnDiv.className = 'suspect-actions';
+            const accuseBtn = document.createElement('button');
+            accuseBtn.className = 'suspect-button accuse-btn';
+            accuseBtn.textContent = 'Accuse';
+            accuseBtn.onclick = () => selectSuspect(index);
+            const exonerateBtn = document.createElement('button');
+            exonerateBtn.className = 'suspect-button exonerate-btn';
+            exonerateBtn.textContent = publicState.eliminatedSuspects.has(suspect.name) ? 'Restore' : 'Exonerate';
+            exonerateBtn.onclick = () => {
+                if (publicState.eliminatedSuspects.has(suspect.name)) {
+                    publicState.eliminatedSuspects.delete(suspect.name);
+                } else {
+                    publicState.eliminatedSuspects.add(suspect.name);
+                }
+                displaySuspects(suspects);
+            };
+            btnDiv.appendChild(accuseBtn);
+            btnDiv.appendChild(exonerateBtn);
+            card.appendChild(btnDiv);
             grid.appendChild(card);
         });
     }
@@ -1147,12 +1164,60 @@ const GameManager = (function() {
         return next;
     }
 
+    function showRules() {
+        let modal = document.getElementById('rulesModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'rulesModal';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100vw';
+            modal.style.height = '100vh';
+            modal.style.background = 'rgba(0,0,0,0.7)';
+            modal.style.zIndex = '9999';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.innerHTML = `
+                <div style="background: #1e293b; color: #fff; padding: 40px; border-radius: 20px; max-width: 600px; width: 90%; position: relative;">
+                    <button id="closeRulesModal" style="position: absolute; top: 20px; right: 20px; background: #ef4444; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer;">Close</button>
+                    <h2>How to Play</h2>
+                    <ul style="margin-bottom: 20px;">
+                        <li>Each day, a new mystery scenario is generated. Your goal: find the culprit!</li>
+                        <li>Use the initial suspect profile as a reference. This person is NOT guilty, but their traits are clues.</li>
+                        <li>Click "Accuse" on a suspect to see feedback for each trait (green = exact match, yellow = close, gray = different).</li>
+                        <li>Use "Exonerate" to mark suspects you want to ignore.</li>
+                        <li>You have a limited number of guesses. Good luck, detective!</li>
+                    </ul>
+                    <h3>Trait Guide</h3>
+                    <div id="traitGuide"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('closeRulesModal').onclick = function() {
+                modal.remove();
+            };
+            // Render trait guide
+            const guideDiv = document.getElementById('traitGuide');
+            const traitCategories = getTraitCategories(getDailyCrime());
+            let guideHTML = '';
+            Object.keys(traitCategories).forEach(trait => {
+                guideHTML += `<div style="margin-bottom: 10px;"><strong>${traitCategories[trait].name}:</strong> `;
+                guideHTML += Object.entries(traitCategories[trait].values).map(([val, desc]) => `<span style="margin-left: 8px;"><em>${val}</em>: ${desc}</span>`).join('<br>');
+                guideHTML += '</div>';
+            });
+            guideDiv.innerHTML = guideHTML;
+        }
+    }
+
     // At the end of the IIFE, before the closing })();
     return {
         initGame: initGame,
         displayInitialSuspect: displayInitialSuspect,
         updateMainMenuTheme: updateMainMenuTheme,
-        getNextPuzzleTime: getNextPuzzleTime
+        getNextPuzzleTime: getNextPuzzleTime,
+        showRules: showRules
     };
 })();
 
