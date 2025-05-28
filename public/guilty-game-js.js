@@ -30,6 +30,9 @@ const GameManager = (function() {
         confidenceLevel: 0
     };
     
+    // Event handler reference for cleanup
+    let boundHandleClick = null;
+    
     // Enhanced difficulty settings with better balance
     const DIFFICULTY_SETTINGS = {
         easy: {
@@ -1267,11 +1270,9 @@ const GameManager = (function() {
     };
 })();
 
-window.GameManager = GameManager;
-console.log('GameManager exported:', window.GameManager);
-
-// document.addEventListener('DOMContentLoaded', function() {
-//     if (typeof GameManager.initGame === 'function') {
-//         GameManager.initGame();
-//     }
-// });
+// Make GameManager available globally
+if (typeof window !== 'undefined') {
+    window.GameManager = GameManager;
+    window.runAITests = function(n) { return GameManager.runAITests(n); };
+    console.log('GameManager loaded and attached to window');
+}
