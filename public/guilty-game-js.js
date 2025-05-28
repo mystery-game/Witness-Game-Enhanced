@@ -637,6 +637,7 @@ const GameManager = (function() {
         if (typeof GameManager.displayInitialSuspect === 'function') {
             GameManager.displayInitialSuspect();
         }
+        updateMainMenuTheme(crime);
     }
 
     // Start the game
@@ -1122,10 +1123,19 @@ const GameManager = (function() {
         return suspects;
     }
 
+    function updateMainMenuTheme(crime) {
+        if (!crime) return;
+        const themeEl = document.getElementById('dailyTheme');
+        const descEl = document.getElementById('themeDescription');
+        if (themeEl) themeEl.textContent = crime.title || 'Today\'s Mystery';
+        if (descEl) descEl.textContent = crime.description || 'Loading theme...';
+    }
+
     // At the end of the IIFE, before the closing })();
     return {
-        initGame: initGame
-        // Add other public methods here if needed
+        initGame: initGame,
+        displayInitialSuspect: displayInitialSuspect,
+        updateMainMenuTheme: updateMainMenuTheme
     };
 })();
 
