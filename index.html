@@ -1100,46 +1100,27 @@
     <script src="public/guilty-game-js.js" defer></script>
     <script defer>
     document.addEventListener('DOMContentLoaded', function() {
-        // Pick a random crime to show on the main menu
+        // Show the actual daily puzzle scenario on the main menu
         if (window.GameManager && typeof window.GameManager.updateMainMenuTheme === 'function') {
-            // Use the same CRIME_SCENARIOS as in the JS file
-            var crimes = [
-                {
-                    title: "The Museum Diamond Heist",
-                    description: "The priceless 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. Security footage shows the thief knew the guard rotation perfectly. The crime occurred between 2-3 AM."
-                },
-                {
-                    title: "The Research Lab Data Theft",
-                    description: "Someone copied confidential AI research data from TechCorp's lab. The breach occurred at 11:47 PM using valid credentials. The stolen data could be worth millions."
-                },
-                {
-                    title: "The Secret Recipe Theft",
-                    description: "The famous century-old recipe for 'Grandma's Miracle Cookies' was stolen from the company vault. The thief struck during the evening shift change at 7:45 PM. Competitors would pay handsomely for this formula."
-                },
-                {
-                    title: "The Five-Star Poisoning",
-                    description: "Celebrity chef Marcus Beaumont collapsed during dinner service at Le Jardin. A rare poison was found in his wine glass. Only those with kitchen access between 7-8 PM could have done it."
-                },
-                {
-                    title: "The Sunken Treasure Sabotage",
-                    description: "A priceless artifact vanished from the deep-sea research base. Only those with access to the submersible bay could have done it. The theft occurred during a bioluminescent blackout."
-                },
-                {
-                    title: "The Zoo Animal Escape",
-                    description: "A rare animal has mysteriously escaped from the city zoo. Only those with access to the enclosures could have orchestrated it. The incident happened during the morning feeding."
-                },
-                {
-                    title: "The Space Station Sabotage",
-                    description: "Critical systems were tampered with aboard the international space station. Only crew with access to engineering modules could have done it. The sabotage occurred during a solar storm blackout."
-                },
-                {
-                    title: "The School Exam Scandal",
-                    description: "The answers to the final exam were leaked at the prestigious academy. Only those with access to the teacher's lounge could have done it. The leak happened during lunch break."
-                }
-            ];
-            var randomCrime = crimes[Math.floor(Math.random() * crimes.length)];
-            window.GameManager.updateMainMenuTheme(randomCrime);
+            window.GameManager.updateMainMenuTheme();
         }
+        // Countdown timer for next puzzle
+        function updateCountdown() {
+            if (window.GameManager && typeof window.GameManager.getNextPuzzleTime === 'function') {
+                var now = new Date();
+                var next = window.GameManager.getNextPuzzleTime();
+                var diff = next - now;
+                if (diff < 0) diff = 0;
+                var hours = Math.floor(diff / 1000 / 60 / 60);
+                var minutes = Math.floor((diff / 1000 / 60) % 60);
+                var seconds = Math.floor((diff / 1000) % 60);
+                document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+                document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+                document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+            }
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
     });
     console.log('window.GameManager at script start:', window.GameManager);
     document.getElementById('start-game').addEventListener('click', function() {

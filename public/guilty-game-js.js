@@ -602,22 +602,21 @@ const GameManager = (function() {
 
     // Initialize the game
     function initGame() {
-        const seed = getDailySeed();
-        const crime = CRIME_SCENARIOS[Math.floor(seededRandom(seed) * CRIME_SCENARIOS.length)];
+        const crime = getDailyCrime();
         currentCrime = crime;
         
         // Generate suspects
-        const suspects = generateSuspects(seed, crime);
+        const suspects = generateSuspects(getDailySeed(), crime);
         
         // Select culprit
-        const culpritIndex = Math.floor(seededRandom(seed * 2) * suspects.length);
+        const culpritIndex = Math.floor(seededRandom(getDailySeed() * 2) * suspects.length);
         const culprit = suspects[culpritIndex];
         
         // Generate initial suspect
-        const initialSuspect = generateInitialSuspect(culprit, publicState.difficulty, seed);
+        const initialSuspect = generateInitialSuspect(culprit, publicState.difficulty, getDailySeed());
         
         // Distribute traits for puzzle balance
-        const balancedSuspects = distributeSuspectTraits(suspects, culprit, initialSuspect, seed);
+        const balancedSuspects = distributeSuspectTraits(suspects, culprit, initialSuspect, getDailySeed());
         
         // Update game state
         publicState.suspects = balancedSuspects;
@@ -637,7 +636,7 @@ const GameManager = (function() {
         if (typeof GameManager.displayInitialSuspect === 'function') {
             GameManager.displayInitialSuspect();
         }
-        updateMainMenuTheme(crime);
+        updateMainMenuTheme();
     }
 
     // Start the game
@@ -1123,19 +1122,37 @@ const GameManager = (function() {
         return suspects;
     }
 
-    function updateMainMenuTheme(crime) {
-        if (!crime) return;
+    function updateMainMenuTheme() {
+        const crime = getDailyCrime();
         const themeEl = document.getElementById('dailyTheme');
         const descEl = document.getElementById('themeDescription');
         if (themeEl) themeEl.textContent = crime.title || 'Today\'s Mystery';
         if (descEl) descEl.textContent = crime.description || 'Loading theme...';
     }
 
+    function getDailyCrime() {
+        const seed = getDailySeed();
+        return CRIME_SCENARIOS[Math.floor(seededRandom(seed) * CRIME_SCENARIOS.length)];
+    }
+
+    function getNextPuzzleTime() {
+        // Get current EST time
+        const now = getESTTime();
+        const next = new Date(now);
+        if (now.getHours() < 12) {
+            next.setHours(12, 0, 0, 0); // Next 12pm
+        } else {
+            next.setHours(24, 0, 0, 0); // Next 12am (midnight)
+        }
+        return next;
+    }
+
     // At the end of the IIFE, before the closing })();
     return {
         initGame: initGame,
         displayInitialSuspect: displayInitialSuspect,
-        updateMainMenuTheme: updateMainMenuTheme
+        updateMainMenuTheme: updateMainMenuTheme,
+        getNextPuzzleTime: getNextPuzzleTime
     };
 })();
 
