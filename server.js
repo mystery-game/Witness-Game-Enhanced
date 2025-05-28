@@ -16,7 +16,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'"]
@@ -45,7 +45,14 @@ if (isDevelopment) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files with caching
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: isDevelopment ? 0 : '1d',
+    etag: true,
+    lastModified: true
+}));
+
+// Serve static files from root directory
 app.use(express.static(path.join(__dirname), {
     maxAge: isDevelopment ? 0 : '1d',
     etag: true,
