@@ -1654,6 +1654,32 @@
                 displayConfidence();
             }
             
+            // Count viable suspects for pattern
+            function countViableSuspectsForPattern(pattern) {
+                let viableCount = 0;
+                privateState.suspects.forEach(suspect => {
+                    let isViable = true;
+                    Object.keys(currentCrime.traits).forEach(trait => {
+                        if (pattern[trait] === undefined) return;
+                        const patternFeedback = getFeedbackForTrait(
+                            pattern[trait],
+                            privateState.culprit[trait],
+                            trait
+                        );
+                        const suspectFeedback = getFeedbackForTrait(
+                            pattern[trait],
+                            suspect[trait],
+                            trait
+                        );
+                        if (patternFeedback !== suspectFeedback) {
+                            isViable = false;
+                        }
+                    });
+                    if (isViable) viableCount++;
+                });
+                return viableCount;
+            }
+            
             return {
                 init: function() {
                     try {
