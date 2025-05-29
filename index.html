@@ -1255,23 +1255,26 @@
             // Calculate minimum guesses needed from current state
             function calculateMinimumGuessesNeeded() {
                 const remainingViable = publicState.viableSuspectsCount;
-                
-                if (remainingViable <= 1) return 0;
-                if (remainingViable === 2) return 1;
-                
+
                 // Use information theory: log2(n) is theoretical minimum
                 // But we need to account for imperfect information (missing traits)
-                const theoreticalMin = Math.log2(remainingViable);
-                
+                let theoreticalMin = Math.log2(remainingViable);
+
                 // Adjust for missing information
                 const avgMissingTraits = privateState.suspects.reduce((sum, s) => {
                     const missing = Object.keys(traitCategories).filter(t => s[t] === undefined).length;
                     return sum + missing;
                 }, 0) / privateState.suspects.length;
-                
+
                 const missingInfoPenalty = avgMissingTraits * 0.3;
-                
-                return Math.ceil(theoreticalMin + missingInfoPenalty);
+
+                let minGuesses = Math.ceil(theoreticalMin + missingInfoPenalty);
+
+                // Enforce a minimum of 2 and a maximum of 4
+                if (minGuesses < 2) minGuesses = 2;
+                if (minGuesses > 4) minGuesses = 4;
+
+                return minGuesses;
             }
             
             // Calculate if player's guess was optimal
