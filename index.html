@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUILTY - Daily Detective Mystery</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-medium: #1e293b;
+            --bg-light: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        /* Shimmer effect overlay */
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.08) 25%,
+                rgba(255, 255, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.08) 75%,
+                transparent 100%
+            );
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        /* Updated shimmer animation */
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* Make sure h1 has proper z-index */
+        h1 {
+            font-size: 3.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Additional glow effect for the title */
+        h1::after {
+            content: '🔍 GUILTY 🔍';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: -1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: blur(20px);
+            opacity: 0.5;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2em;
+        }
+
+        /* Loading screen */
+        .loading-screen {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--glass-border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Main menu */
+        .main-menu {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 50px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+        }
+
+        .difficulty-select {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-medium);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 18px 36px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-medium);
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-light);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Error message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        /* Game screen */
+        .game-screen {
+            display: none;
+        }
+
+        /* Crime box */
+        .crime-box {
+            background: var(--glass);
+            padding: 35px;
+            border-radius: 24px;
+            margin-bottom: 30px;
+        }
+
+        .crime-box h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .crime-box p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        /* Game stats */
+        .game-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: var(--glass);
+            padding: 15px 25px;
+            border-radius: 16px;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        /* Initial suspect */
+        .initial-suspect-section {
+            background: var(--glass);
+            padding: 30px;
+            border-radius: 24px;
+            margin-bottom: 30px;
+        }
+
+        .initial-suspect-header h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .initial-suspect-note {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .initial-suspect-traits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .initial-trait {
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .initial-trait.green {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: var(--success);
+        }
+
+        .initial-trait.yellow {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--warning);
+        }
+
+        .initial-trait.gray {
+            background: rgba(148, 163, 184, 0.15);
+            border-color: var(--text-muted);
+        }
+
+        .initial-trait-label {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .initial-trait-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Color legend */
+        .color-legend {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: var(--bg-medium);
+            border-radius: 12px;
+        }
+
+        .color-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+        }
+
+        .color-box.green { background: var(--success); }
+        .color-box.yellow { background: var(--warning); }
+        .color-box.gray { background: var(--text-muted); }
+
+        /* Trait guide */
+        .trait-guide-section {
+            background: var(--glass);
+            padding: 30px;
+            border-radius: 24px;
+            margin-top: 30px;
+        }
+
+        .trait-guide-header h4 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .trait-guide-note {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .trait-guide-item {
+            margin: 30px 0;
+        }
+
+        .trait-guide-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .trait-scale-container {
+            position: relative;
+            height: 60px;
+            margin: 20px 0;
+        }
+
+        .trait-scale-line {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .trait-values-scale {
+            position: relative;
+            height: 100%;
+        }
+
+        .trait-scale-item {
+            position: absolute;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .trait-scale-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--bg-medium);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            position: relative;
+            top: 24px;
+        }
+
+        .trait-scale-label {
+            font-size: 0.85em;
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .trait-proximity-arrow {
+            position: absolute;
+            top: 10px;
+            transform: translateX(-50%);
+            color: var(--warning);
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        /* Suspects grid */
+        #suspectsGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .suspect-card {
+            background: var(--glass);
+            padding: 25px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid var(--glass-border);
+        }
+
+        .suspect-card:hover:not(.disabled):not(.eliminated) {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .suspect-card.disabled {
+            opacity: 0.6;
+            transform: scale(0.98);
+        }
+
+        .suspect-card.eliminated {
+            opacity: 0.3 !important;
+            filter: grayscale(100%) !important;
+            transform: scale(0.95) !important;
+        }
+
+        .suspect-name {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .suspect-job {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .suspect-traits {
+            margin-bottom: 20px;
+        }
+
+        .trait-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 12px;
+            background: var(--bg-medium);
+            border-radius: 10px;
+        }
+
+        .trait-label {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        .trait-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .trait-value.unknown-value {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .suspect-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .suspect-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        .suspect-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .accuse-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .accuse-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .exonerate-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .exonerate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .elimination-mark {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 2em;
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        /* Game board */
+        .game-board {
+            background: var(--glass);
+            padding: 25px;
+            border-radius: 24px;
+            margin-bottom: 30px;
+            min-height: 120px;
+        }
+
+        .guess-row-v2 {
+            display: flex;
+            gap: 25px;
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--bg-medium);
+            border-radius: 16px;
+            align-items: center;
+        }
+
+        .guess-suspect {
+            min-width: 200px;
+        }
+
+        .guess-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .guess-job {
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+
+        .guess-feedback {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .trait-feedback {
+            padding: 12px 18px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 140px;
+            font-weight: 500;
+        }
+
+        .trait-feedback-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .trait-feedback-value {
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .trait-feedback.correct {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .trait-feedback.close {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .trait-feedback.wrong {
+            background: var(--bg-light);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .trait-feedback.unknown {
+            background: var(--bg-light);
+            color: var(--text-muted);
+            border: 1px dashed var(--border);
+            font-style: italic;
+        }
+
+        /* Confidence display */
+        .confidence-display {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 16px;
+            margin: 20px 0;
+        }
+
+        .confidence-meter {
+            height: 20px;
+            background: var(--bg-medium);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+            transition: width 0.5s ease;
+        }
+
+        .confidence-text {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        /* Game over */
+        .game-over {
+            text-align: center;
+            padding: 50px;
+            background: var(--glass);
+            border-radius: 24px;
+            margin-top: 30px;
+        }
+
+        .game-over.won {
+            border: 2px solid var(--success);
+        }
+
+        .game-over.lost {
+            border: 2px solid var(--danger);
+        }
+
+        #gameOverTitle {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+
+        .game-over.won #gameOverTitle {
+            color: var(--success);
+        }
+
+        .game-over.lost #gameOverTitle {
+            color: var(--danger);
+        }
+
+        /* Dev tools */
+        .dev-tools {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            z-index: 9999;
+            max-width: 450px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        .dev-tools h3 {
+            margin-bottom: 20px;
+            color: #22c55e;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+        }
+
+        .dev-tools button {
+            background: #1e293b;
+            color: #22c55e;
+            border: 1px solid #22c55e;
+            padding: 10px 18px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .dev-tools button:hover {
+            background: #22c55e;
+            color: #0f172a;
+            transform: translateY(-2px);
+        }
+
+        #devOutput {
+            margin-top: 20px;
+            padding: 20px;
+            background: #0f172a;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 450px;
+            overflow-y: auto;
+            border: 1px solid #1e293b;
+        }
+
+        /* Minimal Trait Reference CSS */
+        .trait-reference-minimal {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .trait-reference-minimal h4 {
+            color: #f8fafc;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .reference-subtitle {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .trait-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .trait-line {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 0;
+        }
+
+        .trait-name {
+            color: #a5b4fc;
+            font-weight: 600;
+            font-size: 0.9em;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .trait-flow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+            color: #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .trait-flow span {
+            background: rgba(71, 85, 105, 0.5);
+            padding: 3px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .trait-flow i {
+            color: #64748b;
+            font-style: normal;
+            font-size: 0.8em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5em; }
+            .container { padding: 15px; }
+            #suspectsGrid { grid-template-columns: 1fr; }
+            .game-stats { flex-direction: column; }
+            .guess-row-v2 { flex-direction: column; }
+            .guess-feedback { flex-direction: column; }
+            .trait-feedback { width: 100%; }
+            .trait-line {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .trait-name {
+                text-align: left;
+                margin-bottom: 4px;
+            }
+            
+            .trait-flow i {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 GUILTY 🔍</h1>
+            <div class="subtitle">Daily Detective Mystery</div>
+        </div>
+
+        <!-- Loading screen -->
+        <div id="loading-screen" class="loading-screen" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 20px;">Loading game...</p>
+        </div>
+
+        <!-- Error message -->
+        <div id="error-message" class="error-message">
+            <strong>Error:</strong> <span id="error-text">Something went wrong. Please refresh the page.</span>
+        </div>
+
+        <div id="main-menu" class="main-menu">
+            <h2>Welcome, Detective</h2>
+            <p style="margin: 20px 0; color: var(--text-secondary);">
+                A new mystery awaits. Can you deduce the culprit from the clues?
+            </p>
+            
+            <select id="difficulty-select" class="difficulty-select">
+                <option value="easy">Easy (8 guesses)</option>
+                <option value="medium" selected>Medium (6 guesses)</option>
+                <option value="hard">Hard (4 guesses)</option>
+            </select>
+            
+            <button id="start-game" class="btn">Start Investigation</button>
+            <button id="dev-mode-btn" class="btn btn-secondary">Toggle Developer Mode</button>
+            <button id="rules-btn" class="btn btn-secondary">Rules</button>
+        </div>
+
+        <div id="game-screen" class="game-screen">
+            <div class="crime-box">
+                <h2 id="crimeTitle">Today's Mystery</h2>
+                <p id="crimeDescription">Loading theme...</p>
+            </div>
+
+            <div class="game-stats">
+                <div class="stat-item">
+                    <div>⏱️ Time</div>
+                    <div id="timerDisplay" style="font-weight: bold;">0:00</div>
+                </div>
+                <div class="stat-item">
+                    <div>🎯 Guesses</div>
+                    <div id="guessDisplay" style="font-weight: bold;">0/6</div>
+                </div>
+                <div class="stat-item">
+                    <div>🔍 Viable Suspects</div>
+                    <div id="viableDisplay" style="font-weight: bold;">-</div>
+                </div>
+            </div>
+            
+            <div id="gameBoard" class="game-board"></div>
+            
+            <div id="suspectsSection">
+                <!-- Minimal Trait Reference -->
+                <div class="trait-reference-minimal">
+                    <h4>Trait Reference</h4>
+                    <p class="reference-subtitle">Yellow = one step away • Gray = two or more steps away</p>
+                    <div class="trait-grid">
+                        <div class="trait-line">
+                            <span class="trait-name">Access</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Visitor</span>
+                                <i>→</i>
+                                <span>Contractor</span>
+                                <i>→</i>
+                                <span>Staff</span>
+                                <i>→</i>
+                                <span>VIP</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Timing</span>
+                            <div class="trait-flow">
+                                <span>Asleep</span>
+                                <i>→</i>
+                                <span>Working</span>
+                                <i>→</i>
+                                <span>Home</span>
+                                <i>→</i>
+                                <span>Out</span>
+                                <i>→</i>
+                                <span>Verified</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Knowledge</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Basic</span>
+                                <i>→</i>
+                                <span>Limited</span>
+                                <i>→</i>
+                                <span>Familiar</span>
+                                <i>→</i>
+                                <span>Expert</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Motive</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Curious</span>
+                                <i>→</i>
+                                <span>Vengeful</span>
+                                <i>→</i>
+                                <span>Greedy</span>
+                                <i>→</i>
+                                <span>Desperate</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Behavior</span>
+                            <div class="trait-flow">
+                                <span>Helpful</span>
+                                <i>→</i>
+                                <span>Normal</span>
+                                <i>→</i>
+                                <span>Changed</span>
+                                <i>→</i>
+                                <span>Nervous</span>
+                                <i>→</i>
+                                <span>Suspicious</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="suspectsGrid"></div>
+            </div>
+
+            <div id="gameOver" class="game-over" style="display: none;">
+                <h2 id="gameOverTitle"></h2>
+                <div id="gameOverMessage"></div>
+                <button onclick="location.reload()" class="btn" style="margin-top: 20px; width: auto; padding: 12px 24px;">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Developer Tools -->
+    <div id="devTools" class="dev-tools" style="display: none;">
+        <h3>Developer Tools</h3>
+        <button onclick="GameManager.runAIAgent(200)">Run AI Analysis (200 games)</button>
+        <button onclick="GameManager.showCulprit()">Show Culprit</button>
+        <button onclick="GameManager.runAIAgent(20)">Quick Test (20 games)</button>
+        <button onclick="GameManager.forceNewTheme()">Force New Theme</button>
+        <div id="devOutput"></div>
+    </div>
+
+    <script>
+    // Wait for DOM to load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing game...');
+        
+        // Complete GUILTY Game with full logic
+        const GameManager = (function() {
+            // Private state
+            let privateState = {
+        culprit: null,
+        suspects: [],
+        initialSuspect: null,
+                gameSecret: 'guilty-' + Math.random().toString(36).substring(7)
+            };
+            
+            // Public state
+            let publicState = {
+                difficulty: 'medium',
+        guesses: [],
+        currentGuess: 0,
+        gameOver: false,
+        won: false,
+        eliminatedSuspects: new Set(),
+                viableSuspectsCount: 16,
+                confidenceLevel: 0,
+                startTime: null,
+                timerInterval: null
+            };
+            
+            // Difficulty settings
+            const DIFFICULTY_SETTINGS = {
+                easy: {
+                    maxGuesses: 8,
+                    yellowTraits: 3,
+                    missingTraitChance: 0.15,
+                    minViableSuspects: 10
+                },
+                medium: {
+                    maxGuesses: 6,
+                    yellowTraits: 2,
+                    missingTraitChance: 0.25,
+                    minViableSuspects: 12
+                },
+                hard: {
+                    maxGuesses: 4,
+                    yellowTraits: 1,
+                    missingTraitChance: 0.35,
+                    minViableSuspects: 14
+                }
+            };
+            
+            // Crime scenario
+            const currentCrime = {
+                id: 'museum_heist',
+                title: "The Museum Diamond Heist",
+                description: "The priceless 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. Security footage shows the thief knew the guard rotation perfectly. The crime occurred between 2-3 AM.",
+            traits: {
+                    access: ['Staff', 'Visitor', 'VIP', 'Contractor', 'None'],
+                    timing: ['Working', 'Home', 'Out', 'Verified', 'Asleep'],
+                    knowledge: ['Expert', 'Familiar', 'Basic', 'Limited', 'None'],
+                    motive: ['Desperate', 'Greedy', 'Vengeful', 'Curious', 'None'],
+                    behavior: ['Suspicious', 'Nervous', 'Changed', 'Normal', 'Helpful']
+                }
+            };
+            
+            const traitCategories = {
+                access: { name: 'Museum Access' },
+                timing: { name: 'Alibi Time' },
+                knowledge: { name: 'Security Knowledge' },
+                motive: { name: 'Motive Strength' },
+                behavior: { name: 'Recent Behavior' }
+            };
+            
+            // Seeded random for consistency
+            function seededRandom(seed) {
+                const x = Math.sin(seed) * 10000;
+                return x - Math.floor(x);
+            }
+            
+            // Get feedback for trait
+            function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
+                if (guessValue === undefined) {
+                    return 'unknown';
+                } else if (guessValue === culpritValue) {
+                    return 'correct';
+                } else {
+                    const traitArray = currentCrime.traits[traitCategory];
+                    const guessPos = traitArray.indexOf(guessValue);
+                    const culpritPos = traitArray.indexOf(culpritValue);
+                    
+                    if (Math.abs(guessPos - culpritPos) <= 1) {
+                        return 'close';
+                    } else {
+                        return 'wrong';
+                    }
+                }
+            }
+            
+            // Calculate information gain for a potential guess
+            function calculateInformationGain(suspect) {
+                // Calculate how many suspects would be eliminated by each possible outcome
+                const outcomes = {};
+                const traitKeys = Object.keys(traitCategories);
+                
+                // For each possible feedback combination
+                privateState.suspects.forEach(potentialCulprit => {
+                    if (publicState.guesses.some(g => g.name === potentialCulprit.name)) return;
+                    
+                    // Calculate what feedback we'd get if this were the culprit
+                    let feedbackKey = '';
+                    traitKeys.forEach(trait => {
+                        if (suspect[trait] !== undefined && potentialCulprit[trait] !== undefined) {
+                            const feedback = getFeedbackForTrait(suspect[trait], potentialCulprit[trait], trait);
+                            feedbackKey += feedback[0]; // c for correct, l for close, w for wrong
+                        } else {
+                            feedbackKey += 'u'; // unknown
+                        }
+                    });
+                    
+                    outcomes[feedbackKey] = (outcomes[feedbackKey] || 0) + 1;
+                });
+                
+                // Calculate entropy reduction
+                const totalRemaining = privateState.suspects.length - publicState.guesses.length;
+                let expectedInfo = 0;
+                
+                Object.values(outcomes).forEach(count => {
+                    const probability = count / totalRemaining;
+                    if (probability > 0) {
+                        expectedInfo -= probability * Math.log2(probability);
+                    }
+                });
+                
+                return expectedInfo;
+            }
+            
+            // Calculate minimum guesses needed from current state
+            function calculateMinimumGuessesNeeded() {
+                const remainingViable = publicState.viableSuspectsCount;
+                
+                if (remainingViable <= 1) return 0;
+                if (remainingViable === 2) return 1;
+                
+                // Use information theory: log2(n) is theoretical minimum
+                // But we need to account for imperfect information (missing traits)
+                const theoreticalMin = Math.log2(remainingViable);
+                
+                // Adjust for missing information
+                const avgMissingTraits = privateState.suspects.reduce((sum, s) => {
+                    const missing = Object.keys(traitCategories).filter(t => s[t] === undefined).length;
+                    return sum + missing;
+                }, 0) / privateState.suspects.length;
+                
+                const missingInfoPenalty = avgMissingTraits * 0.3;
+                
+                return Math.ceil(theoreticalMin + missingInfoPenalty);
+            }
+            
+            // Calculate if player's guess was optimal
+            function evaluateGuessQuality(guessIndex) {
+                const guess = privateState.suspects[guessIndex];
+                const infoGain = calculateInformationGain(guess);
+                
+                // Find best possible guess
+                let bestInfoGain = 0;
+                let bestGuessName = '';
+                
+                privateState.suspects.forEach((s, i) => {
+                    if (!publicState.guesses.some(g => g.name === s.name)) {
+                        const gain = calculateInformationGain(s);
+                        if (gain > bestInfoGain) {
+                            bestInfoGain = gain;
+                            bestGuessName = s.name;
+                        }
+                    }
+                });
+                
+                const efficiency = infoGain / bestInfoGain;
+                
+                return {
+                    wasOptimal: efficiency > 0.9,
+                    efficiency: efficiency,
+                    bestGuess: bestGuessName,
+                    infoGain: infoGain,
+                    bestInfoGain: bestInfoGain
+                };
+            }
+            
+            // Generate suspects
+            function generateSuspects() {
+                const names = [
+                    "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Joney Davis",
+                    "Sarah Martin", "Roy Lee", "Hannah Anderson", "Lex Brown", "Aaron Johnson",
+                    "Neve Williams", "Cal Miller", "Faye Garcia", "David Rodriguez", "Elle Martinez",
+                    "Jonathan Smith"
+                ];
+                
+                const jobs = [
+                    "Security Guard", "Janitor", "Curator", "Tour Guide",
+                    "Wealthy Donor", "Maintenance Worker", "Art Student", "Security Consultant",
+                    "Night Watchman", "Private Collector", "Museum Administrator", "Restoration Expert",
+                    "Insurance Investigator", "Archaeologist", "Gift Shop Employee", "Delivery Driver"
+                ];
+                
+                const seed = Date.now();
+                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
+                
+                // Generate suspects
+                privateState.suspects = names.map((name, i) => {
+                    const suspect = {
+                        name: name,
+                        job: jobs[i]
+                    };
+                    
+                    // Assign traits with missing values based on difficulty
+                    Object.keys(currentCrime.traits).forEach(trait => {
+                        if (seededRandom(seed + i * 100 + trait.charCodeAt(0)) < difficultySettings.missingTraitChance) {
+                            // Leave trait undefined (question mark)
+                            return;
+                        }
+                        const values = currentCrime.traits[trait];
+                        suspect[trait] = values[Math.floor(seededRandom(seed + i * 101 + trait.charCodeAt(0)) * values.length)];
+                    });
+                    
+                    return suspect;
+                });
+                
+                // Select culprit (ensure they have all traits)
+                const culpritIndex = Math.floor(seededRandom(seed) * privateState.suspects.length);
+                privateState.culprit = privateState.suspects[culpritIndex];
+                
+                // Ensure culprit has ALL traits
+                Object.keys(currentCrime.traits).forEach(trait => {
+                    if (privateState.culprit[trait] === undefined) {
+                        const values = currentCrime.traits[trait];
+                        privateState.culprit[trait] = values[Math.floor(seededRandom(seed + 200 + trait.charCodeAt(0)) * values.length)];
+                    }
+                });
+                
+                // Generate initial suspect (NOT the culprit)
+                generateInitialSuspect(seed);
+                
+                // Distribute traits for game balance
+                distributeSuspectTraits(seed);
+                
+                console.log("Culprit is:", privateState.culprit.name);
+                console.log("Viable suspects:", publicState.viableSuspectsCount);
+            }
+            
+            // Generate initial suspect with yellow/gray clues
+            function generateInitialSuspect(seed) {
+                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
+                
+                privateState.initialSuspect = {
+                    name: "Initial Suspect",
+                    job: "Unknown"
+                };
+                
+                const traitKeys = Object.keys(currentCrime.traits);
+                const shuffledTraits = [...traitKeys].sort(() => seededRandom(seed + 1000) - 0.5);
+                
+                // Determine which traits will be yellow
+                const yellowCount = difficultySettings.yellowTraits;
+                const yellowTraits = new Set(shuffledTraits.slice(0, yellowCount));
+                
+                shuffledTraits.forEach(trait => {
+                    const culpritValue = privateState.culprit[trait];
+                    const traitArray = currentCrime.traits[trait];
+                    const culpritPos = traitArray.indexOf(culpritValue);
+                    
+                    if (yellowTraits.has(trait)) {
+                        // Make it yellow (adjacent)
+                        const adjacentPositions = [];
+                        if (culpritPos > 0) adjacentPositions.push(culpritPos - 1);
+                        if (culpritPos < traitArray.length - 1) adjacentPositions.push(culpritPos + 1);
+                        
+                        if (adjacentPositions.length > 0) {
+                            const chosenPos = adjacentPositions[Math.floor(seededRandom(seed + 2000 + trait.charCodeAt(0)) * adjacentPositions.length)];
+                            privateState.initialSuspect[trait] = traitArray[chosenPos];
+        } else {
+                            privateState.initialSuspect[trait] = culpritValue; // Fallback
+                        }
+                    } else {
+                        // Make it gray (distant)
+                        const distantPositions = [];
+                        for (let i = 0; i < traitArray.length; i++) {
+                            if (Math.abs(i - culpritPos) >= 2) {
+                                distantPositions.push(i);
+                            }
+                        }
+                        
+                        if (distantPositions.length > 0) {
+                            const chosenPos = distantPositions[Math.floor(seededRandom(seed + 3000 + trait.charCodeAt(0)) * distantPositions.length)];
+                            privateState.initialSuspect[trait] = traitArray[chosenPos];
+                        } else {
+                            privateState.initialSuspect[trait] = traitArray[0] === culpritValue ? traitArray[traitArray.length - 1] : traitArray[0];
+                        }
+                    }
+                });
+            }
+            
+            // Distribute traits to create balanced difficulty
+            function distributeSuspectTraits(seed) {
+                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
+                const traitKeys = Object.keys(currentCrime.traits);
+                
+                // Calculate initial feedback pattern
+                const initialFeedback = {};
+                traitKeys.forEach(trait => {
+                    initialFeedback[trait] = getFeedbackForTrait(
+                        privateState.initialSuspect[trait],
+                        privateState.culprit[trait],
+                        trait
+                    );
+                });
+                
+                // Count viable suspects
+                let viableCount = 0;
+                
+                privateState.suspects.forEach((suspect, index) => {
+                    if (suspect.name === privateState.culprit.name) {
+                        viableCount++;
+                        return;
+                    }
+                    
+                    // Check if this suspect would produce similar feedback
+                    let matchingFeedback = 0;
+                    let totalFeedback = 0;
+                    
+                    traitKeys.forEach(trait => {
+                        if (suspect[trait] !== undefined && privateState.initialSuspect[trait] !== undefined) {
+                            const suspectFeedback = getFeedbackForTrait(
+                                privateState.initialSuspect[trait],
+                                suspect[trait],
+                                trait
+                            );
+                            if (suspectFeedback === initialFeedback[trait]) {
+                                matchingFeedback++;
+                            }
+                            totalFeedback++;
+                        }
+                    });
+                    
+                    // Consider viable if matches enough of the pattern
+                    if (totalFeedback > 0 && (matchingFeedback / totalFeedback) >= 0.6) {
+                        viableCount++;
+                    }
+                });
+                
+                publicState.viableSuspectsCount = Math.max(viableCount, difficultySettings.minViableSuspects);
+                publicState.confidenceLevel = Math.round((1 - viableCount / 16) * 100);
+            }
+            
+            // Display initial suspect
+            function displayInitialSuspect() {
+                const existingDiv = document.getElementById('initialSuspect');
+                if (existingDiv) existingDiv.remove();
+                
+                const initialDiv = document.createElement('div');
+                initialDiv.id = 'initialSuspect';
+                initialDiv.className = 'initial-suspect-section';
+                
+                let traitHTML = '';
+                Object.keys(traitCategories).forEach(trait => {
+                    if (privateState.initialSuspect[trait] !== undefined) {
+                        const feedback = getFeedbackForTrait(
+                            privateState.initialSuspect[trait],
+                            privateState.culprit[trait],
+                            trait
+                        );
+                        const colorClass = feedback === 'correct' ? 'green' : feedback === 'close' ? 'yellow' : 'gray';
+                        
+                        traitHTML += `
+                            <div class="initial-trait ${colorClass}">
+                                <div class="initial-trait-label">${traitCategories[trait].name}</div>
+                                <div class="initial-trait-value">${privateState.initialSuspect[trait]}</div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                initialDiv.innerHTML = `
+                    <div class="initial-suspect-header">
+                        <h3>Initial Suspect Profile</h3>
+                        <p class="initial-suspect-note">This person is NOT guilty. Find who shares these trait patterns:</p>
+                    </div>
+                    <div class="initial-suspect-traits">
+                        ${traitHTML}
+                    </div>
+                    <div class="color-legend">
+                        <span class="legend-item"><span class="color-box green"></span> = Exact match with culprit</span>
+                        <span class="legend-item"><span class="color-box yellow"></span> = Close to culprit</span>
+                        <span class="legend-item"><span class="color-box gray"></span> = Different from culprit</span>
+                    </div>
+                `;
+                
+                document.querySelector('.crime-box').after(initialDiv);
+                
+                // Add trait guide
+                displayTraitGuide();
+            }
+            
+            // Display trait guide
+            function displayTraitGuide() {
+                const guideDiv = document.createElement('div');
+                guideDiv.className = 'trait-guide-section';
+                
+                let guideHTML = `
+                    <div class="trait-guide-header">
+                        <h4>Trait Value Reference</h4>
+                        <p class="trait-guide-note">Adjacent values (↔) are considered "close" matches</p>
+                    </div>
+                    <div class="trait-guide-content">
+                `;
+                
+                Object.entries(currentCrime.traits).forEach(([key, values]) => {
+                    guideHTML += `
+                        <div class="trait-guide-item">
+                            <div class="trait-guide-title">${traitCategories[key].name}</div>
+                            <div class="trait-scale-container">
+                                <div class="trait-scale-line"></div>
+                                <div class="trait-values-scale">
+                    `;
+                    
+                    values.forEach((value, index) => {
+                        const position = (index / (values.length - 1)) * 100;
+                        guideHTML += `
+                            <div class="trait-scale-item" style="left: ${position}%;">
+                                <div class="trait-scale-dot"></div>
+                                <div class="trait-scale-label">${value}</div>
+                            </div>
+                        `;
+                        
+                        if (index < values.length - 1) {
+                            const nextPosition = ((index + 1) / (values.length - 1)) * 100;
+                            const midPosition = (position + nextPosition) / 2;
+                            guideHTML += `
+                                <div class="trait-proximity-arrow" style="left: ${midPosition}%">↔</div>
+                            `;
+                        }
+                    });
+                    
+                    guideHTML += '</div></div></div>';
+                });
+                
+                guideHTML += '</div>';
+                guideDiv.innerHTML = guideHTML;
+                
+                document.getElementById('initialSuspect').appendChild(guideDiv);
+            }
+            
+            // Display suspects
+            function displaySuspects() {
+                const grid = document.getElementById('suspectsGrid');
+                grid.innerHTML = '';
+                
+                privateState.suspects.forEach((suspect, index) => {
+                    const isEliminated = publicState.eliminatedSuspects.has(suspect.name);
+                    const isGuessed = publicState.guesses.some(g => g.name === suspect.name);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'suspect-card';
+                    if (isEliminated) card.classList.add('eliminated');
+                    if (isGuessed) card.classList.add('disabled');
+                    
+                    let traitsHTML = '';
+                    Object.keys(traitCategories).forEach(key => {
+                        const value = suspect[key];
+                        const displayValue = value !== undefined ? value : '?';
+                        const valueClass = value === undefined ? 'unknown-value' : '';
+                        
+                        traitsHTML += `
+                            <div class="trait-item">
+                                <span class="trait-label">${traitCategories[key].name}:</span>
+                                <span class="trait-value ${valueClass}">${displayValue}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    card.innerHTML = `
+                        ${isEliminated ? '<div class="elimination-mark">✕</div>' : ''}
+                        <div class="suspect-header">
+                            <div class="suspect-name">${suspect.name}</div>
+                            <div class="suspect-job">${suspect.job}</div>
+                        </div>
+                        <div class="suspect-traits">
+                            ${traitsHTML}
+                        </div>
+                        <div class="suspect-actions">
+                            <button class="suspect-button accuse-btn" 
+                                    onclick="GameManager.makeGuess(${index})"
+                                    ${isGuessed || publicState.gameOver ? 'disabled' : ''}>
+                                Accuse
+                            </button>
+                            <button class="suspect-button exonerate-btn" 
+                                    onclick="GameManager.toggleElimination('${suspect.name}')"
+                                    ${isGuessed || publicState.gameOver ? 'disabled' : ''}>
+                                ${isEliminated ? 'Restore' : 'Exonerate'}
+                            </button>
+                        </div>
+                    `;
+                    
+                    grid.appendChild(card);
+                });
+            }
+            
+            // Display confidence
+            function displayConfidence() {
+                let confidenceDiv = document.getElementById('confidenceDisplay');
+                
+                if (!confidenceDiv) {
+                    confidenceDiv = document.createElement('div');
+                    confidenceDiv.id = 'confidenceDisplay';
+                    confidenceDiv.className = 'confidence-display';
+                    document.querySelector('.game-stats').after(confidenceDiv);
+                }
+                
+                confidenceDiv.innerHTML = `
+                    <div class="confidence-meter">
+                        <div class="confidence-fill" style="width: ${publicState.confidenceLevel}%"></div>
+                    </div>
+                    <div class="confidence-text">
+                        Confidence: ${publicState.confidenceLevel}% 
+                        (${publicState.viableSuspectsCount} suspects remain viable)
+                    </div>
+                `;
+            }
+            
+            // Timer functions
+            function startTimer() {
+                publicState.startTime = Date.now();
+                publicState.timerInterval = setInterval(updateTimer, 100);
+            }
+            
+            function updateTimer() {
+                if (publicState.gameOver) return;
+                
+                const elapsed = Date.now() - publicState.startTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const displaySeconds = seconds % 60;
+                
+                document.getElementById('timerDisplay').textContent = `${minutes}:${displaySeconds.toString().padStart(2, '0')}`;
+            }
+            
+            function stopTimer() {
+                if (publicState.timerInterval) {
+                    clearInterval(publicState.timerInterval);
+                }
+            }
+            
+            // Update viable suspects after each guess
+            function updateViableSuspects() {
+                if (publicState.guesses.length === 0) return;
+                
+                const latestGuess = publicState.guesses[publicState.guesses.length - 1];
+            let viableCount = 0;
+                
+                privateState.suspects.forEach(suspect => {
+                    if (publicState.guesses.some(g => g.name === suspect.name)) {
+                        return; // Skip already guessed
+                    }
+                    
+                    // Check if this suspect could still be the culprit based on feedback
+                    let couldBeCulprit = true;
+                    
+                    publicState.guesses.forEach(guess => {
+                        Object.keys(traitCategories).forEach(trait => {
+                            if (guess[trait] !== undefined && suspect[trait] !== undefined) {
+                                const guessFeedback = getFeedbackForTrait(guess[trait], privateState.culprit[trait], trait);
+                                const suspectFeedback = getFeedbackForTrait(guess[trait], suspect[trait], trait);
+                                
+                                if (guessFeedback !== suspectFeedback) {
+                                    couldBeCulprit = false;
+                                }
+                            }
+                        });
+                    });
+                    
+                    if (couldBeCulprit) {
+                        viableCount++;
+                    }
+                });
+                
+                publicState.viableSuspectsCount = viableCount;
+                publicState.confidenceLevel = Math.round((1 - viableCount / 16) * 100);
+                
+                document.getElementById('viableDisplay').textContent = viableCount.toString();
+                displayConfidence();
+            }
+            
+            return {
+                init: function() {
+                    try {
+                        document.getElementById('crimeTitle').textContent = currentCrime.title;
+                        document.getElementById('crimeDescription').textContent = currentCrime.description;
+                        
+                        generateSuspects();
+                        displayInitialSuspect();
+                        displaySuspects();
+                        displayConfidence();
+                        startTimer();
+                        
+                        // Update display
+                        const maxGuesses = DIFFICULTY_SETTINGS[publicState.difficulty].maxGuesses;
+                        document.getElementById('guessDisplay').textContent = `0/${maxGuesses}`;
+                        document.getElementById('viableDisplay').textContent = publicState.viableSuspectsCount.toString();
+                    } catch (error) {
+                        console.error('Error initializing game:', error);
+                        showError('Failed to initialize game: ' + error.message);
+                    }
+                },
+                
+                makeGuess: function(index) {
+                    const maxGuesses = DIFFICULTY_SETTINGS[publicState.difficulty].maxGuesses;
+                    if (publicState.gameOver || publicState.currentGuess >= maxGuesses) return;
+                    
+                    const suspect = privateState.suspects[index];
+                    if (!suspect || publicState.guesses.some(g => g.name === suspect.name)) return;
+                    
+                    publicState.guesses.push(suspect);
+                    publicState.currentGuess++;
+                    
+                    // Display guess
+                    const board = document.getElementById('gameBoard');
+                    const row = document.createElement('div');
+                    row.className = 'guess-row-v2';
+                    
+                    let feedbackHTML = '';
+                    Object.keys(traitCategories).forEach(trait => {
+                        const value = suspect[trait];
+                        const category = traitCategories[trait];
+                        
+                        if (value === undefined) {
+                            feedbackHTML += `
+                                <div class="trait-feedback unknown">
+                                    <div class="trait-feedback-label">${category.name}</div>
+                                    <div class="trait-feedback-value">?</div>
+                                </div>
+                            `;
+                        } else {
+                            const feedback = getFeedbackForTrait(value, privateState.culprit[trait], trait);
+                            feedbackHTML += `
+                                <div class="trait-feedback ${feedback}">
+                                    <div class="trait-feedback-label">${category.name}</div>
+                                    <div class="trait-feedback-value">${value}</div>
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    row.innerHTML = `
+                        <div class="guess-suspect">
+                            <div class="guess-name">${suspect.name}</div>
+                            <div class="guess-job">${suspect.job}</div>
+                        </div>
+                        <div class="guess-feedback">
+                            ${feedbackHTML}
+                        </div>
+                    `;
+                    
+                    board.appendChild(row);
+                    
+                    // Update displays
+                    document.getElementById('guessDisplay').textContent = `${publicState.currentGuess}/${maxGuesses}`;
+                    updateViableSuspects();
+                    
+                    // Check win/loss
+                    if (suspect.name === privateState.culprit.name) {
+                        this.endGame(true);
+                    } else if (publicState.currentGuess >= maxGuesses) {
+                        this.endGame(false);
+                    }
+                    
+                    displaySuspects();
+                },
+                
+                toggleElimination: function(name) {
+                    if (publicState.eliminatedSuspects.has(name)) {
+                        publicState.eliminatedSuspects.delete(name);
+                    } else {
+                        publicState.eliminatedSuspects.add(name);
+                    }
+                    displaySuspects();
+                },
+                
+                endGame: function(won) {
+                    publicState.gameOver = true;
+                    publicState.won = won;
+                    
+                    stopTimer();
+                    
+                    const gameOverDiv = document.getElementById('gameOver');
+                    const titleElement = document.getElementById('gameOverTitle');
+                    const messageElement = document.getElementById('gameOverMessage');
+                    
+                    const timeElapsed = Date.now() - publicState.startTime;
+                    const minutes = Math.floor(timeElapsed / 60000);
+                    const seconds = Math.floor((timeElapsed % 60000) / 1000);
+                    
+                    if (won) {
+                        gameOverDiv.className = 'game-over won';
+                        titleElement.textContent = 'GUILTY!';
+                        
+                        // Calculate if they were lucky or skilled
+                        const minGuessesNeeded = calculateMinimumGuessesNeeded();
+                        const wasLucky = publicState.currentGuess < minGuessesNeeded;
+                        const wasOptimal = publicState.currentGuess === minGuessesNeeded;
+                        
+                        let feedbackText = '';
+                        if (wasLucky) {
+                            feedbackText = `<div style="color: var(--warning); margin-top: 15px;">
+                                🍀 Lucky guess! Minimum logical deduction would have taken ${minGuessesNeeded} guesses.
+                            </div>`;
+                        } else if (wasOptimal) {
+                            feedbackText = `<div style="color: var(--success); margin-top: 15px;">
+                                🧠 Perfect deduction! You found the culprit in the minimum possible guesses.
+                            </div>`;
+                        } else {
+                            feedbackText = `<div style="color: var(--text-secondary); margin-top: 15px;">
+                                Good work! Optimal play could have solved it in ${minGuessesNeeded} guesses.
+                            </div>`;
+                        }
+                        
+                        messageElement.innerHTML = `
+                            You found the culprit in ${publicState.currentGuess} guesses!<br>
+                            Time: ${minutes}:${seconds.toString().padStart(2, '0')}
+                            ${feedbackText}
+                        `;
+                    } else {
+                        gameOverDiv.className = 'game-over lost';
+                        titleElement.textContent = 'ESCAPED!';
+                        messageElement.innerHTML = `
+                            The culprit was <strong>${privateState.culprit.name}</strong> (${privateState.culprit.job})<br>
+                            <div style="margin-top: 10px;">
+                                ${Object.keys(traitCategories).map(trait => 
+                                    `${traitCategories[trait].name}: ${privateState.culprit[trait]}`
+                                ).join(' • ')}
+                            </div>
+                            <div style="margin-top: 15px; color: var(--text-secondary);">
+                                Time: ${minutes}:${seconds.toString().padStart(2, '0')}<br>
+                                Minimum guesses needed: ${calculateMinimumGuessesNeeded()}
+                            </div>
+                        `;
+                    }
+                    
+                    gameOverDiv.style.display = 'block';
+                    document.getElementById('suspectsSection').style.display = 'none';
+                },
+                
+                setDifficulty: function(difficulty) {
+                    publicState.difficulty = difficulty;
+                },
+                
+                // Developer tools functions
+                showCulprit: function() {
+                    const output = document.getElementById('devOutput');
+                    output.innerHTML = `<strong>Culprit:</strong> ${privateState.culprit.name} (${privateState.culprit.job})<br>`;
+                    Object.keys(traitCategories).forEach(trait => {
+                        output.innerHTML += `${traitCategories[trait].name}: ${privateState.culprit[trait]}<br>`;
+                    });
+                },
+                
+                showOptimalGuess: function() {
+                    let bestGuess = null;
+                    let bestInfoGain = 0;
+                    
+                    privateState.suspects.forEach((suspect, index) => {
+                        if (!publicState.guesses.some(g => g.name === suspect.name)) {
+                            const gain = calculateInformationGain(suspect);
+                            if (gain > bestInfoGain) {
+                                bestInfoGain = gain;
+                                bestGuess = { suspect, index, gain };
+                            }
+                        }
+                    });
+                    
+                    const output = document.getElementById('devOutput');
+                    if (bestGuess) {
+                        output.innerHTML = `<strong>Optimal guess:</strong> ${bestGuess.suspect.name}<br>`;
+                        output.innerHTML += `Information gain: ${bestGuess.gain.toFixed(3)} bits<br>`;
+                        output.innerHTML += `This would reduce uncertainty by ${(bestGuess.gain / Math.log2(publicState.viableSuspectsCount) * 100).toFixed(1)}%`;
+                    }
+                },
+                
+                forceNewTheme: function() {
+                    const output = document.getElementById('devOutput');
+                    output.innerHTML = 'Feature coming soon: Multiple crime scenarios!';
+                },
+                
+                analyzeCurrentPuzzle: function() {
+                    const output = document.getElementById('devOutput');
+                    const minGuesses = calculateMinimumGuessesNeeded();
+                    
+                    output.innerHTML = `<strong>Puzzle Analysis:</strong><br>`;
+                    output.innerHTML += `Viable suspects: ${publicState.viableSuspectsCount}<br>`;
+                    output.innerHTML += `Theoretical minimum guesses: ${minGuesses}<br>`;
+                    output.innerHTML += `Current entropy: ${Math.log2(publicState.viableSuspectsCount).toFixed(3)} bits<br>`;
+                    output.innerHTML += `Difficulty: ${publicState.difficulty}<br>`;
+                    
+                    // Calculate average information per trait
+                    let avgInfo = 0;
+                    let traitCount = 0;
+                    privateState.suspects.forEach(suspect => {
+                        Object.keys(traitCategories).forEach(trait => {
+                            if (suspect[trait] !== undefined) {
+                                traitCount++;
+                            }
+                        });
+                    });
+                    avgInfo = traitCount / (privateState.suspects.length * Object.keys(traitCategories).length);
+                    output.innerHTML += `Average trait completeness: ${(avgInfo * 100).toFixed(1)}%<br>`;
+                },
+                
+                runAIAgent: async function(numGames = 100) {
+                    const output = document.getElementById('devOutput');
+                    output.innerHTML = 'Running AI agent...<br>';
+                    
+                    const results = {
+                        totalGames: numGames,
+                        wins: 0,
+                        totalGuesses: 0,
+                        minGuessesSum: 0,
+                        luckyWins: 0,
+                        optimalWins: 0,
+                        guessDistribution: [0,0,0,0,0,0,0,0,0]
+                    };
+                    
+                    // Save current state
+                    const savedState = {
+                        suspects: [...privateState.suspects],
+                        culprit: privateState.culprit,
+                        initialSuspect: privateState.initialSuspect,
+                        guesses: [...publicState.guesses],
+                        currentGuess: publicState.currentGuess,
+                        gameOver: publicState.gameOver,
+                        viableSuspectsCount: publicState.viableSuspectsCount
+                    };
+                    
+                    for (let game = 0; game < numGames; game++) {
+                        // Reset for new game
+                        privateState.suspects = [];
+                        privateState.culprit = null;
+                        privateState.initialSuspect = null;
+                        publicState.guesses = [];
+                        publicState.currentGuess = 0;
+                        publicState.gameOver = false;
+                        publicState.viableSuspectsCount = 16;
+                        publicState.eliminatedSuspects.clear();
+                        
+                        // Generate new puzzle
+                        generateSuspects();
+                        const initialMinGuesses = calculateMinimumGuessesNeeded();
+                        results.minGuessesSum += initialMinGuesses;
+                        
+                        // AI strategy: Always pick the guess with highest information gain
+                        while (!publicState.gameOver && publicState.currentGuess < DIFFICULTY_SETTINGS[publicState.difficulty].maxGuesses) {
+                            let bestGuess = null;
+                            let bestInfoGain = -1;
+                            
+                            privateState.suspects.forEach((suspect, index) => {
+                                if (!publicState.guesses.some(g => g.name === suspect.name)) {
+                                    const gain = calculateInformationGain(suspect);
+                                    if (gain > bestInfoGain) {
+                                        bestInfoGain = gain;
+                                        bestGuess = index;
+                                    }
+                                }
+                            });
+                            
+                            if (bestGuess !== null) {
+                                this.makeGuess(bestGuess);
+                    } else {
+                                break;
+                            }
+                        }
+                        
+                        if (publicState.won) {
+                            results.wins++;
+                            results.totalGuesses += publicState.currentGuess;
+                            results.guessDistribution[Math.min(publicState.currentGuess - 1, 8)]++;
+                            
+                            const minNeeded = calculateMinimumGuessesNeeded();
+                            if (publicState.currentGuess < initialMinGuesses) {
+                                results.luckyWins++;
+                            } else if (publicState.currentGuess === initialMinGuesses) {
+                                results.optimalWins++;
+                            }
+                        }
+                    }
+                    
+                    // Restore state
+                    privateState.suspects = savedState.suspects;
+                    privateState.culprit = savedState.culprit;
+                    privateState.initialSuspect = savedState.initialSuspect;
+                    publicState.guesses = savedState.guesses;
+                    publicState.currentGuess = savedState.currentGuess;
+                    publicState.gameOver = savedState.gameOver;
+                    publicState.viableSuspectsCount = savedState.viableSuspectsCount;
+                    
+                    // Display results
+                    const winRate = (results.wins / numGames * 100).toFixed(1);
+                    const avgGuesses = results.wins > 0 ? (results.totalGuesses / results.wins).toFixed(2) : 'N/A';
+                    const avgMinGuesses = (results.minGuessesSum / numGames).toFixed(2);
+                    
+                    output.innerHTML = `<strong>AI Agent Results (${numGames} games):</strong><br>`;
+                    output.innerHTML += `Win rate: ${winRate}%<br>`;
+                    output.innerHTML += `Average guesses to win: ${avgGuesses}<br>`;
+                    output.innerHTML += `Average minimum guesses needed: ${avgMinGuesses}<br>`;
+                    output.innerHTML += `Lucky wins: ${results.luckyWins} (${(results.luckyWins/results.wins*100).toFixed(1)}%)<br>`;
+                    output.innerHTML += `Optimal wins: ${results.optimalWins} (${(results.optimalWins/results.wins*100).toFixed(1)}%)<br>`;
+                    output.innerHTML += `<br>Guess distribution:<br>`;
+                    results.guessDistribution.forEach((count, i) => {
+                        if (count > 0) {
+                            output.innerHTML += `${i+1} guesses: ${count} (${(count/results.wins*100).toFixed(1)}%)<br>`;
+                        }
+                    });
+                    
+                    // Recommendation
+                    output.innerHTML += `<br><strong>Recommendation:</strong><br>`;
+                    if (avgGuesses < 3.3) {
+                        output.innerHTML += `Too easy! Increase difficulty parameters.`;
+                    } else if (avgGuesses > 3.7) {
+                        output.innerHTML += `Too hard! Decrease difficulty parameters.`;
+                    } else {
+                        output.innerHTML += `Good balance! Average ${avgGuesses} guesses is close to target of 3.5.`;
+                    }
+                    
+                    // Re-display current game
+                    displaySuspects();
+                }
+            };
+        })();
+        
+        // Error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Make it global
+        window.GameManager = GameManager;
+        
+        // Event listeners
+        try {
+            // Start game
+            document.getElementById('start-game').addEventListener('click', function() {
+                try {
+                    const difficulty = document.getElementById('difficulty-select').value;
+                    GameManager.setDifficulty(difficulty);
+                    
+                    document.getElementById('main-menu').style.display = 'none';
+                    document.getElementById('game-screen').style.display = 'block';
+                    
+                    GameManager.init();
+                } catch (error) {
+                    console.error('Error starting game:', error);
+                    showError('Failed to start game: ' + error.message);
+                }
+            });
+            
+            // Developer mode
+            document.getElementById('dev-mode-btn').addEventListener('click', function() {
+                const devTools = document.getElementById('devTools');
+                devTools.style.display = devTools.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Rules button
+            document.getElementById('rules-btn').addEventListener('click', function() {
+                alert(`GUILTY - How to Play:
+
+1. You're shown an innocent suspect's traits
+2. Note which traits match (green), are close (yellow), or differ (gray) from the culprit
+3. Find other suspects who would produce the same color pattern
+4. Make strategic accusations to narrow down possibilities
+5. Deduce the culprit before running out of guesses!
+
+Strategy Tips:
+- Yellow traits are your best clues
+- Use the trait spectrum to understand relationships
+- Eliminate suspects who can't match the pattern`);
+            });
+            
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+            showError('Failed to initialize game controls: ' + error.message);
+        }
+        
+        // Show that page loaded successfully
+        console.log('Game initialization complete');
+    });
+    </script>
+</body>
+</html>
