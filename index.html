@@ -293,6 +293,12 @@
             border-color: var(--text-muted);
         }
 
+        .initial-trait.unknown {
+            background: var(--bg-medium);
+            border: 2px dashed var(--border);
+            opacity: 0.7;
+        }
+
         .initial-trait-label {
             font-size: 0.9em;
             color: var(--text-muted);
@@ -303,6 +309,11 @@
             font-size: 1.1em;
             font-weight: 600;
             color: var(--text-primary);
+        }
+
+        .initial-trait.unknown .initial-trait-value {
+            color: var(--text-muted);
+            font-style: italic;
         }
 
         /* Color legend */
@@ -332,6 +343,33 @@
         .color-box.green { background: var(--success); }
         .color-box.yellow { background: var(--warning); }
         .color-box.gray { background: var(--text-muted); }
+        .color-box.unknown {
+            background: var(--bg-medium);
+            border: 2px dashed var(--border);
+        }
+
+        /* Deduction notice */
+        .deduction-notice {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .deduction-notice strong {
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        .pattern-info {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
 
         /* Trait guide */
         .trait-guide-section {
@@ -413,6 +451,70 @@
             color: var(--warning);
             font-size: 0.9em;
             font-weight: bold;
+        }
+
+        /* Minimal Trait Reference CSS */
+        .trait-reference-minimal {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .trait-reference-minimal h4 {
+            color: #f8fafc;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .reference-subtitle {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .trait-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .trait-line {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 0;
+        }
+
+        .trait-name {
+            color: #a5b4fc;
+            font-weight: 600;
+            font-size: 0.9em;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .trait-flow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+            color: #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .trait-flow span {
+            background: rgba(71, 85, 105, 0.5);
+            padding: 3px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .trait-flow i {
+            color: #64748b;
+            font-style: normal;
+            font-size: 0.8em;
         }
 
         /* Suspects grid */
@@ -735,70 +837,6 @@
             max-height: 450px;
             overflow-y: auto;
             border: 1px solid #1e293b;
-        }
-
-        /* Minimal Trait Reference CSS */
-        .trait-reference-minimal {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(71, 85, 105, 0.4);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .trait-reference-minimal h4 {
-            color: #f8fafc;
-            font-size: 1.1em;
-            margin-bottom: 8px;
-        }
-
-        .reference-subtitle {
-            color: #94a3b8;
-            font-size: 0.9em;
-            margin-bottom: 20px;
-        }
-
-        .trait-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .trait-line {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 8px 0;
-        }
-
-        .trait-name {
-            color: #a5b4fc;
-            font-weight: 600;
-            font-size: 0.9em;
-            min-width: 80px;
-            text-align: right;
-        }
-
-        .trait-flow {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.85em;
-            color: #e2e8f0;
-            flex-wrap: wrap;
-        }
-
-        .trait-flow span {
-            background: rgba(71, 85, 105, 0.5);
-            padding: 3px 10px;
-            border-radius: 12px;
-            white-space: nowrap;
-        }
-
-        .trait-flow i {
-            color: #64748b;
-            font-style: normal;
-            font-size: 0.8em;
         }
 
         /* Responsive */
