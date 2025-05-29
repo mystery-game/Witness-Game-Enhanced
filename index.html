@@ -1277,6 +1277,22 @@
                 console.log("Viable suspects:", publicState.viableSuspectsCount);
             }
             
+            // Create a gray value (2+ steps away)
+            function makeGrayValue(culpritPos, traitArray, seed) {
+                const grayPositions = [];
+                for (let i = 0; i < traitArray.length; i++) {
+                    if (Math.abs(i - culpritPos) >= 2) {
+                        grayPositions.push(i);
+                    }
+                }
+                if (grayPositions.length > 0) {
+                    const chosenPos = grayPositions[Math.floor(seededRandom(seed + 2000) * grayPositions.length)];
+                    return traitArray[chosenPos];
+                }
+                // Fallback
+                return culpritPos < traitArray.length / 2 ? traitArray[traitArray.length - 1] : traitArray[0];
+            }
+            
             // Generate initial suspect with yellow/gray clues
             function createTrialPattern(seed, settings) {
                 const pattern = {
