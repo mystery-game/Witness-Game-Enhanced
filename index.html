@@ -1101,15 +1101,15 @@
                 behavior: { name: 'Recent Behavior' }
             };
             
-            // Seeded random for consistency
+            // Helper: Seeded random for consistency
             function seededRandom(seed) {
                 const x = Math.sin(seed) * 10000;
                 return x - Math.floor(x);
             }
             
-            // Get feedback for trait
+            // Helper: Get feedback for trait
             function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
-                if (guessValue === undefined) {
+                if (guessValue === undefined || culpritValue === undefined) {
                     return 'unknown';
                 } else if (guessValue === culpritValue) {
                     return 'correct';
@@ -1117,13 +1117,101 @@
                     const traitArray = currentCrime.traits[traitCategory];
                     const guessPos = traitArray.indexOf(guessValue);
                     const culpritPos = traitArray.indexOf(culpritValue);
-                    
                     if (Math.abs(guessPos - culpritPos) <= 1) {
                         return 'close';
                     } else {
                         return 'wrong';
                     }
                 }
+            }
+            
+            // Helper: Create a gray value (2+ steps away)
+            function makeGrayValue(culpritPos, traitArray, seed) {
+                const grayPositions = [];
+                for (let i = 0; i < traitArray.length; i++) {
+                    if (Math.abs(i - culpritPos) >= 2) {
+                        grayPositions.push(i);
+                    }
+                }
+                if (grayPositions.length > 0) {
+                    const chosenPos = grayPositions[Math.floor(seededRandom(seed + 2000) * grayPositions.length)];
+                    return traitArray[chosenPos];
+                }
+                // Fallback
+                return culpritPos < traitArray.length / 2 ? traitArray[traitArray.length - 1] : traitArray[0];
+            }
+            
+            // Helper: Count viable suspects for pattern
+            function countViableSuspectsForPattern(pattern) {
+                let viableCount = 0;
+                privateState.suspects.forEach(suspect => {
+                    let isViable = true;
+                    Object.keys(currentCrime.traits).forEach(trait => {
+                        if (pattern[trait] === undefined) return;
+                        const patternFeedback = getFeedbackForTrait(
+                            pattern[trait],
+                            privateState.culprit[trait],
+                            trait
+                        );
+                        const suspectFeedback = getFeedbackForTrait(
+                            pattern[trait],
+                            suspect[trait],
+                            trait
+                        );
+                        if (patternFeedback !== suspectFeedback) {
+                            isViable = false;
+                        }
+                    });
+                    if (isViable) viableCount++;
+                });
+                return viableCount;
+            }
+            
+            // Helper: Verify pattern meets constraints
+            function verifyPattern(pattern, settings) {
+                let visibleCount = 0;
+                let yellowCount = 0;
+                let greenCount = 0;
+                Object.keys(currentCrime.traits).forEach(trait => {
+                    if (pattern[trait] !== undefined) {
+                        visibleCount++;
+                        const feedback = getFeedbackForTrait(
+                            pattern[trait],
+                            privateState.culprit[trait],
+                            trait
+                        );
+                        if (feedback === 'close') yellowCount++;
+                        if (feedback === 'correct') greenCount++;
+                    }
+                });
+                const isValid = visibleCount <= settings.visibleTraits && 
+                       yellowCount <= settings.maxYellowTraits && 
+                       greenCount <= settings.maxGreenTraits;
+                console.log(`Pattern verification: ${visibleCount}/${settings.visibleTraits} visible, ${yellowCount}/${settings.maxYellowTraits} yellow - ${isValid ? 'VALID' : 'INVALID'}`);
+                return isValid;
+            }
+            
+            // Helper: Create minimal fallback pattern
+            function createFallbackPattern(settings) {
+                const pattern = {
+                    name: "Initial Suspect",
+                    job: "Unknown"
+                };
+                const traitKeys = Object.keys(currentCrime.traits);
+                // Set all to undefined first
+                traitKeys.forEach(trait => {
+                    pattern[trait] = undefined;
+                });
+                // Only show minimal traits
+                if (settings.visibleTraits >= 1) {
+                    // Show one gray trait
+                    const trait = traitKeys[0];
+                    const traitArray = currentCrime.traits[trait];
+                    const culpritValue = privateState.culprit[trait];
+                    const culpritPos = traitArray.indexOf(culpritValue);
+                    pattern[trait] = makeGrayValue(culpritPos, traitArray, 12345);
+                }
+                return pattern;
             }
             
             // Calculate information gain for a potential guess
@@ -1277,22 +1365,6 @@
                 console.log("Viable suspects:", publicState.viableSuspectsCount);
             }
             
-            // Create a gray value (2+ steps away)
-            function makeGrayValue(culpritPos, traitArray, seed) {
-                const grayPositions = [];
-                for (let i = 0; i < traitArray.length; i++) {
-                    if (Math.abs(i - culpritPos) >= 2) {
-                        grayPositions.push(i);
-                    }
-                }
-                if (grayPositions.length > 0) {
-                    const chosenPos = grayPositions[Math.floor(seededRandom(seed + 2000) * grayPositions.length)];
-                    return traitArray[chosenPos];
-                }
-                // Fallback
-                return culpritPos < traitArray.length / 2 ? traitArray[traitArray.length - 1] : traitArray[0];
-            }
-            
             // Generate initial suspect with yellow/gray clues
             function createTrialPattern(seed, settings) {
                 const pattern = {
@@ -1343,77 +1415,6 @@
                 
                 console.log(`Pattern created with ${visibleTraits.length} visible traits, ${5 - visibleTraits.length} hidden`);
                 return pattern;
-            }
-            
-            // Add a verification function to ensure patterns are correct
-            function verifyPattern(pattern, settings) {
-                let visibleCount = 0;
-                let yellowCount = 0;
-                let greenCount = 0;
-                
-                Object.keys(currentCrime.traits).forEach(trait => {
-                    if (pattern[trait] !== undefined) {
-                        visibleCount++;
-                        const feedback = getFeedbackForTrait(
-                            pattern[trait],
-                            privateState.culprit[trait],
-                            trait
-                        );
-                        if (feedback === 'close') yellowCount++;
-                        if (feedback === 'correct') greenCount++;
-                    }
-                });
-                
-                console.log(`Pattern verification: ${visibleCount} visible (max ${settings.visibleTraits}), ${yellowCount} yellow (max ${settings.maxYellowTraits})`);
-                
-                return visibleCount <= settings.visibleTraits && 
-                       yellowCount <= settings.maxYellowTraits && 
-                       greenCount <= settings.maxGreenTraits;
-            }
-            
-            // Generate initial suspect with proper constraints
-            function generateInitialSuspect(seed) {
-                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
-                
-                // Try multiple patterns until we find one that leaves enough viable suspects
-                let bestPattern = null;
-                let bestViableCount = 0;
-                
-                for (let attempt = 0; attempt < 100; attempt++) {
-                    const pattern = createTrialPattern(seed + attempt, difficultySettings);
-                    
-                    // Verify the pattern meets our constraints
-                    if (!verifyPattern(pattern, difficultySettings)) {
-                        console.warn(`Pattern failed verification, skipping...`);
-                        continue;
-                    }
-                    
-                    const viableCount = countViableSuspectsForPattern(pattern);
-                    
-                    // Check if this pattern meets our constraints
-                    if (viableCount >= difficultySettings.minViableSuspects && 
-                        viableCount <= 16) {
-                        // Prefer patterns closer to target
-                        const targetDiff = Math.abs(viableCount - difficultySettings.targetViableSuspects);
-                        const bestDiff = Math.abs(bestViableCount - difficultySettings.targetViableSuspects);
-                        
-                        if (!bestPattern || targetDiff < bestDiff) {
-                            bestPattern = pattern;
-                            bestViableCount = viableCount;
-                        }
-                    }
-                }
-                
-                if (!bestPattern) {
-                    console.error("Could not generate valid pattern! Using fallback...");
-                    bestPattern = createFallbackPattern(difficultySettings);
-                    bestViableCount = countViableSuspectsForPattern(bestPattern);
-                }
-                
-                privateState.initialSuspect = bestPattern;
-                publicState.viableSuspectsCount = bestViableCount;
-                
-                console.log(`Final pattern: ${Object.values(bestPattern).filter(v => v !== undefined).length} visible traits, ${bestViableCount} viable suspects`);
             }
             
             // Display initial suspect
@@ -1654,30 +1655,49 @@
                 displayConfidence();
             }
             
-            // Count viable suspects for pattern
-            function countViableSuspectsForPattern(pattern) {
-                let viableCount = 0;
-                privateState.suspects.forEach(suspect => {
-                    let isViable = true;
-                    Object.keys(currentCrime.traits).forEach(trait => {
-                        if (pattern[trait] === undefined) return;
-                        const patternFeedback = getFeedbackForTrait(
-                            pattern[trait],
-                            privateState.culprit[trait],
-                            trait
-                        );
-                        const suspectFeedback = getFeedbackForTrait(
-                            pattern[trait],
-                            suspect[trait],
-                            trait
-                        );
-                        if (patternFeedback !== suspectFeedback) {
-                            isViable = false;
+            // Generate initial suspect with proper constraints
+            function generateInitialSuspect(seed) {
+                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
+                
+                // Try multiple patterns until we find one that leaves enough viable suspects
+                let bestPattern = null;
+                let bestViableCount = 0;
+                
+                for (let attempt = 0; attempt < 100; attempt++) {
+                    const pattern = createTrialPattern(seed + attempt, difficultySettings);
+                    
+                    // Verify the pattern meets our constraints
+                    if (!verifyPattern(pattern, difficultySettings)) {
+                        console.warn(`Pattern failed verification, skipping...`);
+                        continue;
+                    }
+                    
+                    const viableCount = countViableSuspectsForPattern(pattern);
+                    
+                    // Check if this pattern meets our constraints
+                    if (viableCount >= difficultySettings.minViableSuspects && 
+                        viableCount <= 16) {
+                        // Prefer patterns closer to target
+                        const targetDiff = Math.abs(viableCount - difficultySettings.targetViableSuspects);
+                        const bestDiff = Math.abs(bestViableCount - difficultySettings.targetViableSuspects);
+                        
+                        if (!bestPattern || targetDiff < bestDiff) {
+                            bestPattern = pattern;
+                            bestViableCount = viableCount;
                         }
-                    });
-                    if (isViable) viableCount++;
-                });
-                return viableCount;
+                    }
+                }
+                
+                if (!bestPattern) {
+                    console.error("Could not generate valid pattern! Using fallback...");
+                    bestPattern = createFallbackPattern(difficultySettings);
+                    bestViableCount = countViableSuspectsForPattern(bestPattern);
+                }
+                
+                privateState.initialSuspect = bestPattern;
+                publicState.viableSuspectsCount = bestViableCount;
+                
+                console.log(`Final pattern: ${Object.values(bestPattern).filter(v => v !== undefined).length} visible traits, ${bestViableCount} viable suspects`);
             }
             
             return {
