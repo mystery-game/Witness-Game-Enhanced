@@ -1700,6 +1700,12 @@
                 console.log(`Final pattern: ${Object.values(bestPattern).filter(v => v !== undefined).length} visible traits, ${bestViableCount} viable suspects`);
             }
             
+            // Helper: distributeSuspectTraits (compatibility stub)
+            function distributeSuspectTraits() {
+                // This function is a placeholder. All trait distribution is now handled in generateSuspects and related helpers.
+                // You can safely leave this empty or remove calls to it if not needed.
+            }
+            
             return {
                 init: function() {
                     try {
