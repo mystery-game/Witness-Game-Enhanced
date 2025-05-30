@@ -573,10 +573,6 @@
     </style>
 </head>
 <body>
-    <div style="background: purple; color: white; padding: 10px; text-align: center;">
-        VERSION 2.0 - ELIMINATION ONLY - Updated <?php echo date('Y-m-d H:i:s'); ?>
-    </div>
-
     <div class="container">
         <div class="header">
             <h1>🔍 GUILTY 🔍</h1>
@@ -752,14 +748,765 @@
         </div>
     </div>
 
+    <div style="background: purple; color: white; padding: 10px; text-align: center;">
+        VERSION 2.0 - ELIMINATION ONLY - Updated <span id="update-time"></span>
+        <script>document.getElementById('update-time').textContent = new Date().toLocaleString();</script>
+    </div>
+
     <script>
-    // Game Manager - Pure Time Challenge Version with All Updates
+    // Game Manager - Pure Time Challenge Version
     document.addEventListener('DOMContentLoaded', function() {
         const GameManager = (function() {
-            // ... (rest of the user's provided script) ...
+            // Private state
+            let privateState = {
+                culprit: null,
+                suspects: [],
+                cluesSuspects: [], // All clue suspects given
+                logicallyImpossible: new Set(),
+                cluesRequired: 0, // Number of clues needed to solve
+                gameSecret: 'guilty-' + Math.random().toString(36).substring(7)
+            };
+            
+            // Public state
+            let publicState = {
+                difficulty: 'medium',
+                gameOver: false,
+                won: false,
+                exoneratedSuspects: new Set(),
+                incorrectlyExonerated: new Set(),
+                viableSuspectsCount: 16,
+                startTime: null,
+                timerInterval: null,
+                eliminationRounds: 0,
+                cluesGiven: 0
+            };
+            
+            // Difficulty settings
+            const DIFFICULTY_SETTINGS = {
+                easy: {
+                    initialTraits: 2,
+                    traitVisibilityChance: 0.85
+                },
+                medium: {
+                    initialTraits: 2,
+                    traitVisibilityChance: 0.8
+                },
+                hard: {
+                    initialTraits: 1,
+                    traitVisibilityChance: 0.75
+                }
+            };
+            
+            // Crime scenario
+            const currentCrime = {
+                id: 'museum_heist',
+                title: "The Museum Diamond Heist",
+                description: "The priceless 'Star of Mumbai' diamond was stolen from the Natural History Museum last night. Security footage shows the thief knew the guard rotation perfectly. The crime occurred between 2-3 AM.",
+                traits: {
+                    access: ['None', 'Visitor', 'Contractor', 'Staff', 'VIP'],
+                    timing: ['Asleep', 'Working', 'Home', 'Out', 'Verified'],
+                    knowledge: ['None', 'Basic', 'Limited', 'Familiar', 'Expert'],
+                    motive: ['None', 'Curious', 'Vengeful', 'Greedy', 'Desperate'],
+                    behavior: ['Helpful', 'Normal', 'Changed', 'Nervous', 'Suspicious']
+                }
+            };
+            
+            const traitCategories = {
+                access: { name: 'Museum Access' },
+                timing: { name: 'Alibi Time' },
+                knowledge: { name: 'Security Knowledge' },
+                motive: { name: 'Motive Strength' },
+                behavior: { name: 'Recent Behavior' }
+            };
+            
+            // Helper: Seeded random
+            function seededRandom(seed) {
+                const x = Math.sin(seed) * 10000;
+                return x - Math.floor(x);
+            }
+            
+            // Helper: Get feedback for trait
+            function getFeedbackForTrait(guessValue, culpritValue, traitCategory) {
+                if (!guessValue || !culpritValue || !currentCrime.traits[traitCategory]) {
+                    return 'unknown';
+                }
+                
+                if (guessValue === culpritValue) {
+                    return 'correct';
+                }
+                
+                const traitArray = currentCrime.traits[traitCategory];
+                const guessPos = traitArray.indexOf(guessValue);
+                const culpritPos = traitArray.indexOf(culpritValue);
+                
+                if (guessPos === -1 || culpritPos === -1) {
+                    return 'unknown';
+                }
+                
+                if (Math.abs(guessPos - culpritPos) <= 1) {
+                    return 'close';
+                } else {
+                    return 'wrong';
+                }
+            }
+            
+            // Calculate which suspects are logically impossible
+            function calculateLogicallyImpossible() {
+                privateState.logicallyImpossible.clear();
+                
+                privateState.suspects.forEach(suspect => {
+                    if (suspect.name === privateState.culprit.name) return;
+                    if (publicState.exoneratedSuspects.has(suspect.name)) return;
+                    
+                    let canMatch = true;
+                    
+                    // Check against all clues given
+                    privateState.cluesSuspects.forEach(clue => {
+                        Object.keys(currentCrime.traits).forEach(trait => {
+                            if (clue[trait] !== undefined && suspect[trait] !== undefined) {
+                                const clueFeedback = getFeedbackForTrait(
+                                    clue[trait],
+                                    privateState.culprit[trait],
+                                    trait
+                                );
+                                const suspectFeedback = getFeedbackForTrait(
+                                    clue[trait],
+                                    suspect[trait],
+                                    trait
+                                );
+                                if (clueFeedback !== suspectFeedback) {
+                                    canMatch = false;
+                                }
+                            }
+                        });
+                    });
+                    
+                    if (!canMatch) {
+                        privateState.logicallyImpossible.add(suspect.name);
+                    }
+                });
+                
+                updateExonerationDisplay();
+            }
+            
+            // Update exoneration display
+            function updateExonerationDisplay() {
+                const shouldCount = privateState.logicallyImpossible.size;
+                const exoneratedCount = publicState.exoneratedSuspects.size;
+                const remainingCount = privateState.suspects.length - exoneratedCount;
+                
+                document.getElementById('shouldExonerateCount').textContent = shouldCount;
+                document.getElementById('exoneratedCount').textContent = exoneratedCount;
+                document.getElementById('remainingCount').textContent = remainingCount;
+                
+                // Update suspect cards
+                privateState.suspects.forEach(suspect => {
+                    const card = document.querySelector(`[data-suspect-name="${suspect.name}"]`);
+                    if (!card) return;
+                    
+                    card.classList.remove('should-exonerate', 'correctly-exonerated', 'incorrectly-exonerated', 'the-culprit');
+                    
+                    if (publicState.exoneratedSuspects.has(suspect.name)) {
+                        if (privateState.logicallyImpossible.has(suspect.name)) {
+                            card.classList.add('correctly-exonerated');
+                        } else {
+                            card.classList.add('incorrectly-exonerated');
+                        }
+                    } else if (privateState.logicallyImpossible.has(suspect.name)) {
+                        card.classList.add('should-exonerate');
+                    }
+                });
+            }
+            
+            // Check exonerations and progress
+            function checkExonerations() {
+                const shouldExonerate = privateState.logicallyImpossible;
+                const actuallyExonerated = publicState.exoneratedSuspects;
+                const incorrectExonerations = publicState.incorrectlyExonerated;
+                
+                // Clear previous incorrect marks
+                incorrectExonerations.clear();
+                
+                // Check for incorrect exonerations
+                let incorrectCount = 0;
+                actuallyExonerated.forEach(name => {
+                    if (!shouldExonerate.has(name) && name !== privateState.culprit.name) {
+                        incorrectCount++;
+                        incorrectExonerations.add(name);
+                    }
+                });
+                
+                // Count how many more need to be exonerated
+                let needToExonerateCount = 0;
+                shouldExonerate.forEach(name => {
+                    if (!actuallyExonerated.has(name)) {
+                        needToExonerateCount++;
+                    }
+                });
+                
+                if (incorrectCount > 0 || needToExonerateCount > 0) {
+                    let message = "Close!\n\n";
+                    if (incorrectCount > 0) {
+                        message += `You exonerated ${incorrectCount} suspect${incorrectCount > 1 ? 's' : ''} incorrectly.\n`;
+                    }
+                    if (needToExonerateCount > 0) {
+                        message += `You still need to exonerate ${needToExonerateCount} more suspect${needToExonerateCount > 1 ? 's' : ''}.`;
+                    }
+                    alert(message);
+                    updateExonerationDisplay();
+                    return;
+                }
+                
+                // Success! Check if game is complete
+                const remainingSuspects = privateState.suspects.filter(s => 
+                    !publicState.exoneratedSuspects.has(s.name)
+                );
+                
+                publicState.eliminationRounds++;
+                document.getElementById('roundsDisplay').textContent = publicState.eliminationRounds;
+                
+                // Check if we've given enough clues and only culprit remains
+                if (remainingSuspects.length === 1 && 
+                    remainingSuspects[0].name === privateState.culprit.name &&
+                    publicState.cluesGiven >= privateState.cluesRequired) {
+                    // Game won!
+                    endGame(true);
+                } else {
+                    // Give another clue
+                    giveNewClue();
+                    calculateLogicallyImpossible();
+                }
+            }
+            
+            // Give a new clue
+            function giveNewClue() {
+                const remainingSuspects = privateState.suspects.filter(s => 
+                    !publicState.exoneratedSuspects.has(s.name) &&
+                    s.name !== privateState.culprit.name
+                );
+                
+                if (remainingSuspects.length === 0) return;
+                
+                // If we haven't given enough clues yet, ensure we don't pick someone that would end the game
+                let validCandidates = remainingSuspects;
+                if (publicState.cluesGiven < privateState.cluesRequired - 1) {
+                    // Make sure we don't accidentally pick someone that would leave only the culprit
+                    validCandidates = remainingSuspects.filter(suspect => {
+                        // Simulate what would happen if we gave this clue
+                        const wouldEliminate = remainingSuspects.filter(s => {
+                            if (s.name === suspect.name) return false;
+                            
+                            // Check if this suspect would be eliminated based on the new clue
+                            let matches = true;
+                            Object.keys(traitCategories).forEach(trait => {
+                                if (suspect[trait] !== undefined && s[trait] !== undefined) {
+                                    const suspectFeedback = getFeedbackForTrait(
+                                        suspect[trait],
+                                        privateState.culprit[trait],
+                                        trait
+                                    );
+                                    const otherFeedback = getFeedbackForTrait(
+                                        suspect[trait],
+                                        s[trait],
+                                        trait
+                                    );
+                                    if (suspectFeedback !== otherFeedback) {
+                                        matches = false;
+                                    }
+                                }
+                            });
+                            return !matches;
+                        });
+                        
+                        // Only valid if it doesn't eliminate everyone
+                        return wouldEliminate.length < remainingSuspects.length - 1;
+                    });
+                    
+                    // If no valid candidates, use all remaining
+                    if (validCandidates.length === 0) {
+                        validCandidates = remainingSuspects;
+                    }
+                }
+                
+                // Select a random suspect from valid candidates
+                const clueIndex = Math.floor(seededRandom(Date.now() + publicState.cluesGiven) * validCandidates.length);
+                const clueSuspect = validCandidates[clueIndex];
+                
+                privateState.cluesSuspects.push(clueSuspect);
+                publicState.cluesGiven++;
+                
+                // Display the clue
+                displayClue(clueSuspect);
+                
+                // Update displays
+                document.getElementById('cluesDisplay').textContent = publicState.cluesGiven;
+                updateViableSuspects();
+            }
+            
+            // Display clue
+            function displayClue(suspect, isInitial = false) {
+                const board = document.getElementById('gameBoard');
+                
+                // Show clue reveal
+                const clueReveal = document.createElement('div');
+                clueReveal.className = 'hint-reveal';
+                
+                if (isInitial) {
+                    clueReveal.innerHTML = `
+                        <div class="hint-title">🔍 Prime Suspect</div>
+                        <div>The prime suspect was <strong>${suspect.name}</strong>, but they had a solid alibi.<br>
+                        Use information about ${suspect.name} to exonerate other potential suspects!</div>
+                    `;
+                } else {
+                    clueReveal.innerHTML = `
+                        <div class="hint-title">🎁 New Clue Unlocked!</div>
+                        <div>Good work! Here's another innocent suspect to analyze:</div>
+                    `;
+                }
+                board.appendChild(clueReveal);
+                
+                // Add the clue row
+                const row = document.createElement('div');
+                row.className = 'clue-row';
+                
+                let feedbackHTML = '';
+                Object.keys(traitCategories).forEach(trait => {
+                    const value = suspect[trait];
+                    const category = traitCategories[trait];
+                    
+                    if (value === undefined) {
+                        feedbackHTML += `
+                            <div class="trait-feedback unknown">
+                                <div class="trait-feedback-label">${category.name}</div>
+                                <div class="trait-feedback-value">?</div>
+                            </div>
+                        `;
+                    } else {
+                        const feedback = getFeedbackForTrait(value, privateState.culprit[trait], trait);
+                        feedbackHTML += `
+                            <div class="trait-feedback ${feedback}">
+                                <div class="trait-feedback-label">${category.name}</div>
+                                <div class="trait-feedback-value">${value}</div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                row.innerHTML = `
+                    <div class="clue-suspect">
+                        <div style="color: var(--primary); font-size: 0.9em; margin-bottom: 5px;">CLUE ${publicState.cluesGiven}</div>
+                        <div class="clue-name" style="font-weight: 600;">${suspect.name}</div>
+                        <div class="clue-job" style="color: var(--text-muted);">${suspect.job}</div>
+                    </div>
+                    <div class="clue-feedback">
+                        ${feedbackHTML}
+                    </div>
+                `;
+                
+                board.appendChild(row);
+            }
+            
+            // Generate initial clue suspect
+            function generateInitialClue() {
+                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
+                
+                // Create initial clue suspect (not the culprit)
+                const nonCulprits = privateState.suspects.filter(s => s.name !== privateState.culprit.name);
+                const initialSuspect = nonCulprits[Math.floor(seededRandom(Date.now()) * nonCulprits.length)];
+                
+                // For initial clue, only show limited traits based on difficulty
+                const clue = {
+                    name: initialSuspect.name,
+                    job: initialSuspect.job
+                };
+                
+                const traitKeys = Object.keys(currentCrime.traits);
+                const shuffled = [...traitKeys].sort(() => seededRandom(Date.now() + 1000) - 0.5);
+                
+                // Set visible traits
+                shuffled.slice(0, difficultySettings.initialTraits).forEach(trait => {
+                    clue[trait] = initialSuspect[trait];
+                });
+                
+                privateState.cluesSuspects.push(clue);
+                publicState.cluesGiven = 1;
+                
+                return clue;
+            }
+            
+            // Display initial clue
+            function displayInitialClue() {
+                const clue = privateState.cluesSuspects[0];
+                const board = document.getElementById('gameBoard');
+                board.innerHTML = ''; // Clear board first
+                
+                // Add clue requirement display
+                const clueReq = document.createElement('div');
+                clueReq.className = 'clue-requirement';
+                clueReq.innerHTML = `This puzzle requires <strong>${privateState.cluesRequired} clues</strong> to solve`;
+                board.appendChild(clueReq);
+                
+                const heading = document.createElement('h3');
+                heading.style.margin = '20px 0';
+                heading.textContent = 'Clues Given:';
+                board.appendChild(heading);
+                
+                displayClue(clue, true);
+                document.getElementById('cluesDisplay').textContent = publicState.cluesGiven;
+            }
+            
+            // Generate suspects
+            function generateSuspects() {
+                const names = [
+                    "Anne Chen", "Ted Santos", "Henry Wilson", "Abby Thompson", "Joney Davis",
+                    "Sarah Martin", "Roy Lee", "Hannah Anderson", "Lex Brown", "Aaron Johnson",
+                    "Neve Williams", "Cal Miller", "Faye Garcia", "David Rodriguez", "Elle Martinez",
+                    "Jonathan Smith"
+                ];
+                
+                const jobs = [
+                    "Security Guard", "Janitor", "Curator", "Tour Guide",
+                    "Wealthy Donor", "Maintenance Worker", "Art Student", "Security Consultant",
+                    "Night Watchman", "Private Collector", "Museum Administrator", "Restoration Expert",
+                    "Insurance Investigator", "Archaeologist", "Gift Shop Employee", "Delivery Driver"
+                ];
+                
+                const seed = Date.now();
+                const difficultySettings = DIFFICULTY_SETTINGS[publicState.difficulty];
+                
+                // Generate suspects
+                privateState.suspects = names.map((name, i) => {
+                    const suspect = {
+                        name: name,
+                        job: jobs[i]
+                    };
+                    
+                    // Assign traits based on visibility chance
+                    Object.keys(currentCrime.traits).forEach(trait => {
+                        if (seededRandom(seed + i * 100 + trait.charCodeAt(0)) < difficultySettings.traitVisibilityChance) {
+                            const values = currentCrime.traits[trait];
+                            suspect[trait] = values[Math.floor(seededRandom(seed + i * 101 + trait.charCodeAt(0)) * values.length)];
+                        }
+                    });
+                    
+                    return suspect;
+                });
+                
+                // Select culprit
+                const culpritIndex = Math.floor(seededRandom(seed) * privateState.suspects.length);
+                privateState.culprit = privateState.suspects[culpritIndex];
+                
+                // Ensure culprit has ALL traits
+                Object.keys(currentCrime.traits).forEach(trait => {
+                    if (!privateState.culprit[trait]) {
+                        const values = currentCrime.traits[trait];
+                        privateState.culprit[trait] = values[Math.floor(seededRandom(seed + 200 + trait.charCodeAt(0)) * values.length)];
+                    }
+                });
+                
+                console.log("Culprit is:", privateState.culprit.name);
+                
+                // Calculate how many clues will be required (3-6)
+                // Based on difficulty and suspect trait distribution
+                const baseclues = publicState.difficulty === 'hard' ? 5 : 
+                                  publicState.difficulty === 'medium' ? 4 : 3;
+                const variance = Math.floor(seededRandom(seed + 999) * 2); // 0 or 1
+                privateState.cluesRequired = baseclues + variance;
+                privateState.cluesRequired = Math.min(6, Math.max(3, privateState.cluesRequired));
+                
+                // Generate initial clue
+                generateInitialClue();
+            }
+            
+            // Display suspects
+            function displaySuspects() {
+                const grid = document.getElementById('suspectsGrid');
+                grid.innerHTML = '';
+                
+                privateState.suspects.forEach((suspect, index) => {
+                    const isExonerated = publicState.exoneratedSuspects.has(suspect.name);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'suspect-card';
+                    card.dataset.suspectName = suspect.name;
+                    if (isExonerated) card.classList.add('eliminated');
+                    
+                    let traitsHTML = '';
+                    Object.keys(traitCategories).forEach(key => {
+                        const value = suspect[key];
+                        const displayValue = value !== undefined ? value : '?';
+                        const valueClass = value === undefined ? 'unknown-value' : '';
+                        
+                        traitsHTML += `
+                            <div class="trait-item">
+                                <span class="trait-label">${traitCategories[key].name}:</span>
+                                <span class="trait-value ${valueClass}">${displayValue}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    card.innerHTML = `
+                        <div class="suspect-header">
+                            <div class="suspect-name">${suspect.name}</div>
+                            <div class="suspect-job">${suspect.job}</div>
+                        </div>
+                        <div class="suspect-traits">
+                            ${traitsHTML}
+                        </div>
+                        <div class="suspect-actions">
+                            <button class="suspect-button exonerate-btn" 
+                                    onclick="GameManager.toggleElimination('${suspect.name}')"
+                                    ${publicState.gameOver ? 'disabled' : ''}>
+                                ${isExonerated ? 'Restore' : 'Exonerate'}
+                            </button>
+                        </div>
+                    `;
+                    
+                    grid.appendChild(card);
+                });
+                
+                updateExonerationDisplay();
+            }
+            
+            // Timer functions
+            function startTimer() {
+                publicState.startTime = Date.now();
+                publicState.timerInterval = setInterval(updateTimer, 100);
+            }
+            
+            function updateTimer() {
+                if (publicState.gameOver) return;
+                
+                const elapsed = Date.now() - publicState.startTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const displaySeconds = seconds % 60;
+                
+                document.getElementById('timerDisplay').textContent = 
+                    `${minutes}:${displaySeconds.toString().padStart(2, '0')}`;
+            }
+            
+            function stopTimer() {
+                if (publicState.timerInterval) {
+                    clearInterval(publicState.timerInterval);
+                }
+            }
+            
+            // Update viable suspects count
+            function updateViableSuspects() {
+                let viableCount = 0;
+                
+                privateState.suspects.forEach(suspect => {
+                    if (publicState.exoneratedSuspects.has(suspect.name)) return;
+                    
+                    let couldBeCulprit = true;
+                    
+                    privateState.cluesSuspects.forEach(clue => {
+                        Object.keys(traitCategories).forEach(trait => {
+                            if (clue[trait] !== undefined && suspect[trait] !== undefined) {
+                                const clueFeedback = getFeedbackForTrait(
+                                    clue[trait],
+                                    privateState.culprit[trait],
+                                    trait
+                                );
+                                const suspectFeedback = getFeedbackForTrait(
+                                    clue[trait],
+                                    suspect[trait],
+                                    trait
+                                );
+                                if (clueFeedback !== suspectFeedback) {
+                                    couldBeCulprit = false;
+                                }
+                            }
+                        });
+                    });
+                    
+                    if (couldBeCulprit) viableCount++;
+                });
+                
+                publicState.viableSuspectsCount = viableCount;
+                document.getElementById('viableDisplay').textContent = viableCount.toString();
+            }
+            
+            // End game
+            function endGame(won) {
+                publicState.gameOver = true;
+                publicState.won = won;
+                
+                stopTimer();
+                
+                // Highlight the culprit
+                const culpritCard = document.querySelector(`[data-suspect-name="${privateState.culprit.name}"]`);
+                if (culpritCard) {
+                    culpritCard.classList.add('the-culprit');
+                }
+                
+                const gameOverDiv = document.getElementById('gameOver');
+                const titleElement = document.getElementById('gameOverTitle');
+                const messageElement = document.getElementById('gameOverMessage');
+                const phaseIndicator = document.getElementById('phaseIndicator');
+                
+                const timeElapsed = Date.now() - publicState.startTime;
+                const minutes = Math.floor(timeElapsed / 60000);
+                const seconds = Math.floor((timeElapsed % 60000) / 1000);
+                
+                gameOverDiv.className = 'game-over won';
+                titleElement.textContent = 'CASE SOLVED!';
+                
+                // Phase indicator shows completion
+                phaseIndicator.className = 'phase-indicator complete';
+                phaseIndicator.innerHTML = `
+                    <div class="phase-title">✅ Investigation Complete!</div>
+                    <div class="phase-description">
+                        The culprit was ${privateState.culprit.name}
+                    </div>
+                `;
+                
+                // Calculate score based on time and difficulty
+                const baseScore = 10000;
+                const timeBonus = Math.max(0, baseScore - (timeElapsed / 1000) * 50);
+                const difficultyMultiplier = publicState.difficulty === 'hard' ? 1.5 : 
+                                           publicState.difficulty === 'medium' ? 1.0 : 0.8;
+                
+                // Bonus for using exactly the required number of clues
+                const clueBonus = publicState.cluesGiven === privateState.cluesRequired ? 2000 : 0;
+                
+                const finalScore = Math.round((timeBonus + clueBonus) * difficultyMultiplier);
+                
+                messageElement.innerHTML = `
+                    <div style="font-size: 1.2em; margin-bottom: 20px;">
+                        The culprit was <strong style="color: var(--success)">${privateState.culprit.name}</strong> (${privateState.culprit.job})
+                    </div>
+                    <div style="display: grid; gap: 10px; max-width: 400px; margin: 0 auto;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>⏱️ Time:</span>
+                            <strong>${minutes}:${seconds.toString().padStart(2, '0')}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>🎯 Clues Used:</span>
+                            <strong>${publicState.cluesGiven} / ${privateState.cluesRequired}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>📊 Elimination Rounds:</span>
+                            <strong>${publicState.eliminationRounds}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>🏆 Difficulty:</span>
+                            <strong>${publicState.difficulty.charAt(0).toUpperCase() + publicState.difficulty.slice(1)}</strong>
+                        </div>
+                        <hr style="border: 1px solid var(--border); margin: 10px 0;">
+                        <div style="display: flex; justify-content: space-between; font-size: 1.3em;">
+                            <span>Final Score:</span>
+                            <strong style="color: var(--primary)">${finalScore.toLocaleString()}</strong>
+                        </div>
+                        ${publicState.cluesGiven === privateState.cluesRequired ? 
+                            '<div style="color: var(--success); margin-top: 10px;">✨ Perfect deduction! Solved with minimum clues!</div>' : 
+                            ''
+                        }
+                    </div>
+                `;
+                
+                gameOverDiv.style.display = 'block';
+                document.getElementById('checkExonerationsBtn').disabled = true;
+            }
+            
+            return {
+                init: function() {
+                    try {
+                        document.getElementById('crimeTitle').textContent = currentCrime.title;
+                        document.getElementById('crimeDescription').textContent = currentCrime.description;
+                        
+                        generateSuspects();
+                        displayInitialClue();
+                        displaySuspects();
+                        calculateLogicallyImpossible();
+                        startTimer();
+                        
+                        document.getElementById('viableDisplay').textContent = publicState.viableSuspectsCount.toString();
+                        
+                        // Add check button listener
+                        document.getElementById('checkExonerationsBtn').addEventListener('click', checkExonerations);
+                    } catch (error) {
+                        console.error('Error initializing game:', error);
+                        showError('Failed to initialize game: ' + error.message);
+                    }
+                },
+                
+                toggleElimination: function(name) {
+                    if (publicState.exoneratedSuspects.has(name)) {
+                        publicState.exoneratedSuspects.delete(name);
+                        publicState.incorrectlyExonerated.delete(name);
+                    } else {
+                        publicState.exoneratedSuspects.add(name);
+                    }
+                    displaySuspects();
+                    updateExonerationDisplay();
+                },
+                
+                setDifficulty: function(difficulty) {
+                    publicState.difficulty = difficulty;
+                }
+            };
         })();
-        // ... (rest of the user's provided script) ...
+        
+        // Error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Make it global
+        window.GameManager = GameManager;
+        
+        // Event listeners
+        try {
+            document.getElementById('start-game').addEventListener('click', function() {
+                try {
+                    const difficulty = document.getElementById('difficulty-select').value;
+                    GameManager.setDifficulty(difficulty);
+                    
+                    document.getElementById('main-menu').style.display = 'none';
+                    document.getElementById('game-screen').style.display = 'block';
+                    
+                    GameManager.init();
+                } catch (error) {
+                    console.error('Error starting game:', error);
+                    showError('Failed to start game: ' + error.message);
+                }
+            });
+            
+            document.getElementById('rules-btn').addEventListener('click', function() {
+                alert(`GUILTY - Time Challenge Mode
+
+How to Play:
+1. Study the clue suspect's traits and their colors
+2. Exonerate ALL suspects who CAN'T match the pattern
+3. Click "Check Exonerations" to verify
+4. Each correct round reveals a NEW clue!
+5. Continue until only ONE suspect remains
+
+Scoring:
+- Pure time-based challenge
+- Faster solutions = Higher scores
+- Difficulty affects score multiplier
+- No guess limit - it's all about speed!
+
+Strategy:
+- Green = Exact match
+- Yellow = Adjacent trait (one step away)
+- Gray = Different (2+ steps away)
+- Be careful - incorrect eliminations slow you down!`);
+            });
+            
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+            showError('Failed to initialize game controls: ' + error.message);
+        }
+        
+        console.log('Game initialization complete');
     });
     </script>
 </body>
-</html> 
+</html>
