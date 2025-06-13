@@ -135,9 +135,28 @@ DIFFICULTY LEVELS:
                     name: shuffledNames[i],
                     job: shuffledJobs[i],
                     traits: generateRandomTraits(),
+                    hiddenTraits: [],
                     exonerated: false,
                     shouldExonerate: false
                 };
+                
+                // Hide some traits based on difficulty to increase challenge
+                const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
+                let numHidden = 0;
+                
+                // Difficulty-based hidden trait counts
+                if (gameState.difficulty === 'easy') {
+                    numHidden = 1; // Hide 1 trait per suspect
+                } else if (gameState.difficulty === 'medium') {
+                    numHidden = 2; // Hide 2 traits per suspect  
+                } else {
+                    numHidden = 2; // Hide 2 traits per suspect for hard mode
+                }
+                
+                // Randomly select traits to hide
+                const shuffledTraits = [...traitTypes].sort(() => Math.random() - 0.5);
+                suspect.hiddenTraits = shuffledTraits.slice(0, numHidden);
+                
                 gameState.suspects.push(suspect);
             }
         }
@@ -215,6 +234,12 @@ DIFFICULTY LEVELS:
 
         function matchesCulpritClues(suspect) {
             return gameState.cluesRevealed.every(clue => {
+                // If this trait is hidden for the suspect, we can't eliminate them based on this clue
+                // Hidden traits act as wildcards - they could match or not match
+                if (suspect.hiddenTraits.includes(clue.type)) {
+                    return true; // Assume it could match, so don't eliminate
+                }
+                
                 const suspectValue = suspect.traits[clue.type];
                 const culpritValue = clue.value;
                 const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
@@ -302,7 +327,7 @@ DIFFICULTY LEVELS:
                         ${Object.entries(suspect.traits).map(([type, value]) => 
                             `<div class="trait-item">
                                 <span>${capitalizeFirst(type)}</span>
-                                <span>${value}</span>
+                                <span class="${suspect.hiddenTraits.includes(type) ? 'hidden-trait' : ''}">${suspect.hiddenTraits.includes(type) ? '?' : value}</span>
                             </div>`
                         ).join('')}
                     </div>
@@ -363,6 +388,8 @@ DIFFICULTY LEVELS:
             let incorrectExonerations = 0;
             let shouldExonerateCount = 0;
             let notExoneratedCount = 0;
+            let incorrectlyExoneratedNames = [];
+            let shouldExonerateNames = [];
 
             gameState.suspects.forEach(suspect => {
                 if (suspect.shouldExonerate) {
@@ -371,9 +398,11 @@ DIFFICULTY LEVELS:
                         correctExonerations++;
                     } else {
                         notExoneratedCount++;
+                        shouldExonerateNames.push(suspect.name);
                     }
                 } else if (suspect.exonerated && suspect !== gameState.culprit) {
                     incorrectExonerations++;
+                    incorrectlyExoneratedNames.push(suspect.name);
                 }
             });
 
@@ -381,7 +410,9 @@ DIFFICULTY LEVELS:
                 shouldExonerateCount,
                 correctExonerations,
                 notExoneratedCount,
-                incorrectExonerations
+                incorrectExonerations,
+                incorrectlyExoneratedNames,
+                shouldExonerateNames
             });
 
             // Check if all eligible suspects have been exonerated and no incorrect ones
@@ -396,15 +427,18 @@ DIFFICULTY LEVELS:
                 // Show specific feedback about what needs to be fixed
                 let message = "";
                 if (incorrectExonerations > 0) {
-                    message = `❌ You exonerated ${incorrectExonerations} suspect(s) incorrectly. Un-exonerate suspects who DO match the clues.`;
+                    message = `❌ You incorrectly exonerated: <strong>${incorrectlyExoneratedNames.join(', ')}</strong>. These suspects DO match the current clues (including yellow/close matches). Please un-exonerate them.`;
                 } else if (notExoneratedCount > 0) {
-                    message = `⚠️ You need to exonerate ${notExoneratedCount} more suspect(s) who don't match ALL the clues. Look for suspects highlighted in yellow.`;
+                    message = `⚠️ You still need to exonerate: <strong>${shouldExonerateNames.join(', ')}</strong>. These suspects don't match ALL the clues.`;
                 } else if (shouldExonerateCount === 0) {
                     message = `🤔 No suspects need to be exonerated right now. All remaining suspects are viable matches for the current clues.`;
                 } else {
                     message = `📝 Review the current clues and suspect traits carefully.`;
                 }
                 showHint(message);
+                
+                // Highlight incorrectly exonerated suspects
+                highlightIncorrectExonerations(incorrectlyExoneratedNames);
             }
         }
 
@@ -414,13 +448,47 @@ DIFFICULTY LEVELS:
             );
 
             if (availableTraits.length > 0) {
-                const newTraitType = availableTraits[Math.floor(Math.random() * availableTraits.length)];
+                // Get remaining non-exonerated suspects
+                const remainingSuspects = gameState.suspects.filter(s => !s.exonerated);
+                
+                let bestTraitType = null;
+                let maxEliminable = 0;
+                
+                // Find the trait that allows eliminating the most suspects while keeping game solvable
+                for (const traitType of availableTraits) {
+                    const culpritValue = gameState.culprit.traits[traitType];
+                    
+                    // Count how many remaining suspects would NOT match this new clue
+                    const eliminableCount = remainingSuspects.filter(suspect => {
+                        if (suspect === gameState.culprit) return false; // Never eliminate culprit
+                        
+                        // Simulate adding this clue and check if suspect would match ALL clues
+                        const tempClues = [...gameState.cluesRevealed, { type: traitType, value: culpritValue }];
+                        return !wouldMatchAllClues(suspect, tempClues);
+                    }).length;
+                    
+                    // Ensure at least 1 suspect can be eliminated but not all non-culprit suspects
+                    const nonCulpritRemaining = remainingSuspects.filter(s => s !== gameState.culprit).length;
+                    if (eliminableCount > 0 && eliminableCount < nonCulpritRemaining) {
+                        if (eliminableCount > maxEliminable) {
+                            maxEliminable = eliminableCount;
+                            bestTraitType = traitType;
+                        }
+                    }
+                }
+                
+                // If no trait provides good elimination, use fallback
+                if (!bestTraitType) {
+                    bestTraitType = availableTraits[Math.floor(Math.random() * availableTraits.length)];
+                    console.warn('No optimal trait found, using random fallback');
+                }
+                
                 gameState.cluesRevealed.push({
-                    type: newTraitType,
-                    value: gameState.culprit.traits[newTraitType]
+                    type: bestTraitType,
+                    value: gameState.culprit.traits[bestTraitType]
                 });
 
-                console.log(`New clue added: ${newTraitType} = ${gameState.culprit.traits[newTraitType]}`);
+                console.log(`New clue added: ${bestTraitType} = ${gameState.culprit.traits[bestTraitType]} (eliminable: ${maxEliminable})`);
                 
                 // Update everything after new clue
                 updateSuspectStatuses();
@@ -428,6 +496,52 @@ DIFFICULTY LEVELS:
                 renderSuspects();
                 updateGameStats();
                 updateExonerationTracker();
+            }
+        }
+        
+        function wouldMatchAllClues(suspect, clues) {
+            return clues.every(clue => {
+                // If this trait is hidden for the suspect, we can't eliminate them based on this clue
+                // Hidden traits act as wildcards - they could match or not match
+                if (suspect.hiddenTraits.includes(clue.type)) {
+                    return true; // Assume it could match, so don't eliminate
+                }
+                
+                const suspectValue = suspect.traits[clue.type];
+                const culpritValue = clue.value;
+                const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
+                
+                // Use same matching logic as main game
+                if (suspectValue === culpritValue) {
+                    return true;
+                }
+                
+                if (gameState.difficulty === 'easy') {
+                    return distance <= 1;
+                } else if (gameState.difficulty === 'medium') {
+                    return distance <= 1;
+                } else {
+                    return false;
+                }
+            });
+        }
+
+        function highlightIncorrectExonerations(incorrectNames) {
+            // Clear any existing highlights
+            document.querySelectorAll('.suspect-card').forEach(card => {
+                card.classList.remove('incorrectly-exonerated');
+            });
+            
+            // Highlight incorrectly exonerated suspects
+            if (incorrectNames.length > 0) {
+                gameState.suspects.forEach(suspect => {
+                    if (incorrectNames.includes(suspect.name)) {
+                        const card = document.querySelector(`[data-suspect-id="${suspect.id}"]`);
+                        if (card) {
+                            card.classList.add('incorrectly-exonerated');
+                        }
+                    }
+                });
             }
         }
 
@@ -444,12 +558,12 @@ DIFFICULTY LEVELS:
 
             document.getElementById('gameBoard').appendChild(hint);
 
-            // Auto-hide after 5 seconds
+            // Auto-hide after 8 seconds for longer messages
             setTimeout(() => {
                 if (hint.parentNode) {
                     hint.remove();
                 }
-            }, 5000);
+            }, 8000);
         }
 
         function updateExonerationTracker() {

@@ -490,8 +490,9 @@ h1::after {
 }
 
 .suspect-card.incorrectly-exonerated {
-    border: 2px solid var(--danger);
-    opacity: 0.5;
+    border: 3px solid var(--danger) !important;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+    animation: errorPulse 1.5s ease-in-out infinite !important;
 }
 
 .suspect-card.eliminated {
@@ -509,6 +510,21 @@ h1::after {
     0% { transform: scale(1); }
     50% { transform: scale(1.02); }
     100% { transform: scale(1); }
+}
+
+@keyframes errorPulse {
+    0% { 
+        border-color: var(--danger);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    }
+    50% { 
+        border-color: #ff6b6b;
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
+    }
+    100% { 
+        border-color: var(--danger);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    }
 }
 
 .suspect-name {
@@ -535,6 +551,18 @@ h1::after {
     padding: 12px;
     background: var(--bg-medium);
     border-radius: 10px;
+}
+
+/* Hidden trait styling - show question marks in distinctive color */
+.trait-item span:last-child {
+    font-weight: 500;
+}
+
+.trait-item .hidden-trait {
+    color: #ffcc00;
+    font-weight: bold;
+    font-size: 1.2em;
+    text-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
 }
 
 .suspect-actions {

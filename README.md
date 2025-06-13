@@ -275,6 +275,23 @@ function checkExonerations() {
 - **Solution:** Ensure `npm install` runs before `npm start`
 - **Prevention:** Added to .gitignore and deployment documentation
 
+#### **Issue #5: Game Stuck State - All Remaining Suspects Match Clues**
+- **Problem:** Player reached state where all 4 remaining suspects had "Knowledge: Expert" (exact matches)
+- **User Analysis:** "Can you analyze what went wrong here? Was I wrong or is there an issue with the game?"
+- **Root Cause:** Initial "no green matches" fix only applied to first clue; subsequent clues could create unsolvable states
+- **Impact:** 0 suspects should be exonerated → no way to progress → violates "3+ round minimum" design goal
+- **Solution:** Intelligent clue progression that analyzes elimination potential
+- **Implementation:**
+  ```javascript
+  // Find trait that eliminates most suspects while keeping game solvable
+  const eliminableCount = remainingSuspects.filter(suspect => {
+      if (suspect === gameState.culprit) return false;
+      const tempClues = [...gameState.cluesRevealed, { type: traitType, value: culpritValue }];
+      return !wouldMatchAllClues(suspect, tempClues);
+  }).length;
+  ```
+- **Prevention:** Each new clue ensures 1+ suspects can be eliminated but game remains solvable
+
 ### **User Design Philosophy Enforcement:**
 
 #### **Minimal Starting Information:**
@@ -316,7 +333,9 @@ function checkExonerations() {
 - [ ] Exonerate/un-exonerate cycle functions properly  
 - [ ] Check Exonerations provides accurate feedback and works when clicked
 - [ ] Game requires minimum 3 elimination rounds (no green matches initially)
+- [ ] **No stuck states** - every elimination round allows meaningful progress
 - [ ] Tracker numbers are accurate in real-time
+- [ ] Intelligent clue progression prevents unsolvable situations
 - [ ] Responsive design works on mobile/tablet/desktop
 - [ ] Edge cases in trait matching handled correctly
 - [ ] Performance acceptable on slower devices
