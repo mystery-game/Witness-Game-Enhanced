@@ -104,7 +104,7 @@ TRAIT_PROGRESSIONS = {
 - **NEVER hide exonerated suspects** - they must remain visible
 - Exonerated suspects: 40% opacity, grayscale filter, muted colors
 - **Green "Un-Exonerate" button** for mistake correction
-- **Yellow highlighting** for suspects that should be exonerated
+- **NO visual hints** - players must deduce which suspects to eliminate
 - **Smart feedback** on Check Exonerations button
 
 ### **Visual States:**
@@ -115,10 +115,12 @@ TRAIT_PROGRESSIONS = {
     border: 1px solid var(--text-muted);
 }
 
+/* REMOVED: should-exonerate visual indicators to preserve "thinking game" principle
 .suspect-card.should-exonerate {
     border: 2px solid var(--warning);
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
 }
+*/
 ```
 
 ### **Responsive Design:**
@@ -328,6 +330,31 @@ function checkExonerations() {
   ```
 - **Result:** Strategic ambiguity maintained in ALL rounds - no logic shortcuts possible
 - **Impact:** Game now consistently requires strategic thinking throughout entire session
+
+#### **Issue #11: Yellow Border Spoiler & Clue Display Overflow**
+- **Problem 1:** Yellow border around suspects who should be exonerated gave away answers
+- **Problem 2:** After 5 clues, page ran out of space and subsequent clues became invisible
+- **User Guidance:** "There is a yellow border around suspects who should be exonerated that gives the answer away to players" and "once you get past clue 5 the page runs out of space and you can't see subsequent clues"
+- **Strategic Impact:** Yellow borders completely defeated "THINKING GAME, NOT GUESSING GAME" principle
+- **Solutions Applied:**
+  - **Removed Yellow Border Spoiler:** Completely eliminated `.suspect-card.should-exonerate` CSS styling
+  - **Removed JavaScript Logic:** Eliminated `should-exonerate` class application in `renderSuspects()`
+  - **Fixed Clue Overflow:** Added scrollable game board with max-height 300px and custom scrollbars
+  - **Improved Clue Layout:** Changed to grid layout for better space utilization
+  - **Compact Clue Design:** Reduced padding and font size for more clues per screen
+- **Implementation:**
+  ```css
+  .game-board {
+      max-height: 300px;
+      overflow-y: auto;
+  }
+  .clue-feedback {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  ```
+- **Result:** Players must now use genuine logical deduction without visual hints
+- **Impact:** Preserves game integrity and ensures all clues remain visible throughout session
 
 ### **Critical Fixes Log (Previous Issues)**
 

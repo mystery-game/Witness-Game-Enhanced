@@ -337,33 +337,58 @@ h1::after {
     border-radius: 24px;
     margin-bottom: 30px;
     min-height: 120px;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--bg-medium);
+}
+
+/* Custom scrollbar for webkit browsers */
+.game-board::-webkit-scrollbar {
+    width: 8px;
+}
+
+.game-board::-webkit-scrollbar-track {
+    background: var(--bg-medium);
+    border-radius: 4px;
+}
+
+.game-board::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+.game-board::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
 }
 
 .clue-row {
     display: flex;
-    gap: 25px;
-    margin: 20px 0;
-    padding: 20px;
+    flex-direction: column;
+    gap: 15px;
+    margin: 15px 0;
+    padding: 15px;
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
     border: 1px solid var(--primary);
     border-radius: 16px;
-    align-items: center;
     animation: slideInUp 0.6s ease-out;
 }
 
 .clue-feedback {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
     flex: 1;
 }
 
 .trait-feedback {
-    padding: 12px 18px;
-    border-radius: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
     text-align: center;
-    min-width: 140px;
+    min-width: 120px;
     font-weight: 500;
+    font-size: 0.9em;
+    line-height: 1.3;
 }
 
 .trait-feedback.correct {
@@ -452,10 +477,12 @@ h1::after {
     border: 1px solid var(--glass-border);
 }
 
+/* REMOVED: Yellow border spoiler that gives away answers
 .suspect-card.should-exonerate {
     border: 2px solid var(--warning);
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
 }
+*/
 
 /* Exonerated suspects - grayed out but still visible */
 .suspect-card.exonerated {
@@ -478,11 +505,12 @@ h1::after {
     color: var(--text-muted);
 }
 
-/* Don't highlight should-exonerate when already exonerated */
+/* REMOVED: should-exonerate highlighting completely eliminated
 .suspect-card.exonerated.should-exonerate {
     border: 1px solid var(--text-muted);
     box-shadow: none;
 }
+*/
 
 .suspect-card.correctly-exonerated {
     border: 2px solid var(--success);

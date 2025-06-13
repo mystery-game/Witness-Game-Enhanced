@@ -322,9 +322,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (suspect.exonerated) {
                     card.classList.add('exonerated');
                 }
-                if (suspect.shouldExonerate && !suspect.exonerated) {
-                    card.classList.add('should-exonerate');
-                }
+                // REMOVED: should-exonerate visual indicator to preserve "thinking game" principle
+                // Players must deduce which suspects to eliminate without visual hints
 
                 // Special styling for accusation phase
                 if (isAccusationPhase && !suspect.exonerated) {
