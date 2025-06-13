@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUILTY - Daily Detective Mystery</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div style="background: purple; color: white; padding: 10px; text-align: center;">
+        VERSION 2.0 - ELIMINATION ONLY - Updated Daily
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔍 GUILTY 🔍</h1>
+            <div class="subtitle">Daily Detective Mystery - Time Challenge</div>
+        </div>
+
+        <!-- Error message -->
+        <div id="error-message" class="error-message">
+            <strong>Error:</strong> <span id="error-text">Something went wrong. Please refresh the page.</span>
+        </div>
+
+        <div id="main-menu" class="main-menu">
+            <h2>Welcome, Detective</h2>
+            <p style="margin: 20px 0; color: var(--text-secondary);">
+                Race against time to narrow down suspects through logical deduction. 
+                Each correct elimination round reveals new clues until only the culprit remains!
+            </p>
+            
+            <select id="difficulty-select" class="difficulty-select">
+                <option value="easy">Easy (More initial clues)</option>
+                <option value="medium" selected>Medium (Balanced challenge)</option>
+                <option value="hard">Hard (Minimal starting info)</option>
+            </select>
+            
+            <button id="start-game" class="btn">Start Investigation</button>
+            <button id="rules-btn" class="btn btn-secondary">How to Play</button>
+        </div>
+
+        <div id="game-screen" class="game-screen" style="display: none;">
+            <div class="crime-box">
+                <h2 id="crimeTitle">Today's Mystery</h2>
+                <p id="crimeDescription">Loading theme...</p>
+            </div>
+
+            <!-- Timer display -->
+            <div class="timer-display">
+                <div class="timer-value" id="timerDisplay">0:00</div>
+                <div class="timer-label">Time Elapsed</div>
+            </div>
+
+            <div class="game-stats">
+                <div class="stat-item">
+                    <div>🎯 Clues Given</div>
+                    <div id="cluesDisplay" style="font-weight: bold;">0</div>
+                </div>
+                <div class="stat-item">
+                    <div>🔍 Viable Suspects</div>
+                    <div id="viableDisplay" style="font-weight: bold;">16</div>
+                </div>
+                <div class="stat-item">
+                    <div>📊 Elimination Rounds</div>
+                    <div id="roundsDisplay" style="font-weight: bold;">0</div>
+                </div>
+            </div>
+
+            <!-- Phase indicator -->
+            <div id="phaseIndicator" class="phase-indicator">
+                <div class="phase-title">Elimination Round</div>
+                <div class="phase-description">
+                    Exonerate all suspects who don't match the clues to receive another trait!
+                </div>
+            </div>
+
+            <!-- Exoneration tracker -->
+            <div id="exonerationTracker" class="exoneration-tracker">
+                <div class="exoneration-stats">
+                    <div class="exoneration-stat">
+                        <div class="stat-value" id="shouldExonerateCount">0</div>
+                        <div class="stat-label">Should Exonerate</div>
+                    </div>
+                    <div class="exoneration-stat">
+                        <div class="stat-value" id="exoneratedCount">0</div>
+                        <div class="stat-label">Exonerated</div>
+                    </div>
+                    <div class="exoneration-stat">
+                        <div class="stat-value" id="remainingCount">16</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                </div>
+                <button id="checkExonerationsBtn" class="check-exonerations-btn">
+                    Check Exonerations
+                </button>
+            </div>
+            
+            <div id="gameBoard" class="game-board"></div>
+            
+            <div id="suspectsSection">
+                <!-- Trait Reference -->
+                <div class="trait-reference-minimal">
+                    <h4>Trait Reference</h4>
+                    <p class="reference-subtitle">Yellow = one step away • Gray = two or more steps away</p>
+                    <div class="trait-grid">
+                        <div class="trait-line">
+                            <span class="trait-name">Access</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Visitor</span>
+                                <i>→</i>
+                                <span>Contractor</span>
+                                <i>→</i>
+                                <span>Staff</span>
+                                <i>→</i>
+                                <span>VIP</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Timing</span>
+                            <div class="trait-flow">
+                                <span>Asleep</span>
+                                <i>→</i>
+                                <span>Working</span>
+                                <i>→</i>
+                                <span>Home</span>
+                                <i>→</i>
+                                <span>Out</span>
+                                <i>→</i>
+                                <span>Verified</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Knowledge</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Basic</span>
+                                <i>→</i>
+                                <span>Limited</span>
+                                <i>→</i>
+                                <span>Familiar</span>
+                                <i>→</i>
+                                <span>Expert</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Motive</span>
+                            <div class="trait-flow">
+                                <span>None</span>
+                                <i>→</i>
+                                <span>Curious</span>
+                                <i>→</i>
+                                <span>Vengeful</span>
+                                <i>→</i>
+                                <span>Greedy</span>
+                                <i>→</i>
+                                <span>Desperate</span>
+                            </div>
+                        </div>
+                        <div class="trait-line">
+                            <span class="trait-name">Behavior</span>
+                            <div class="trait-flow">
+                                <span>Helpful</span>
+                                <i>→</i>
+                                <span>Normal</span>
+                                <i>→</i>
+                                <span>Changed</span>
+                                <i>→</i>
+                                <span>Nervous</span>
+                                <i>→</i>
+                                <span>Suspicious</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="suspectsGrid"></div>
+            </div>
+
+            <div id="gameOver" class="game-over" style="display: none;">
+                <h2 id="gameOverTitle"></h2>
+                <div id="gameOverMessage"></div>
+                <button onclick="location.reload()" class="btn" style="margin-top: 20px; width: auto; padding: 12px 24px;">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="guilty-game-js.js"></script>
+</body>
+</html> 
