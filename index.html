@@ -180,6 +180,75 @@
                 <button onclick="location.reload()" class="btn" style="margin-top: 20px; width: auto; padding: 12px 24px;">New Game</button>
             </div>
         </div>
+
+        <!-- Rules Modal -->
+        <div id="rulesModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🕵️ How to Play GUILTY</h2>
+                    <span class="close-btn" onclick="GameManager.closeRules()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="rules-section">
+                        <h3>🎯 Objective</h3>
+                        <p>Find the culprit by systematically eliminating suspects who don't match the clues through logical deduction over multiple rounds.</p>
+                    </div>
+
+                    <div class="rules-section">
+                        <h3>🔍 Game Setup</h3>
+                        <ul>
+                            <li><strong>16 Suspects:</strong> Each with 5 traits (Access, Timing, Knowledge, Motive, Behavior)</li>
+                            <li><strong>1 Culprit:</strong> Randomly selected with specific trait values</li>
+                            <li><strong>Hidden Traits:</strong> 2 traits per suspect marked with "?" (unknown)</li>
+                            <li><strong>Yellow Clues:</strong> Reveal traits that are 1 step away from the culprit's actual trait</li>
+                        </ul>
+                    </div>
+
+                    <div class="rules-section">
+                        <h3>⚡ How to Play</h3>
+                        <ol>
+                            <li><strong>Analyze the Clue:</strong> Look at the yellow clue shown at the top</li>
+                            <li><strong>Find Non-Matches:</strong> Identify suspects who DON'T fit the clue pattern</li>
+                            <li><strong>Exonerate Suspects:</strong> Click "Exonerate" on suspects who can't be the culprit</li>
+                            <li><strong>Check Your Work:</strong> Click "Check Exonerations" to verify your logic</li>
+                            <li><strong>Get New Clue:</strong> Perfect elimination rounds reveal additional clues</li>
+                            <li><strong>Repeat:</strong> Continue until only the culprit remains</li>
+                        </ol>
+                    </div>
+
+                    <div class="rules-section">
+                        <h3>🧩 Understanding Clues</h3>
+                        <div class="clue-examples">
+                            <div class="clue-example">
+                                <div class="clue-label">Yellow Clue:</div>
+                                <div class="clue-demo yellow">Knowledge: Basic</div>
+                                <div class="clue-explanation">The culprit has "Knowledge: None" OR "Knowledge: Limited" (1 step away)</div>
+                            </div>
+                        </div>
+                        <p><strong>Key Rule:</strong> Anyone who exactly matches a yellow clue should be eliminated - the culprit is 1 step away, not at the clue value!</p>
+                    </div>
+
+                    <div class="rules-section">
+                        <h3>🎲 Strategic Tips</h3>
+                        <ul>
+                            <li>Start with <strong>visible traits only</strong> - ignore "?" hidden traits</li>
+                            <li>Look for suspects who are <strong>too far</strong> from clue values</li>
+                            <li>Remember: <strong>exact matches to yellow clues = eliminate</strong></li>
+                            <li>Use the <strong>Un-Exonerate</strong> button to fix mistakes</li>
+                            <li>Check the trait reference guide below the game</li>
+                        </ul>
+                    </div>
+
+                    <div class="rules-section">
+                        <h3>🏆 Winning</h3>
+                        <p>The game is won when you've correctly eliminated all suspects except the culprit. This typically requires <strong>3+ rounds</strong> of strategic thinking and perfect elimination logic.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" onclick="GameManager.closeRules()">Start Playing!</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="guilty-game-js.js"></script>

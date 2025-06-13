@@ -75,14 +75,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function showRules() {
-            alert(`HOW TO PLAY GUILTY:
+            document.getElementById('rulesModal').style.display = 'block';
+        }
 
-1. ELIMINATION ROUNDS: Exonerate suspects who don't match the clues
-2. TRAIT MATCHING: Yellow = close match, Gray = no match  
-3. PROGRESSION: Complete elimination rounds to get more clues
-4. WIN CONDITION: Find the culprit when only one suspect remains
-5. TIME CHALLENGE: Solve as quickly as possible!
-6. HIDDEN TRAITS: Some traits show '?' - you can't eliminate based on those`);
+        function closeRules() {
+            document.getElementById('rulesModal').style.display = 'none';
         }
 
         function startGame() {
@@ -569,11 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('exoneratedCount').textContent = exonerated;
             document.getElementById('remainingCount').textContent = remaining;
 
-            // Enable check button if there's any work to do:
-            // - Suspects that should be exonerated but aren't
-            // - Suspects that are incorrectly exonerated
+            // Enable check button when:
+            // 1. Suspects that should be exonerated but aren't
+            // 2. Suspects that are incorrectly exonerated 
+            // 3. Player has done correct exonerations and needs to check them to get next clue
             const checkBtn = document.getElementById('checkExonerationsBtn');
-            const hasWork = shouldExonerate > 0 || incorrectlyExonerated > 0;
+            const hasCorrectExonerations = exonerated > 0 && shouldExonerate === 0 && incorrectlyExonerated === 0;
+            const hasWork = shouldExonerate > 0 || incorrectlyExonerated > 0 || hasCorrectExonerations;
             checkBtn.disabled = !hasWork;
             
             // Debug logging (remove in production)
@@ -582,6 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 exonerated, 
                 remaining,
                 incorrectlyExonerated,
+                hasCorrectExonerations,
                 hasWork,
                 buttonDisabled: checkBtn.disabled
             });
@@ -658,7 +658,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             init,
             exonerateSuspect,
-            unExonerateSuspect
+            unExonerateSuspect,
+            closeRules
         };
     })();
 
