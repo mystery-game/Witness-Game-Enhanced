@@ -284,6 +284,27 @@ function checkExonerations() {
 - **Solution:** Changed matching logic from `return distance <= 1` to `return distance === 1`
 - **Impact:** Fixed false "incorrectly exonerated" warnings, proper elimination logic restored
 
+#### **Issue #10: Yellow Clues at Extreme Positions Remove Strategic Ambiguity**
+- **Problem:** Yellow clues at trait progression extremes (positions 0 or 4) only have one possible adjacent position
+- **User Guidance:** "There's one more issue with putting yellow clues at the either far end of the trait spectrum. Since there's only one trait that's 'next' to a yellow trait on the far end of the trait reference, that means the culprit has the trait directly next to it."
+- **Strategic Impact:** 
+  - Clue at "None" (index 0) → Culprit MUST be "Visitor" (index 1) - no ambiguity
+  - Clue at "VIP" (index 4) → Culprit MUST be "Staff" (index 3) - no ambiguity
+  - Violates "THINKING GAME, NOT GUESSING GAME" principle
+- **Solution:** Restrict yellow clue generation to middle positions (indices 1, 2, 3) only
+- **Implementation:**
+  ```javascript
+  // Only use clues if they're not at extremes (have neighbors on both sides)
+  if (clueIndex > 0 && clueIndex < progression.length - 1) {
+      possibleClueIndices.push(clueIndex);
+  }
+  ```
+- **Result:** Every yellow clue now maintains exactly 2 possible culprit positions:
+  - "Visitor" → Culprit could be "None" OR "Contractor"
+  - "Contractor" → Culprit could be "Visitor" OR "Staff"  
+  - "Staff" → Culprit could be "Contractor" OR "VIP"
+- **Impact:** Preserves strategic depth and eliminates logic shortcuts
+
 ### **Critical Fixes Log (Previous Issues)**
 
 #### **Issue #1: Check Exonerations Button Not Working**

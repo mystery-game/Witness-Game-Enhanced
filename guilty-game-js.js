@@ -171,9 +171,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const culpritIndex = progression.indexOf(culpritValue);
                 
                 // Try both directions (one step before and one step after)
+                // CRITICAL: Avoid extreme positions (0 and length-1) as they only have one adjacent position
                 const possibleClueIndices = [];
-                if (culpritIndex > 0) possibleClueIndices.push(culpritIndex - 1);
-                if (culpritIndex < progression.length - 1) possibleClueIndices.push(culpritIndex + 1);
+                if (culpritIndex > 0) {
+                    const clueIndex = culpritIndex - 1;
+                    // Only use this clue if it's not at an extreme (has neighbors on both sides)
+                    if (clueIndex > 0 && clueIndex < progression.length - 1) {
+                        possibleClueIndices.push(clueIndex);
+                    }
+                }
+                if (culpritIndex < progression.length - 1) {
+                    const clueIndex = culpritIndex + 1;
+                    // Only use this clue if it's not at an extreme (has neighbors on both sides)
+                    if (clueIndex > 0 && clueIndex < progression.length - 1) {
+                        possibleClueIndices.push(clueIndex);
+                    }
+                }
                 
                 for (const clueIndex of possibleClueIndices) {
                     const clueValue = progression[clueIndex];
