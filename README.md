@@ -234,6 +234,58 @@ function checkExonerations() {
 
 ### **Critical Fixes Log (January 2024)**
 
+#### **Issue #6: Question Mark System for Hidden Traits (Latest)**
+- **Problem:** Game needed more strategic difficulty without making it unfair
+- **User Guidance:** "We should also add question marks that leave some of each suspect's traits ambiguous so that they can't be exonerated on the basis of that trait"
+- **Solution:** Added `hiddenTraits` array to each suspect (2 traits hidden per suspect)
+- **Implementation:**
+  ```javascript
+  suspect.hiddenTraits = shuffledTraits.slice(0, 2);
+  // Renders '?' for hidden traits with distinctive yellow styling
+  ${suspect.hiddenTraits.includes(type) ? '?' : value}
+  ```
+- **Logic:** Hidden traits act as wildcards in matching - can't eliminate suspects based on unknown information
+- **Impact:** Forces players to rely only on revealed clues, increases strategic depth
+
+#### **Issue #7: Single Difficulty Level Simplification**
+- **Problem:** Multiple difficulty levels were confusing and still generating green clues
+- **User Guidance:** "I want there to be only one difficulty level. It should always start with one yellow clue and leave between 8 and 11 viable suspects"
+- **Root Cause:** Complex difficulty system was still buggy, needed simplification
+- **Solution:** 
+  - Removed difficulty dropdown entirely from UI
+  - Simplified to single logic: always generate yellow clues leaving 8-11 viable suspects
+  - Consistent yellow zone logic (`distance <= 1`) throughout game
+- **Code Changes:**
+  ```javascript
+  // Always generates yellow clues (1 step away from culprit trait)
+  if (viableSuspects >= 8 && viableSuspects <= 11) {
+      gameState.cluesRevealed.push({ type: selectedTraitType, value: clueValue });
+  }
+  ```
+
+#### **Issue #8: Green Clue Display Bug** 
+- **Problem:** Clues appeared green (exact match styling) even when they were yellow clues
+- **User Guidance:** "That didn't work. I'm still getting a green clue"
+- **Root Cause:** `renderClues()` function used CSS class `trait-feedback correct` (green) instead of `trait-feedback close` (yellow)
+- **Solution:** Changed CSS class from `correct` to `close` for proper yellow styling
+- **Before:** `traitDiv.className = 'trait-feedback correct';`
+- **After:** `traitDiv.className = 'trait-feedback close';`
+- **Additional Fix:** Updated fallback logic to generate yellow clues instead of green ones
+
+#### **Issue #9: Yellow Clue Logic Inversion (Critical)**
+- **Problem:** Suspects who exactly matched yellow clue were kept as viable (incorrect)
+- **User Guidance:** "Someone who exactly matches a yellow clue should be exonerated because the culprit will have a trait to the left or right, not the matching trait"
+- **Root Cause:** Misunderstood yellow clue logic - had `distance <= 1` instead of `distance === 1`
+- **Correct Logic:** 
+  - Yellow clue = 1 step away from culprit's actual trait
+  - Exact match to clue = ELIMINATE (distance 0)
+  - 1 step from clue = VIABLE (distance 1, could be culprit)
+  - 2+ steps from clue = ELIMINATE (distance >= 2)
+- **Solution:** Changed matching logic from `return distance <= 1` to `return distance === 1`
+- **Impact:** Fixed false "incorrectly exonerated" warnings, proper elimination logic restored
+
+### **Critical Fixes Log (Previous Issues)**
+
 #### **Issue #1: Check Exonerations Button Not Working**
 - **Problem:** Button had incorrect enable/disable logic and wasn't validating properly
 - **User Guidance:** "The 'check exonerations' button still doesn't work"
