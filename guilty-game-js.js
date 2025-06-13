@@ -205,13 +205,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 attempts++;
             }
             
-            // Fallback if no good yellow clue found - just use any trait
-            console.warn('No optimal yellow clue found, using fallback');
+            // Fallback if no good yellow clue found - generate any yellow clue
+            console.warn('No optimal yellow clue found, using fallback yellow clue');
             const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
             const selectedTraitType = traitTypes[Math.floor(Math.random() * traitTypes.length)];
+            const culpritValue = gameState.culprit.traits[selectedTraitType];
+            const progression = TRAIT_PROGRESSIONS[selectedTraitType];
+            const culpritIndex = progression.indexOf(culpritValue);
+            
+            // Generate a yellow clue (1 step away) for fallback
+            let fallbackClueValue = culpritValue; // Default to green if no yellow possible
+            if (culpritIndex > 0) {
+                fallbackClueValue = progression[culpritIndex - 1]; // One step before
+            } else if (culpritIndex < progression.length - 1) {
+                fallbackClueValue = progression[culpritIndex + 1]; // One step after
+            }
+            
             gameState.cluesRevealed.push({
                 type: selectedTraitType,
-                value: gameState.culprit.traits[selectedTraitType]
+                value: fallbackClueValue
             });
 
             updateSuspectStatuses();
@@ -266,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             gameState.cluesRevealed.forEach(clue => {
                 const traitDiv = document.createElement('div');
-                traitDiv.className = 'trait-feedback correct';
+                traitDiv.className = 'trait-feedback close';
                 traitDiv.innerHTML = `<strong>${capitalizeFirst(clue.type)}:</strong> ${clue.value}`;
                 clueFeedback.appendChild(traitDiv);
             });
