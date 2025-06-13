@@ -180,6 +180,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Count how many suspects would remain viable with this clue
                     const viableSuspects = gameState.suspects.filter(suspect => {
+                        // If this trait is hidden for the suspect, they're always viable (wildcard)
+                        if (suspect.hiddenTraits.includes(selectedTraitType)) {
+                            return true;
+                        }
+                        
                         const suspectValue = suspect.traits[selectedTraitType];
                         const distance = getTraitDistance(selectedTraitType, suspectValue, clueValue);
                         return distance === 1; // Yellow logic - only distance 1 is viable
