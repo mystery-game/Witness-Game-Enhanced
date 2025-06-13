@@ -296,6 +296,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const grid = document.getElementById('suspectsGrid');
             grid.innerHTML = '';
 
+            // Check if we're in accusation phase (2 suspects remaining)
+            const remainingSuspects = gameState.suspects.filter(s => !s.exonerated);
+            const isAccusationPhase = remainingSuspects.length === 2;
+
             gameState.suspects.forEach(suspect => {
                 const card = document.createElement('div');
                 card.className = 'suspect-card';
@@ -309,14 +313,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     card.classList.add('should-exonerate');
                 }
 
-                // Create action buttons based on exonerated state
-                const actionButton = suspect.exonerated ? 
-                    `<button class="suspect-button un-exonerate-btn" onclick="GameManager.unExonerateSuspect(${suspect.id})">
+                // Special styling for accusation phase
+                if (isAccusationPhase && !suspect.exonerated) {
+                    card.classList.add('accusation-ready');
+                }
+
+                // Create action buttons based on game phase and exonerated state
+                let actionButton = '';
+                if (suspect.exonerated) {
+                    actionButton = `<button class="suspect-button un-exonerate-btn" onclick="GameManager.unExonerateSuspect(${suspect.id})">
                         Un-Exonerate
-                    </button>` :
-                    `<button class="suspect-button exonerate-btn" onclick="GameManager.exonerateSuspect(${suspect.id})">
+                    </button>`;
+                } else if (isAccusationPhase) {
+                    actionButton = `<button class="suspect-button accuse-btn" onclick="GameManager.accuseSuspect(${suspect.id})">
+                        🎯 ACCUSE
+                    </button>`;
+                } else {
+                    actionButton = `<button class="suspect-button exonerate-btn" onclick="GameManager.exonerateSuspect(${suspect.id})">
                         Exonerate
                     </button>`;
+                }
 
                 card.innerHTML = `
                     <div class="suspect-name">${suspect.name}</div>
@@ -356,11 +372,33 @@ document.addEventListener('DOMContentLoaded', function() {
             renderSuspects();
             updateExonerationTracker();
 
-            // Check if only culprit remains (among non-exonerated)
+            // Check if we've reached accusation phase (2 suspects remaining)
             const remainingSuspects = gameState.suspects.filter(s => !s.exonerated);
-            if (remainingSuspects.length === 1) {
-                endGame(true, "Congratulations! You found the culprit!");
+            if (remainingSuspects.length === 2) {
+                enterAccusationPhase();
             }
+        }
+
+        function accuseSuspect(suspectId) {
+            const suspect = gameState.suspects.find(s => s.id === suspectId);
+            if (!suspect || suspect.exonerated) return;
+
+            console.log(`Accusing suspect: ${suspect.name}`);
+            
+            // Check if this is the correct accusation
+            if (suspect === gameState.culprit) {
+                // Victory!
+                endGame(true, `🎉 Correct accusation! ${suspect.name} was indeed the culprit!`);
+            } else {
+                // Wrong accusation - game over
+                endGame(false, `❌ Wrong accusation! ${suspect.name} was innocent. The real culprit was ${gameState.culprit.name}.`);
+            }
+        }
+
+        function enterAccusationPhase() {
+            gameState.phase = 'accusation';
+            updatePhaseIndicator();
+            showHint(`🎯 <strong>ACCUSATION PHASE!</strong> You've narrowed it down to 2 suspects. Choose carefully - accuse the culprit to win!`);
         }
 
         function unExonerateSuspect(suspectId) {
@@ -571,6 +609,15 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('exoneratedCount').textContent = exonerated;
             document.getElementById('remainingCount').textContent = remaining;
 
+            // Hide exoneration tracker during accusation phase
+            const tracker = document.getElementById('exonerationTracker');
+            if (gameState.phase === 'accusation') {
+                tracker.style.display = 'none';
+                return;
+            } else {
+                tracker.style.display = 'flex';
+            }
+
             // Enable check button when:
             // 1. Suspects that should be exonerated but aren't
             // 2. Suspects that are incorrectly exonerated 
@@ -597,8 +644,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const title = indicator.querySelector('.phase-title');
             const description = indicator.querySelector('.phase-description');
 
-            title.textContent = `Elimination Round ${gameState.eliminationRound}`;
-            description.textContent = 'Exonerate all suspects who don\'t match the clues to receive another trait!';
+            if (gameState.phase === 'accusation') {
+                title.textContent = '🎯 ACCUSATION PHASE';
+                description.textContent = 'You\'ve narrowed it down to 2 suspects! Choose wisely - accuse the correct culprit to win!';
+                indicator.classList.add('accusation-phase');
+            } else {
+                title.textContent = `Elimination Round ${gameState.eliminationRound}`;
+                description.textContent = 'Exonerate all suspects who don\'t match the clues to receive another trait!';
+                indicator.classList.remove('accusation-phase');
+            }
         }
 
         function startTimer() {
@@ -664,6 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
             init,
             exonerateSuspect,
             unExonerateSuspect,
+            accuseSuspect,
             closeRules
         };
     })();
