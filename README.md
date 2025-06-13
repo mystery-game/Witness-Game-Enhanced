@@ -305,6 +305,30 @@ function checkExonerations() {
   - "Staff" → Culprit could be "Contractor" OR "VIP"
 - **Impact:** Preserves strategic depth and eliminates logic shortcuts
 
+#### **Issue #10b: Extreme Position Restriction Only Applied to Initial Clues**
+- **Problem:** The fix for Issue #10 only applied to initial clue generation, but subsequent rounds still generated extreme position clues
+- **User Guidance:** "The problem persisted. In the second round I got a yellow clue at the extreme end, and then it wouldn't let me exonerate someone who was an exact match in that trait category"
+- **Root Cause:** `addNewClue()` function was using culprit's actual trait value instead of generating proper yellow clues with extreme position restrictions
+- **Before Fix:** `value: gameState.culprit.traits[bestTraitType]` could be "None" or "VIP"
+- **Solution:** Completely rewrote `addNewClue()` function to:
+  - Generate yellow clues (1 step away from culprit's trait) instead of using culprit's actual trait
+  - Apply same extreme position restriction (indices 1, 2, 3 only) to ALL rounds
+  - Evaluate multiple possible yellow clues to find optimal elimination potential
+  - Include fallback logic with extreme position restrictions
+- **Implementation:**
+  ```javascript
+  // Generate possible yellow clues with extreme position restrictions
+  const possibleClueIndices = [];
+  if (culpritIndex > 0) {
+      const clueIndex = culpritIndex - 1;
+      if (clueIndex > 0 && clueIndex < progression.length - 1) {
+          possibleClueIndices.push(clueIndex);
+      }
+  }
+  ```
+- **Result:** Strategic ambiguity maintained in ALL rounds - no logic shortcuts possible
+- **Impact:** Game now consistently requires strategic thinking throughout entire session
+
 ### **Critical Fixes Log (Previous Issues)**
 
 #### **Issue #1: Check Exonerations Button Not Working**
