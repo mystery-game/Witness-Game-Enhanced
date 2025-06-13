@@ -157,8 +157,9 @@ DIFFICULTY LEVELS:
         }
 
         function generateInitialClues() {
-            const numClues = gameState.difficulty === 'easy' ? 3 : 
-                            gameState.difficulty === 'medium' ? 2 : 1;
+            // Start with minimal information - just 1 clue for all difficulties
+            // Players must work through multiple rounds to deduce logically
+            const numClues = 1;
             
             const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
             const selectedTraits = traitTypes.sort(() => Math.random() - 0.5).slice(0, numClues);
@@ -184,14 +185,21 @@ DIFFICULTY LEVELS:
             return gameState.cluesRevealed.every(clue => {
                 const suspectValue = suspect.traits[clue.type];
                 const culpritValue = clue.value;
+                const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
                 
+                // Fixed logic: If suspect matches exactly, they're viable
+                if (suspectValue === culpritValue) {
+                    return true;
+                }
+                
+                // Yellow zone logic with edge case handling
                 if (gameState.difficulty === 'easy') {
-                    return getTraitDistance(clue.type, suspectValue, culpritValue) <= 1;
+                    return distance <= 1;
                 } else if (gameState.difficulty === 'medium') {
-                    return suspectValue === culpritValue || 
-                           getTraitDistance(clue.type, suspectValue, culpritValue) <= 1;
+                    return distance <= 1;
                 } else {
-                    return suspectValue === culpritValue;
+                    // Hard mode: Only exact matches count
+                    return false;
                 }
             });
         }
@@ -234,15 +242,26 @@ DIFFICULTY LEVELS:
             grid.innerHTML = '';
 
             gameState.suspects.forEach(suspect => {
-                if (suspect.exonerated) return; // Don't show exonerated suspects
-
                 const card = document.createElement('div');
                 card.className = 'suspect-card';
                 card.dataset.suspectId = suspect.id;
 
-                if (suspect.shouldExonerate) {
+                // Apply visual states
+                if (suspect.exonerated) {
+                    card.classList.add('exonerated');
+                }
+                if (suspect.shouldExonerate && !suspect.exonerated) {
                     card.classList.add('should-exonerate');
                 }
+
+                // Create action buttons based on exonerated state
+                const actionButton = suspect.exonerated ? 
+                    `<button class="suspect-button un-exonerate-btn" onclick="GameManager.unExonerateSuspect(${suspect.id})">
+                        Un-Exonerate
+                    </button>` :
+                    `<button class="suspect-button exonerate-btn" onclick="GameManager.exonerateSuspect(${suspect.id})">
+                        Exonerate
+                    </button>`;
 
                 card.innerHTML = `
                     <div class="suspect-name">${suspect.name}</div>
@@ -256,9 +275,7 @@ DIFFICULTY LEVELS:
                         ).join('')}
                     </div>
                     <div class="suspect-actions">
-                        <button class="suspect-button exonerate-btn" onclick="GameManager.exonerateSuspect(${suspect.id})">
-                            Exonerate
-                        </button>
+                        ${actionButton}
                     </div>
                 `;
 
@@ -282,11 +299,22 @@ DIFFICULTY LEVELS:
             renderSuspects();
             updateExonerationTracker();
 
-            // Check if only culprit remains
+            // Check if only culprit remains (among non-exonerated)
             const remainingSuspects = gameState.suspects.filter(s => !s.exonerated);
             if (remainingSuspects.length === 1) {
                 endGame(true, "Congratulations! You found the culprit!");
             }
+        }
+
+        function unExonerateSuspect(suspectId) {
+            const suspect = gameState.suspects.find(s => s.id === suspectId);
+            if (!suspect || !suspect.exonerated) return;
+
+            suspect.exonerated = false;
+            
+            updateGameStats();
+            renderSuspects();
+            updateExonerationTracker();
         }
 
         function checkExonerations() {
@@ -300,20 +328,29 @@ DIFFICULTY LEVELS:
                     if (suspect.exonerated) {
                         correctExonerations++;
                     }
-                } else if (suspect.exonerated) {
+                } else if (suspect.exonerated && suspect !== gameState.culprit) {
                     incorrectExonerations++;
                 }
             });
 
-            // Check if all eligible suspects have been exonerated
-            if (correctExonerations === shouldExonerateCount && incorrectExonerations === 0) {
+            // Check if all eligible suspects have been exonerated and no incorrect ones
+            if (correctExonerations === shouldExonerateCount && incorrectExonerations === 0 && shouldExonerateCount > 0) {
                 // Give new clue
                 addNewClue();
                 gameState.eliminationRound++;
                 updatePhaseIndicator();
+                showHint(`✅ Perfect elimination! New clue revealed for Round ${gameState.eliminationRound}`);
             } else {
-                // Show feedback
-                showExonerationFeedback(correctExonerations, shouldExonerateCount, incorrectExonerations);
+                // Show feedback about what needs to be fixed
+                let message = "";
+                if (incorrectExonerations > 0) {
+                    message = `❌ You exonerated ${incorrectExonerations} suspect(s) incorrectly. Un-exonerate suspects who DO match the clues.`;
+                } else if (correctExonerations < shouldExonerateCount) {
+                    message = `⚠️ You need to exonerate ${shouldExonerateCount - correctExonerations} more suspect(s) who don't match ALL the clues.`;
+                } else {
+                    message = `🤔 No suspects need to be exonerated right now. Review the clues and suspect traits.`;
+                }
+                showHint(message);
             }
         }
 
@@ -445,7 +482,8 @@ DIFFICULTY LEVELS:
         // Public API
         return {
             init,
-            exonerateSuspect
+            exonerateSuspect,
+            unExonerateSuspect
         };
     })();
 

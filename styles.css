@@ -457,6 +457,33 @@ h1::after {
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
 }
 
+/* Exonerated suspects - grayed out but still visible */
+.suspect-card.exonerated {
+    opacity: 0.4;
+    background: rgba(30, 41, 59, 0.3);
+    filter: grayscale(50%);
+    border: 1px solid var(--text-muted);
+}
+
+.suspect-card.exonerated .suspect-name {
+    color: var(--text-muted);
+}
+
+.suspect-card.exonerated .suspect-job {
+    color: var(--text-muted);
+}
+
+.suspect-card.exonerated .trait-item {
+    background: rgba(30, 41, 59, 0.5);
+    color: var(--text-muted);
+}
+
+/* Don't highlight should-exonerate when already exonerated */
+.suspect-card.exonerated.should-exonerate {
+    border: 1px solid var(--text-muted);
+    box-shadow: none;
+}
+
 .suspect-card.correctly-exonerated {
     border: 2px solid var(--success);
     opacity: 0.7;
@@ -539,6 +566,23 @@ h1::after {
 }
 
 .exonerate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Un-exonerate button styling */
+.un-exonerate-btn {
+    background: linear-gradient(135deg, var(--success), #16a34a);
+    color: white;
+}
+
+.un-exonerate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
+}
+
+.un-exonerate-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
