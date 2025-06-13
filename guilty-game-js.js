@@ -501,43 +501,87 @@ document.addEventListener('DOMContentLoaded', function() {
                 const remainingSuspects = gameState.suspects.filter(s => !s.exonerated);
                 
                 let bestTraitType = null;
+                let bestClueValue = null;
                 let maxEliminable = 0;
                 
                 // Find the trait that allows eliminating the most suspects while keeping game solvable
                 for (const traitType of availableTraits) {
                     const culpritValue = gameState.culprit.traits[traitType];
+                    const progression = TRAIT_PROGRESSIONS[traitType];
+                    const culpritIndex = progression.indexOf(culpritValue);
                     
-                    // Count how many remaining suspects would NOT match this new clue
-                    const eliminableCount = remainingSuspects.filter(suspect => {
-                        if (suspect === gameState.culprit) return false; // Never eliminate culprit
+                    // Generate possible yellow clues (1 step away from culprit's trait)
+                    // CRITICAL: Avoid extreme positions (0 and length-1) as they only have one adjacent position
+                    const possibleClueIndices = [];
+                    if (culpritIndex > 0) {
+                        const clueIndex = culpritIndex - 1;
+                        // Only use this clue if it's not at an extreme (has neighbors on both sides)
+                        if (clueIndex > 0 && clueIndex < progression.length - 1) {
+                            possibleClueIndices.push(clueIndex);
+                        }
+                    }
+                    if (culpritIndex < progression.length - 1) {
+                        const clueIndex = culpritIndex + 1;
+                        // Only use this clue if it's not at an extreme (has neighbors on both sides)
+                        if (clueIndex > 0 && clueIndex < progression.length - 1) {
+                            possibleClueIndices.push(clueIndex);
+                        }
+                    }
+                    
+                    // Try each possible yellow clue for this trait
+                    for (const clueIndex of possibleClueIndices) {
+                        const clueValue = progression[clueIndex];
                         
-                        // Simulate adding this clue and check if suspect would match ALL clues
-                        const tempClues = [...gameState.cluesRevealed, { type: traitType, value: culpritValue }];
-                        return !wouldMatchAllClues(suspect, tempClues);
-                    }).length;
-                    
-                    // Ensure at least 1 suspect can be eliminated but not all non-culprit suspects
-                    const nonCulpritRemaining = remainingSuspects.filter(s => s !== gameState.culprit).length;
-                    if (eliminableCount > 0 && eliminableCount < nonCulpritRemaining) {
-                        if (eliminableCount > maxEliminable) {
-                            maxEliminable = eliminableCount;
-                            bestTraitType = traitType;
+                        // Count how many remaining suspects would NOT match this new clue
+                        const eliminableCount = remainingSuspects.filter(suspect => {
+                            if (suspect === gameState.culprit) return false; // Never eliminate culprit
+                            
+                            // Simulate adding this clue and check if suspect would match ALL clues
+                            const tempClues = [...gameState.cluesRevealed, { type: traitType, value: clueValue }];
+                            return !wouldMatchAllClues(suspect, tempClues);
+                        }).length;
+                        
+                        // Ensure at least 1 suspect can be eliminated but not all non-culprit suspects
+                        const nonCulpritRemaining = remainingSuspects.filter(s => s !== gameState.culprit).length;
+                        if (eliminableCount > 0 && eliminableCount < nonCulpritRemaining) {
+                            if (eliminableCount > maxEliminable) {
+                                maxEliminable = eliminableCount;
+                                bestTraitType = traitType;
+                                bestClueValue = clueValue;
+                            }
                         }
                     }
                 }
                 
-                // If no trait provides good elimination, use fallback
+                // If no good yellow clue found, use fallback with extreme position restrictions
                 if (!bestTraitType) {
+                    console.warn('No optimal yellow clue found, using fallback');
                     bestTraitType = availableTraits[Math.floor(Math.random() * availableTraits.length)];
-                    console.warn('No optimal trait found, using random fallback');
+                    const culpritValue = gameState.culprit.traits[bestTraitType];
+                    const progression = TRAIT_PROGRESSIONS[bestTraitType];
+                    const culpritIndex = progression.indexOf(culpritValue);
+                    
+                    // Generate fallback yellow clue with extreme position restrictions
+                    bestClueValue = culpritValue; // Default fallback
+                    if (culpritIndex > 0) {
+                        const clueIndex = culpritIndex - 1;
+                        if (clueIndex > 0 && clueIndex < progression.length - 1) {
+                            bestClueValue = progression[clueIndex];
+                        }
+                    } else if (culpritIndex < progression.length - 1) {
+                        const clueIndex = culpritIndex + 1;
+                        if (clueIndex > 0 && clueIndex < progression.length - 1) {
+                            bestClueValue = progression[clueIndex];
+                        }
+                    }
                 }
                 
                 gameState.cluesRevealed.push({
                     type: bestTraitType,
-                    value: gameState.culprit.traits[bestTraitType]
+                    value: bestClueValue
                 });
 
-                console.log(`New clue added: ${bestTraitType} = ${gameState.culprit.traits[bestTraitType]} (eliminable: ${maxEliminable})`);
+                console.log(`New yellow clue added: ${bestTraitType} = ${bestClueValue} (eliminable: ${maxEliminable})`);
                 
                 // Update everything after new clue
                 updateSuspectStatuses();
