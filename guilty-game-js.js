@@ -115,6 +115,7 @@ DIFFICULTY LEVELS:
             updateGameStats();
             renderSuspects();
             updatePhaseIndicator();
+            updateExonerationTracker();
         }
 
         function setupCrimeScenario() {
@@ -158,21 +159,52 @@ DIFFICULTY LEVELS:
 
         function generateInitialClues() {
             // Start with minimal information - just 1 clue for all difficulties
-            // Players must work through multiple rounds to deduce logically
+            // CRITICAL: Ensure NO exact matches (greens) - only yellow/gray matches allowed
             const numClues = 1;
             
-            const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
-            const selectedTraits = traitTypes.sort(() => Math.random() - 0.5).slice(0, numClues);
+            let attempts = 0;
+            const maxAttempts = 50;
             
-            selectedTraits.forEach(traitType => {
+            while (attempts < maxAttempts) {
+                // Clear any existing clues
+                gameState.cluesRevealed = [];
+                
+                const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
+                const selectedTraitType = traitTypes[Math.floor(Math.random() * traitTypes.length)];
+                
                 gameState.cluesRevealed.push({
-                    type: traitType,
-                    value: gameState.culprit.traits[traitType]
+                    type: selectedTraitType,
+                    value: gameState.culprit.traits[selectedTraitType]
                 });
-            });
+                
+                // Check if this clue creates any exact matches (greens)
+                const exactMatches = gameState.suspects.filter(suspect => 
+                    suspect !== gameState.culprit && 
+                    suspect.traits[selectedTraitType] === gameState.culprit.traits[selectedTraitType]
+                ).length;
+                
+                // If no exact matches, this clue is good
+                if (exactMatches === 0) {
+                    break;
+                }
+                
+                attempts++;
+            }
+            
+            // If we couldn't find a trait with no exact matches, fall back to any trait
+            if (attempts >= maxAttempts) {
+                gameState.cluesRevealed = [];
+                const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
+                const selectedTraitType = traitTypes[Math.floor(Math.random() * traitTypes.length)];
+                gameState.cluesRevealed.push({
+                    type: selectedTraitType,
+                    value: gameState.culprit.traits[selectedTraitType]
+                });
+            }
 
             updateSuspectStatuses();
             renderClues();
+            updateExonerationTracker();
         }
 
         function updateSuspectStatuses() {
@@ -287,6 +319,7 @@ DIFFICULTY LEVELS:
             const suspect = gameState.suspects.find(s => s.id === suspectId);
             if (!suspect || suspect.exonerated) return;
 
+            console.log(`Exonerating suspect: ${suspect.name}`);
             suspect.exonerated = true;
             
             // Check if this was the culprit
@@ -295,6 +328,7 @@ DIFFICULTY LEVELS:
                 return;
             }
 
+            // Update all displays and trackers
             updateGameStats();
             renderSuspects();
             updateExonerationTracker();
@@ -310,45 +344,65 @@ DIFFICULTY LEVELS:
             const suspect = gameState.suspects.find(s => s.id === suspectId);
             if (!suspect || !suspect.exonerated) return;
 
+            console.log(`Un-exonerating suspect: ${suspect.name}`);
             suspect.exonerated = false;
             
+            // Update all displays and trackers
             updateGameStats();
             renderSuspects();
             updateExonerationTracker();
         }
 
         function checkExonerations() {
+            console.log('checkExonerations called'); // Debug log
+            
+            // Ensure suspect statuses are up to date
+            updateSuspectStatuses();
+            
             let correctExonerations = 0;
             let incorrectExonerations = 0;
             let shouldExonerateCount = 0;
+            let notExoneratedCount = 0;
 
             gameState.suspects.forEach(suspect => {
                 if (suspect.shouldExonerate) {
                     shouldExonerateCount++;
                     if (suspect.exonerated) {
                         correctExonerations++;
+                    } else {
+                        notExoneratedCount++;
                     }
                 } else if (suspect.exonerated && suspect !== gameState.culprit) {
                     incorrectExonerations++;
                 }
             });
 
+            console.log('Exoneration Check:', {
+                shouldExonerateCount,
+                correctExonerations,
+                notExoneratedCount,
+                incorrectExonerations
+            });
+
             // Check if all eligible suspects have been exonerated and no incorrect ones
             if (correctExonerations === shouldExonerateCount && incorrectExonerations === 0 && shouldExonerateCount > 0) {
-                // Give new clue
+                // Perfect round - give new clue
                 addNewClue();
                 gameState.eliminationRound++;
                 updatePhaseIndicator();
+                updateExonerationTracker();
                 showHint(`✅ Perfect elimination! New clue revealed for Round ${gameState.eliminationRound}`);
             } else {
-                // Show feedback about what needs to be fixed
+                // Show specific feedback about what needs to be fixed
                 let message = "";
                 if (incorrectExonerations > 0) {
                     message = `❌ You exonerated ${incorrectExonerations} suspect(s) incorrectly. Un-exonerate suspects who DO match the clues.`;
-                } else if (correctExonerations < shouldExonerateCount) {
-                    message = `⚠️ You need to exonerate ${shouldExonerateCount - correctExonerations} more suspect(s) who don't match ALL the clues.`;
+                } else if (notExoneratedCount > 0) {
+                    message = `⚠️ You need to exonerate ${notExoneratedCount} more suspect(s) who don't match ALL the clues. Look for suspects highlighted in yellow.`;
+                } else if (shouldExonerateCount === 0) {
+                    message = `🤔 No suspects need to be exonerated right now. All remaining suspects are viable matches for the current clues.`;
                 } else {
-                    message = `🤔 No suspects need to be exonerated right now. Review the clues and suspect traits.`;
+                    message = `📝 Review the current clues and suspect traits carefully.`;
                 }
                 showHint(message);
             }
@@ -366,22 +420,15 @@ DIFFICULTY LEVELS:
                     value: gameState.culprit.traits[newTraitType]
                 });
 
+                console.log(`New clue added: ${newTraitType} = ${gameState.culprit.traits[newTraitType]}`);
+                
+                // Update everything after new clue
                 updateSuspectStatuses();
                 renderClues();
                 renderSuspects();
+                updateGameStats();
                 updateExonerationTracker();
-
-                // Show hint
-                showHint(`New clue revealed! The culprit has ${newTraitType}: ${gameState.culprit.traits[newTraitType]}`);
             }
-        }
-
-        function showExonerationFeedback(correct, total, incorrect) {
-            const message = incorrect > 0 ? 
-                `❌ You exonerated ${incorrect} suspects incorrectly. Only exonerate suspects who don't match ALL clues.` :
-                `✅ ${correct}/${total} correct exonerations. Exonerate ${total - correct} more suspects to get a new clue!`;
-            
-            showHint(message);
         }
 
         function showHint(message) {
@@ -396,20 +443,48 @@ DIFFICULTY LEVELS:
             `;
 
             document.getElementById('gameBoard').appendChild(hint);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (hint.parentNode) {
+                    hint.remove();
+                }
+            }, 5000);
         }
 
         function updateExonerationTracker() {
+            // Recalculate suspect statuses first to ensure accuracy
+            updateSuspectStatuses();
+            
             const shouldExonerate = gameState.suspects.filter(s => s.shouldExonerate && !s.exonerated).length;
             const exonerated = gameState.suspects.filter(s => s.exonerated).length;
             const remaining = gameState.suspects.filter(s => !s.exonerated).length;
+            
+            // Count incorrect exonerations (suspects who are exonerated but shouldn't be, excluding culprit)
+            const incorrectlyExonerated = gameState.suspects.filter(s => 
+                s.exonerated && !s.shouldExonerate && s !== gameState.culprit
+            ).length;
 
             document.getElementById('shouldExonerateCount').textContent = shouldExonerate;
             document.getElementById('exoneratedCount').textContent = exonerated;
             document.getElementById('remainingCount').textContent = remaining;
 
-            // Enable/disable check button
+            // Enable check button if there's any work to do:
+            // - Suspects that should be exonerated but aren't
+            // - Suspects that are incorrectly exonerated
             const checkBtn = document.getElementById('checkExonerationsBtn');
-            checkBtn.disabled = shouldExonerate === 0;
+            const hasWork = shouldExonerate > 0 || incorrectlyExonerated > 0;
+            checkBtn.disabled = !hasWork;
+            
+            // Debug logging (remove in production)
+            console.log('Tracker Update:', {
+                shouldExonerate,
+                exonerated, 
+                remaining,
+                incorrectlyExonerated,
+                hasWork,
+                buttonDisabled: checkBtn.disabled
+            });
         }
 
         function updatePhaseIndicator() {
