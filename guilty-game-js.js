@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const viableSuspects = gameState.suspects.filter(suspect => {
                         const suspectValue = suspect.traits[selectedTraitType];
                         const distance = getTraitDistance(selectedTraitType, suspectValue, clueValue);
-                        return distance <= 1; // Yellow zone - distance 0 or 1
+                        return distance === 1; // Yellow logic - only distance 1 is viable
                     }).length;
                     
                     // Check if this gives us the right number of viable suspects (8-11)
@@ -249,8 +249,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const culpritValue = clue.value;
                 const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
                 
-                // Yellow zone logic - suspects within 1 step are viable
-                return distance <= 1;
+                // Yellow clue logic: clue is 1 step away from culprit's actual trait
+                // - If suspect exactly matches clue (distance = 0): ELIMINATE (culprit is 1 step away from clue, not at clue)
+                // - If suspect is 1 step away from clue (distance = 1): VIABLE (could be the culprit)
+                // - If suspect is 2+ steps away from clue (distance >= 2): ELIMINATE (too far)
+                return distance === 1;
             });
         }
 
@@ -504,8 +507,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const culpritValue = clue.value;
                 const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
                 
-                // Yellow zone logic - suspects within 1 step are viable
-                return distance <= 1;
+                // Yellow clue logic: only suspects exactly 1 step away from clue are viable
+                return distance === 1;
             });
         }
 
