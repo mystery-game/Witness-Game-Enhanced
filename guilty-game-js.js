@@ -64,9 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Main menu events
             document.getElementById('start-game').addEventListener('click', startGame);
             document.getElementById('rules-btn').addEventListener('click', showRules);
-            document.getElementById('difficulty-select').addEventListener('change', (e) => {
-                gameState.difficulty = e.target.value;
-            });
 
             // Game events
             document.getElementById('checkExonerationsBtn').addEventListener('click', checkExonerations);
@@ -81,15 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(`HOW TO PLAY GUILTY:
 
 1. ELIMINATION ROUNDS: Exonerate suspects who don't match the clues
-2. TRAIT MATCHING: Green = exact match, Yellow = close, Gray = wrong
+2. TRAIT MATCHING: Yellow = close match, Gray = no match  
 3. PROGRESSION: Complete elimination rounds to get more clues
 4. WIN CONDITION: Find the culprit when only one suspect remains
 5. TIME CHALLENGE: Solve as quickly as possible!
-
-DIFFICULTY LEVELS:
-• Easy: More starting clues, forgiving matching
-• Medium: Balanced challenge
-• Hard: Minimal clues, precise matching required`);
+6. HIDDEN TRAITS: Some traits show '?' - you can't eliminate based on those`);
         }
 
         function startGame() {
@@ -140,22 +133,10 @@ DIFFICULTY LEVELS:
                     shouldExonerate: false
                 };
                 
-                // Hide some traits based on difficulty to increase challenge
+                // Hide 2 traits per suspect to increase strategic challenge
                 const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
-                let numHidden = 0;
-                
-                // Difficulty-based hidden trait counts
-                if (gameState.difficulty === 'easy') {
-                    numHidden = 1; // Hide 1 trait per suspect
-                } else if (gameState.difficulty === 'medium') {
-                    numHidden = 2; // Hide 2 traits per suspect  
-                } else {
-                    numHidden = 2; // Hide 2 traits per suspect for hard mode
-                }
-                
-                // Randomly select traits to hide
                 const shuffledTraits = [...traitTypes].sort(() => Math.random() - 0.5);
-                suspect.hiddenTraits = shuffledTraits.slice(0, numHidden);
+                suspect.hiddenTraits = shuffledTraits.slice(0, 2);
                 
                 gameState.suspects.push(suspect);
             }
@@ -177,49 +158,61 @@ DIFFICULTY LEVELS:
         }
 
         function generateInitialClues() {
-            // Start with minimal information - just 1 clue for all difficulties
-            // CRITICAL: Ensure NO exact matches (greens) - only yellow/gray matches allowed
-            const numClues = 1;
-            
+            // Always start with exactly 1 YELLOW clue that leaves 8-11 viable suspects
             let attempts = 0;
             const maxAttempts = 50;
             
             while (attempts < maxAttempts) {
-                // Clear any existing clues
                 gameState.cluesRevealed = [];
                 
                 const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
                 const selectedTraitType = traitTypes[Math.floor(Math.random() * traitTypes.length)];
+                const culpritValue = gameState.culprit.traits[selectedTraitType];
                 
-                gameState.cluesRevealed.push({
-                    type: selectedTraitType,
-                    value: gameState.culprit.traits[selectedTraitType]
-                });
+                // Try a clue that's 1 step away from the culprit's trait (creates yellow match for culprit)
+                const progression = TRAIT_PROGRESSIONS[selectedTraitType];
+                const culpritIndex = progression.indexOf(culpritValue);
                 
-                // Check if this clue creates any exact matches (greens)
-                const exactMatches = gameState.suspects.filter(suspect => 
-                    suspect !== gameState.culprit && 
-                    suspect.traits[selectedTraitType] === gameState.culprit.traits[selectedTraitType]
-                ).length;
+                // Try both directions (one step before and one step after)
+                const possibleClueIndices = [];
+                if (culpritIndex > 0) possibleClueIndices.push(culpritIndex - 1);
+                if (culpritIndex < progression.length - 1) possibleClueIndices.push(culpritIndex + 1);
                 
-                // If no exact matches, this clue is good
-                if (exactMatches === 0) {
-                    break;
+                for (const clueIndex of possibleClueIndices) {
+                    const clueValue = progression[clueIndex];
+                    
+                    // Count how many suspects would remain viable with this clue
+                    const viableSuspects = gameState.suspects.filter(suspect => {
+                        const suspectValue = suspect.traits[selectedTraitType];
+                        const distance = getTraitDistance(selectedTraitType, suspectValue, clueValue);
+                        return distance <= 1; // Yellow zone - distance 0 or 1
+                    }).length;
+                    
+                    // Check if this gives us the right number of viable suspects (8-11)
+                    if (viableSuspects >= 8 && viableSuspects <= 11) {
+                        gameState.cluesRevealed.push({
+                            type: selectedTraitType,
+                            value: clueValue
+                        });
+                        console.log(`Yellow clue generated: ${selectedTraitType} = ${clueValue}, viable suspects: ${viableSuspects}`);
+                        updateSuspectStatuses();
+                        renderClues();
+                        updateExonerationTracker();
+                        return;
+                    }
                 }
                 
                 attempts++;
             }
             
-            // If we couldn't find a trait with no exact matches, fall back to any trait
-            if (attempts >= maxAttempts) {
-                gameState.cluesRevealed = [];
-                const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
-                const selectedTraitType = traitTypes[Math.floor(Math.random() * traitTypes.length)];
-                gameState.cluesRevealed.push({
-                    type: selectedTraitType,
-                    value: gameState.culprit.traits[selectedTraitType]
-                });
-            }
+            // Fallback if no good yellow clue found - just use any trait
+            console.warn('No optimal yellow clue found, using fallback');
+            const traitTypes = Object.keys(TRAIT_PROGRESSIONS);
+            const selectedTraitType = traitTypes[Math.floor(Math.random() * traitTypes.length)];
+            gameState.cluesRevealed.push({
+                type: selectedTraitType,
+                value: gameState.culprit.traits[selectedTraitType]
+            });
 
             updateSuspectStatuses();
             renderClues();
@@ -244,20 +237,8 @@ DIFFICULTY LEVELS:
                 const culpritValue = clue.value;
                 const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
                 
-                // Fixed logic: If suspect matches exactly, they're viable
-                if (suspectValue === culpritValue) {
-                    return true;
-                }
-                
-                // Yellow zone logic with edge case handling
-                if (gameState.difficulty === 'easy') {
-                    return distance <= 1;
-                } else if (gameState.difficulty === 'medium') {
-                    return distance <= 1;
-                } else {
-                    // Hard mode: Only exact matches count
-                    return false;
-                }
+                // Yellow zone logic - suspects within 1 step are viable
+                return distance <= 1;
             });
         }
 
@@ -511,18 +492,8 @@ DIFFICULTY LEVELS:
                 const culpritValue = clue.value;
                 const distance = getTraitDistance(clue.type, suspectValue, culpritValue);
                 
-                // Use same matching logic as main game
-                if (suspectValue === culpritValue) {
-                    return true;
-                }
-                
-                if (gameState.difficulty === 'easy') {
-                    return distance <= 1;
-                } else if (gameState.difficulty === 'medium') {
-                    return distance <= 1;
-                } else {
-                    return false;
-                }
+                // Yellow zone logic - suspects within 1 step are viable
+                return distance <= 1;
             });
         }
 
